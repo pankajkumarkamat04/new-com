@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { userApi } from "@/lib/api";
+import { useCart } from "@/contexts/CartContext";
 
 export default function UserLoginPage() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function UserLoginPage() {
     else if (res.data?.token) {
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("userType", "user");
+      await mergeGuestCartThenRefresh();
       router.push("/user/dashboard");
     }
   };

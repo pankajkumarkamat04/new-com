@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { settingsApi, type Settings } from "@/lib/api";
 
 const defaultForm: Partial<Settings> = {
@@ -18,7 +17,6 @@ const defaultForm: Partial<Settings> = {
 };
 
 export default function AdminGeneralSettingsPage() {
-  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState<Partial<Settings>>(defaultForm);
   const [loading, setLoading] = useState(true);
@@ -31,12 +29,6 @@ export default function AdminGeneralSettingsPage() {
 
   useEffect(() => {
     if (!mounted) return;
-    const token = localStorage.getItem("token");
-    const userType = localStorage.getItem("userType");
-    if (!token || userType !== "admin") {
-      router.replace("/admin/login");
-      return;
-    }
     settingsApi.get().then((res) => {
       setLoading(false);
       if (res.data?.data) {
@@ -54,7 +46,7 @@ export default function AdminGeneralSettingsPage() {
         });
       }
     });
-  }, [mounted, router]);
+  }, [mounted]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;

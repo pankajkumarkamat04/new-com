@@ -2,11 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { productApi, type Product } from "@/lib/api";
 
 export default function UserProductsPage() {
-  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,14 +16,8 @@ export default function UserProductsPage() {
 
   useEffect(() => {
     if (!mounted) return;
-    const token = localStorage.getItem("token");
-    const userType = localStorage.getItem("userType");
-    if (!token || userType !== "user") {
-      router.replace("/user/login");
-      return;
-    }
     fetchProducts();
-  }, [mounted, router]);
+  }, [mounted]);
 
   const fetchProducts = (params?: { search?: string; page?: number }) => {
     setLoading(true);
@@ -73,22 +65,23 @@ export default function UserProductsPage() {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {products.map((product) => (
-              <div
+              <Link
                 key={product._id}
-                className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md"
+                href={`/product/${product._id}`}
+                className="group rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md hover:border-emerald-200"
               >
                 {product.image ? (
                   <img
                     src={product.image}
                     alt={product.name}
-                    className="mb-4 h-40 w-full rounded-lg object-cover"
+                    className="mb-4 h-40 w-full rounded-lg object-cover transition group-hover:scale-105"
                   />
                 ) : (
                   <div className="mb-4 flex h-40 w-full items-center justify-center rounded-lg bg-slate-100 text-slate-400">
                     No image
                   </div>
                 )}
-                <h3 className="font-semibold text-slate-900">{product.name}</h3>
+                <h3 className="font-semibold text-slate-900 group-hover:text-emerald-600">{product.name}</h3>
                 {product.category && (
                   <p className="mt-1 text-sm text-slate-500">{product.category}</p>
                 )}
@@ -101,7 +94,7 @@ export default function UserProductsPage() {
                   </p>
                 )}
                 <p className="mt-2 text-xs text-slate-500">Stock: {product.stock}</p>
-              </div>
+              </Link>
             ))}
           </div>
         )}

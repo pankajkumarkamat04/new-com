@@ -6,6 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { userApi } from "@/lib/api";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 const navItems = [
   { href: "/user/dashboard", label: "Dashboard", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
@@ -37,12 +38,6 @@ export default function UserLayout({
       setLoading(false);
       return;
     }
-    const token = localStorage.getItem("token");
-    const userType = localStorage.getItem("userType");
-    if (!token || userType !== "user") {
-      router.replace("/user/login");
-      return;
-    }
     userApi.getMe().then((res) => {
       setLoading(false);
       if (res.data?.user) setUser(res.data.user);
@@ -56,13 +51,7 @@ export default function UserLayout({
     router.replace("/");
   };
 
-  if (!mounted || loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="text-slate-600">Loading...</div>
-      </div>
-    );
-  }
+  if (!mounted) return null;
 
   const initial = (user?.name || "U").charAt(0).toUpperCase();
 
@@ -80,6 +69,12 @@ export default function UserLayout({
   }
 
   return (
+    <ProtectedRoute role="user">
+      {loading ? (
+        <div className="flex min-h-screen items-center justify-center bg-slate-50">
+          <div className="text-slate-600">Loading...</div>
+        </div>
+      ) : (
     <div className="flex min-h-screen flex-col bg-white">
       {header}
       <div className="mx-auto flex w-full max-w-7xl flex-1 flex-row items-start gap-0 py-4 sm:py-6">
@@ -167,5 +162,7 @@ export default function UserLayout({
       </div>
       {footer}
     </div>
+      )}
+    </ProtectedRoute>
   );
 }

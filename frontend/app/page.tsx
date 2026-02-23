@@ -119,7 +119,7 @@ export default function Home() {
               {products.map((product) => (
                 <Link
                   key={product._id}
-                  href={`/shop#${product._id}`}
+                  href={`/product/${product._id}`}
                   className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-lg"
                 >
                   {product.image ? (

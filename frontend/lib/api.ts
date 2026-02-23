@@ -102,6 +102,22 @@ export type HomePageSettings = {
   homeCategorySettings?: HomeCategorySettings;
 };
 
+export type SeoSettings = {
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  ogType?: string;
+  twitterCard?: string;
+  twitterTitle?: string;
+  twitterDescription?: string;
+  twitterImage?: string;
+  canonicalUrl?: string;
+  robots?: string;
+};
+
 export const settingsApi = {
   get: () => api<{ data: Settings }>('/settings'),
   update: (body: Partial<Settings>) =>
@@ -113,6 +129,9 @@ export const settingsApi = {
   getHero: () => api<{ data: HeroSettings }>('/settings/hero'),
   updateHero: (body: Partial<HeroSettings>) =>
     api<{ data: HeroSettings }>('/settings/hero', { method: 'PUT', body: JSON.stringify(body) }),
+  getSeo: () => api<{ data: SeoSettings }>('/settings/seo'),
+  updateSeo: (body: Partial<SeoSettings>) =>
+    api<{ data: SeoSettings }>('/settings/seo', { method: 'PUT', body: JSON.stringify(body) }),
 };
 
 // Categories
@@ -176,6 +195,63 @@ export const productApi = {
   update: (id: string, body: Partial<{ name: string; description: string; price: number; category: string; stock: number; image: string; isActive: boolean }>) =>
     api<{ data: Product }>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   delete: (id: string) => api(`/products/${id}`, { method: 'DELETE' }),
+};
+
+// Cart (user auth required for API)
+export type CartItem = {
+  productId: string;
+  product?: { _id: string; name: string; price: number; image?: string; isActive: boolean; stock: number };
+  quantity: number;
+};
+
+export const cartApi = {
+  get: () => api<{ data: { items: CartItem[] } }>('/cart'),
+  add: (productId: string, quantity?: number) =>
+    api<{ data: { items: CartItem[] } }>('/cart', {
+      method: 'POST',
+      body: JSON.stringify({ productId, quantity: quantity || 1 }),
+    }),
+  update: (productId: string, quantity: number) =>
+    api<{ data: { items: CartItem[] } }>('/cart', {
+      method: 'PUT',
+      body: JSON.stringify({ productId, quantity }),
+    }),
+  remove: (productId: string) =>
+    api<{ data: { items: CartItem[] } }>(`/cart/items/${productId}`, { method: 'DELETE' }),
+  merge: (items: { productId: string; quantity: number }[]) =>
+    api<{ data: { items: CartItem[] } }>('/cart/merge', {
+      method: 'POST',
+      body: JSON.stringify({ items }),
+    }),
+  clear: () => api<{ data: { items: CartItem[] } }>('/cart', { method: 'DELETE' }),
+};
+
+// Users (admin only)
+export type UserItem = {
+  _id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  role: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export const usersApi = {
+  list: (params?: { search?: string; page?: number; limit?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.search) searchParams.set('search', params.search);
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const query = searchParams.toString();
+    return api<{ data: UserItem[]; pagination: { page: number; limit: number; total: number; pages: number } }>(
+      `/users${query ? `?${query}` : ''}`
+    );
+  },
+  get: (id: string) => api<{ data: UserItem }>(`/users/${id}`),
+  update: (id: string, body: { name?: string; email?: string; phone?: string }) =>
+    api<{ data: UserItem }>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  delete: (id: string) => api(`/users/${id}`, { method: 'DELETE' }),
 };
 
 // Media

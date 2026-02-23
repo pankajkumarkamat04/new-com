@@ -2,14 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { settingsApi, type HeroSettings, type HeroSlide } from "@/lib/api";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
 
 const defaultSlide = { image: "", title: "Discover Amazing Products", subtitle: "Shop the latest trends.", textColor: "", buttonText: "Shop Now", buttonLink: "/shop", buttonTextColor: "#ffffff", buttonBgColor: "#059669", showText: true };
 
 export default function AdminHeroSettingsPage() {
-  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState<HeroSettings>({
     layout: "single",
@@ -27,12 +25,6 @@ export default function AdminHeroSettingsPage() {
 
   useEffect(() => {
     if (!mounted) return;
-    const token = localStorage.getItem("token");
-    const userType = localStorage.getItem("userType");
-    if (!token || userType !== "admin") {
-      router.replace("/admin/login");
-      return;
-    }
     settingsApi.getHero().then((res) => {
       setLoading(false);
       if (res.data?.data) {
@@ -53,7 +45,7 @@ export default function AdminHeroSettingsPage() {
         });
       }
     });
-  }, [mounted, router]);
+  }, [mounted]);
 
   const handleSlideChange = (index: number, field: keyof HeroSlide, value: string | boolean) => {
     setForm((prev) => {

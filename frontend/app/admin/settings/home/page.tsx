@@ -1,21 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 export default function AdminHomePageSettingsPage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userType = localStorage.getItem("userType");
-    if (!token || userType !== "admin") {
-      router.replace("/admin/login");
-      return;
-    }
-  }, [router]);
-
   return (
     <div className="px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="mb-6 text-2xl font-bold text-slate-900">Home Page Settings</h1>

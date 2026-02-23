@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSettings } from "@/contexts/SettingsContext";
+import { useCart } from "@/contexts/CartContext";
 
 type HeaderProps = {
   /** When true, show logged-in UI. When false, show login/signup. When undefined, detect from localStorage. */
@@ -14,6 +15,7 @@ type HeaderProps = {
 export default function Header({ isLoggedIn: propLoggedIn, userType: propUserType }: HeaderProps = {}) {
   const pathname = usePathname();
   const { settings } = useSettings();
+  const { count: cartCount } = useCart();
   const [mounted, setMounted] = useState(false);
   const [detectedLoggedIn, setDetectedLoggedIn] = useState(false);
   const [detectedUserType, setDetectedUserType] = useState<string | null>(null);
@@ -55,18 +57,22 @@ export default function Header({ isLoggedIn: propLoggedIn, userType: propUserTyp
           >
             Browse
           </Link>
+          <Link href="/cart" className="relative text-slate-600 hover:text-slate-900">
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            {cartCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 w-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 px-1 text-xs font-medium text-white">
+                {cartCount > 99 ? "99+" : cartCount}
+              </span>
+            )}
+          </Link>
           {isLoggedIn ? (
             <>
               <Link href="/user/wishlist" className="text-slate-600 hover:text-slate-900">
                 <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
-              </Link>
-              <Link href="/user/cart" className="relative text-slate-600 hover:text-slate-900">
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-xs font-medium text-white">0</span>
               </Link>
               <Link
                 href="/user/dashboard"

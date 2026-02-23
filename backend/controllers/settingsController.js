@@ -164,6 +164,84 @@ export const updateHomeCategories = async (req, res) => {
   }
 };
 
+// ============ SEO Settings Controller ============
+
+export const getSeoSettings = async (req, res) => {
+  try {
+    const settings = await Settings.getSettings();
+    const seo = settings.seo || {};
+    const data = {
+      metaTitle: seo.metaTitle || '',
+      metaDescription: seo.metaDescription || '',
+      metaKeywords: seo.metaKeywords || '',
+      ogTitle: seo.ogTitle || '',
+      ogDescription: seo.ogDescription || '',
+      ogImage: seo.ogImage || '',
+      ogType: seo.ogType || 'website',
+      twitterCard: seo.twitterCard || 'summary_large_image',
+      twitterTitle: seo.twitterTitle || '',
+      twitterDescription: seo.twitterDescription || '',
+      twitterImage: seo.twitterImage || '',
+      canonicalUrl: seo.canonicalUrl || '',
+      robots: seo.robots || 'index, follow',
+    };
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateSeoSettings = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const allowed = [
+      'metaTitle', 'metaDescription', 'metaKeywords',
+      'ogTitle', 'ogDescription', 'ogImage', 'ogType',
+      'twitterCard', 'twitterTitle', 'twitterDescription', 'twitterImage',
+      'canonicalUrl', 'robots',
+    ];
+
+    const updates = {};
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) {
+        updates[`seo.${key}`] = typeof req.body[key] === 'string' ? req.body[key].trim() : req.body[key];
+      }
+    }
+
+    const settings = await Settings.findOneAndUpdate(
+      { key: 'site' },
+      { $set: updates },
+      { returnDocument: 'after', upsert: true, runValidators: true }
+    );
+
+    const seo = settings.seo || {};
+    res.json({
+      success: true,
+      data: {
+        metaTitle: seo.metaTitle || '',
+        metaDescription: seo.metaDescription || '',
+        metaKeywords: seo.metaKeywords || '',
+        ogTitle: seo.ogTitle || '',
+        ogDescription: seo.ogDescription || '',
+        ogImage: seo.ogImage || '',
+        ogType: seo.ogType || 'website',
+        twitterCard: seo.twitterCard || 'summary_large_image',
+        twitterTitle: seo.twitterTitle || '',
+        twitterDescription: seo.twitterDescription || '',
+        twitterImage: seo.twitterImage || '',
+        canonicalUrl: seo.canonicalUrl || '',
+        robots: seo.robots || 'index, follow',
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // ============ General Settings Controller ============
 
 export const getSettings = async (req, res) => {

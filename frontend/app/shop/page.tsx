@@ -116,16 +116,16 @@ function ShopContent() {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {products.map((product) => (
-              <div
+              <Link
                 key={product._id}
-                id={product._id}
-                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-lg"
+                href={`/product/${product._id}`}
+                className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-lg"
               >
                 {product.image ? (
                   <img
                     src={product.image}
                     alt={product.name}
-                    className="h-48 w-full object-cover"
+                    className="h-48 w-full object-cover transition group-hover:scale-105"
                   />
                 ) : (
                   <div className="flex h-48 w-full items-center justify-center bg-slate-100 text-slate-400">
@@ -136,21 +136,18 @@ function ShopContent() {
                 )}
                 <div className="p-5">
                   <p className="text-xs font-medium uppercase text-emerald-600">{product.category || "Product"}</p>
-                  <h3 className="mt-1 font-semibold text-slate-900">{product.name}</h3>
+                  <h3 className="mt-1 font-semibold text-slate-900 group-hover:text-emerald-600">{product.name}</h3>
                   {product.description && (
                     <p className="mt-2 line-clamp-2 text-sm text-slate-600">{product.description}</p>
                   )}
                   <div className="mt-4 flex items-center justify-between">
                     <p className="text-lg font-bold text-slate-900">${product.price.toFixed(2)}</p>
-                    <Link
-                      href={typeof window !== "undefined" && localStorage.getItem("token") ? "/user/products" : "/user/login"}
-                      className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
-                    >
-                      View
-                    </Link>
+                    <span className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white group-hover:bg-emerald-500">
+                      View Details
+                    </span>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

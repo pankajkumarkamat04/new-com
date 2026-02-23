@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { productApi, categoryApi, type Product, type Category } from "@/lib/api";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
 
 export default function AdminProductsPage() {
-  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -32,15 +30,9 @@ export default function AdminProductsPage() {
 
   useEffect(() => {
     if (!mounted) return;
-    const token = localStorage.getItem("token");
-    const userType = localStorage.getItem("userType");
-    if (!token || userType !== "admin") {
-      router.replace("/admin/login");
-      return;
-    }
     fetchProducts();
     fetchCategories();
-  }, [mounted, router]);
+  }, [mounted]);
 
   const fetchProducts = () => {
     setLoading(true);

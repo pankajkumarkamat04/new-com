@@ -35,6 +35,22 @@ const updateSettingsValidation = [
   body('linkedinUrl').optional().trim(),
 ];
 
+const updateSeoValidation = [
+  body('metaTitle').optional().trim(),
+  body('metaDescription').optional().trim(),
+  body('metaKeywords').optional().trim(),
+  body('ogTitle').optional().trim(),
+  body('ogDescription').optional().trim(),
+  body('ogImage').optional().trim(),
+  body('ogType').optional().trim(),
+  body('twitterCard').optional().trim(),
+  body('twitterTitle').optional().trim(),
+  body('twitterDescription').optional().trim(),
+  body('twitterImage').optional().trim(),
+  body('canonicalUrl').optional().trim(),
+  body('robots').optional().trim(),
+];
+
 const updateHomeCategoriesValidation = [
   body('categories').optional().isArray().withMessage('categories must be array'),
   body('categories.*').optional().isString().trim(),
@@ -58,6 +74,10 @@ router.put('/hero', protectAdmin, updateHeroValidation, settingsController.updat
 // Home categories - public get, admin update
 router.get('/home-categories', settingsController.getHomeCategories);
 router.put('/home-categories', protectAdmin, updateHomeCategoriesValidation, settingsController.updateHomeCategories);
+
+// SEO - public get, admin update
+router.get('/seo', settingsController.getSeoSettings);
+router.put('/seo', protectAdmin, updateSeoValidation, settingsController.updateSeoSettings);
 
 // Admin - update settings
 router.put('/', protectAdmin, updateSettingsValidation, settingsController.updateSettings);

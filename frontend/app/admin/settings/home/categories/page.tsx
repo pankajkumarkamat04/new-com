@@ -2,11 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { settingsApi, type HomeCategorySettings } from "@/lib/api";
 
 export default function AdminHomeCategoriesSettingsPage() {
-  const router = useRouter();
   const [title, setTitle] = useState<string>("Shop by Category");
   const [description, setDescription] = useState<string>("");
   const [columns, setColumns] = useState<number>(4);
@@ -17,13 +15,6 @@ export default function AdminHomeCategoriesSettingsPage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userType = localStorage.getItem("userType");
-    if (!token || userType !== "admin") {
-      router.replace("/admin/login");
-      return;
-    }
-
     (async () => {
       setLoading(true);
       const homeRes = await settingsApi.getHomeCategories();
@@ -37,7 +28,7 @@ export default function AdminHomeCategoriesSettingsPage() {
       }
       setLoading(false);
     })();
-  }, [router]);
+  }, []);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

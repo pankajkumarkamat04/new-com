@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { mediaApi, type MediaItem } from "@/lib/api";
 
 function formatSize(bytes: number) {
@@ -19,7 +18,6 @@ function isVideo(mime: string) {
 }
 
 export default function AdminMediaPage() {
-  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mounted, setMounted] = useState(false);
   const [items, setItems] = useState<MediaItem[]>([]);
@@ -36,14 +34,8 @@ export default function AdminMediaPage() {
 
   useEffect(() => {
     if (!mounted) return;
-    const token = localStorage.getItem("token");
-    const userType = localStorage.getItem("userType");
-    if (!token || userType !== "admin") {
-      router.replace("/admin/login");
-      return;
-    }
     loadMedia();
-  }, [mounted, router, pagination.page, filter]);
+  }, [mounted, pagination.page, filter]);
 
   const loadMedia = async () => {
     setLoading(true);

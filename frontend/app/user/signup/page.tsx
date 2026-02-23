@@ -4,9 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { userApi } from "@/lib/api";
+import { useCart } from "@/contexts/CartContext";
 
 export default function UserSignupPage() {
   const router = useRouter();
+  const { mergeGuestCartThenRefresh } = useCart();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -54,6 +56,7 @@ export default function UserSignupPage() {
     else if (res.data?.token) {
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("userType", "user");
+      await mergeGuestCartThenRefresh();
       router.push("/user/dashboard");
     }
   };

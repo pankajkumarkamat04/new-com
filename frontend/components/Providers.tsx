@@ -1,7 +1,12 @@
 "use client";
 
 import { SettingsProvider } from "@/contexts/SettingsContext";
+import { CartProvider } from "@/contexts/CartContext";
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  return <SettingsProvider>{children}</SettingsProvider>;
+  return (
+    <SettingsProvider>
+      <CartProvider>{children}</CartProvider>
+    </SettingsProvider>
+  );
 }

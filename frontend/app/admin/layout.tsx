@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { adminApi } from "@/lib/api";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 const settingsIcon = "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z";
 
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
+  { href: "/admin/users", label: "Users", icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" },
   { href: "/admin/categories", label: "Categories", icon: "M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" },
   { href: "/admin/products", label: "Products", icon: "M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" },
   { href: "/admin/media", label: "Media", icon: "M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" },
@@ -68,6 +70,16 @@ function SettingsNav({ pathname }: { pathname: string }) {
             }`}
           >
             General
+          </Link>
+          <Link
+            href="/admin/settings/seo"
+            className={`block rounded px-2 py-1.5 text-sm ${
+              pathname === "/admin/settings/seo"
+                ? "font-medium text-amber-700"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            SEO
           </Link>
           <div>
             <button
@@ -150,12 +162,6 @@ export default function AdminLayout({
       setLoading(false);
       return;
     }
-    const token = localStorage.getItem("token");
-    const userType = localStorage.getItem("userType");
-    if (!token || userType !== "admin") {
-      router.replace("/admin/login");
-      return;
-    }
     adminApi.getMe().then((res) => {
       setLoading(false);
       if (res.data?.admin) setAdmin(res.data.admin);
@@ -169,19 +175,19 @@ export default function AdminLayout({
     router.replace("/admin/login");
   };
 
-  if (!mounted || loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="text-slate-600">Loading...</div>
-      </div>
-    );
-  }
+  if (!mounted) return null;
 
   if (isAuthPage) {
     return <>{children}</>;
   }
 
   return (
+    <ProtectedRoute role="admin">
+      {loading ? (
+        <div className="flex min-h-screen items-center justify-center bg-slate-50">
+          <div className="text-slate-600">Loading...</div>
+        </div>
+      ) : (
     <div className="flex min-h-screen bg-slate-50">
       {/* Sidebar */}
       <aside className="fixed left-0 top-0 z-20 flex h-full w-64 flex-col border-r border-slate-200 bg-white shadow-sm">
@@ -237,5 +243,7 @@ export default function AdminLayout({
         {children}
       </main>
     </div>
+      )}
+    </ProtectedRoute>
   );
 }
