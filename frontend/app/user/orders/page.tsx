@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ordersApi, type Order } from "@/lib/api";
+import { useSettings } from "@/contexts/SettingsContext";
 
 export default function UserOrdersPage() {
+  const { formatCurrency } = useSettings();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -60,7 +62,7 @@ export default function UserOrdersPage() {
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold text-slate-900">${order.total.toFixed(2)}</p>
+                <p className="text-lg font-bold text-slate-900">{formatCurrency(order.total)}</p>
                 <span
                   className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${
                     order.status === "pending"
@@ -86,7 +88,7 @@ export default function UserOrdersPage() {
             <ul className="mt-3 space-y-1 text-sm text-slate-600">
               {order.items.map((item, i) => (
                 <li key={i}>
-                  {item.name} × {item.quantity} — ${(item.price * item.quantity).toFixed(2)}
+                  {item.name} × {item.quantity} — {formatCurrency(item.price * item.quantity)}
                 </li>
               ))}
             </ul>

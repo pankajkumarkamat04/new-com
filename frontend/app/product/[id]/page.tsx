@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { productApi, type Product } from "@/lib/api";
 import { useCart } from "@/contexts/CartContext";
+import { useSettings } from "@/contexts/SettingsContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -12,6 +13,7 @@ export default function ProductPage() {
   const params = useParams();
   const id = params?.id as string;
   const { items, addToCart, removeFromCart } = useCart();
+  const { formatCurrency } = useSettings();
   const [product, setProduct] = useState<Product | null>(null);
   const isInCart = product ? items.some((i) => i.productId === product._id) : false;
   const [loading, setLoading] = useState(true);
@@ -122,7 +124,7 @@ export default function ProductPage() {
               </Link>
             )}
             <h1 className="mt-2 text-3xl font-bold text-slate-900">{product.name}</h1>
-            <p className="mt-4 text-3xl font-bold text-slate-900">${product.price.toFixed(2)}</p>
+            <p className="mt-4 text-3xl font-bold text-slate-900">{formatCurrency(product.price)}</p>
 
             {product.description && (
               <div className="mt-6">

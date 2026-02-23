@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { adminOrdersApi, type Order } from "@/lib/api";
+import { useSettings } from "@/contexts/SettingsContext";
 
 const STATUS_OPTIONS = ["all", "pending", "confirmed", "shipped", "delivered", "cancelled"] as const;
 
 export default function AdminOrdersPage() {
+  const { formatCurrency } = useSettings();
   const [orders, setOrders] = useState<Order[]>([]);
   const [status, setStatus] = useState<(typeof STATUS_OPTIONS)[number]>("all");
   const [loading, setLoading] = useState(true);
@@ -68,6 +70,7 @@ export default function AdminOrdersPage() {
                 <th className="px-4 py-3 text-left font-semibold text-slate-700">Order</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-700">Customer</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-700">Total</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-700">Payment</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-700">Status</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-700">Date</th>
                 <th className="px-4 py-3 text-right font-semibold text-slate-700">Actions</th>
@@ -98,7 +101,10 @@ export default function AdminOrdersPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 align-top">
-                      <div className="font-semibold text-slate-900">${order.total.toFixed(2)}</div>
+                      <div className="font-semibold text-slate-900">{formatCurrency(order.total)}</div>
+                    </td>
+                    <td className="px-4 py-3 align-top text-xs text-slate-600 capitalize">
+                      {order.paymentMethod || "—"}
                     </td>
                     <td className="px-4 py-3 align-top">
                       <span

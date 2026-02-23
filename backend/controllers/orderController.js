@@ -23,12 +23,42 @@ const getEffectiveCheckoutConfig = async () => {
   };
 };
 
+const getEffectivePaymentConfig = async () => {
+  const settings = await Settings.getSettings();
+  const raw = settings.payment || {};
+  return {
+    currency: raw.currency || 'INR',
+    cod: raw.cod?.enabled !== false,
+    razorpay: !!raw.razorpay?.enabled,
+    cashfree: !!raw.cashfree?.enabled,
+  };
+};
+
 export const placeOrder = async (req, res) => {
   try {
-    const { shippingAddress } = req.body;
+    const { shippingAddress, paymentMethod: requestedMethod } = req.body;
     const { name, address, city, state, zip, phone, customFields } = shippingAddress || {};
 
     const checkout = await getEffectiveCheckoutConfig();
+    const paymentConfig = await getEffectivePaymentConfig();
+
+    const allowedMethods = [];
+    if (paymentConfig.cod) allowedMethods.push('cod');
+    if (paymentConfig.razorpay) allowedMethods.push('razorpay');
+    if (paymentConfig.cashfree) allowedMethods.push('cashfree');
+
+    const paymentMethod = requestedMethod && typeof requestedMethod === 'string'
+      ? requestedMethod.trim().toLowerCase()
+      : 'cod';
+    if (!allowedMethods.length) {
+      return res.status(400).json({ success: false, message: 'No payment methods are enabled. Please contact support.' });
+    }
+    if (!allowedMethods.includes(paymentMethod)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid or disabled payment method. Allowed: ${allowedMethods.join(', ')}`,
+      });
+    }
     const missing = [];
     if (checkout.name.enabled && checkout.name.required && !name?.trim()) missing.push('name');
     if (checkout.address.enabled && checkout.address.required && !address?.trim()) missing.push('address');
@@ -94,6 +124,7 @@ export const placeOrder = async (req, res) => {
         customFields: normalizedCustomFields,
       },
       status: 'pending',
+      paymentMethod,
     });
 
     await Cart.findOneAndUpdate(

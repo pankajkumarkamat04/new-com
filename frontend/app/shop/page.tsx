@@ -4,11 +4,13 @@ import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { productApi, categoryApi, type Product, type Category } from "@/lib/api";
+import { useSettings } from "@/contexts/SettingsContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 function ShopContent() {
   const searchParams = useSearchParams();
+  const { formatCurrency } = useSettings();
   const categoryParam = searchParams.get("category");
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -141,7 +143,7 @@ function ShopContent() {
                     <p className="mt-2 line-clamp-2 text-sm text-slate-600">{product.description}</p>
                   )}
                   <div className="mt-4 flex items-center justify-between">
-                    <p className="text-lg font-bold text-slate-900">${product.price.toFixed(2)}</p>
+                    <p className="text-lg font-bold text-slate-900">{formatCurrency(product.price)}</p>
                     <span className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white group-hover:bg-emerald-500">
                       View Details
                     </span>

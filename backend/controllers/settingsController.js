@@ -408,6 +408,61 @@ export const updateCheckoutSettings = async (req, res) => {
 };
 
 
+// ============ Payment Settings ============
+
+const PAYMENT_CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD', 'CAD', 'AUD', 'JPY'];
+
+function buildDefaultPaymentSettings(raw) {
+  return {
+    currency: raw?.currency && PAYMENT_CURRENCIES.includes(String(raw.currency).toUpperCase())
+      ? String(raw.currency).toUpperCase()
+      : 'INR',
+    cod: { enabled: raw?.cod?.enabled !== false },
+    razorpay: { enabled: !!raw?.razorpay?.enabled },
+    cashfree: { enabled: !!raw?.cashfree?.enabled },
+  };
+}
+
+export const getPaymentSettings = async (req, res) => {
+  try {
+    const settings = await Settings.getSettings();
+    const payment = settings.payment || {};
+    const data = buildDefaultPaymentSettings(payment);
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updatePaymentSettings = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+    const { currency, cod, razorpay, cashfree } = req.body;
+    const updates = {};
+    if (currency !== undefined) {
+      const c = String(currency).toUpperCase().trim();
+      updates['payment.currency'] = PAYMENT_CURRENCIES.includes(c) ? c : 'INR';
+    }
+    if (cod && typeof cod.enabled !== 'undefined') updates['payment.cod.enabled'] = !!cod.enabled;
+    if (razorpay && typeof razorpay.enabled !== 'undefined') updates['payment.razorpay.enabled'] = !!razorpay.enabled;
+    if (cashfree && typeof cashfree.enabled !== 'undefined') updates['payment.cashfree.enabled'] = !!cashfree.enabled;
+
+    await Settings.findOneAndUpdate(
+      { key: 'site' },
+      { $set: updates },
+      { returnDocument: 'after', upsert: true, runValidators: true }
+    );
+    const settings = await Settings.getSettings();
+    const data = buildDefaultPaymentSettings(settings.payment || {});
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // ============ Public Combined Settings (General + SEO + Header) ============
 
 export const getPublicSettings = async (req, res) => {
@@ -460,6 +515,9 @@ export const getPublicSettings = async (req, res) => {
     const checkoutRaw = settings.checkout || {};
     const checkout = buildDefaultCheckoutSettings(checkoutRaw);
 
+    const paymentRaw = settings.payment || {};
+    const payment = buildDefaultPaymentSettings(paymentRaw);
+
     res.json({
       success: true,
       data: {
@@ -467,6 +525,7 @@ export const getPublicSettings = async (req, res) => {
         seo: seoData,
         header: headerData,
         checkout,
+        payment,
       },
     });
   } catch (error) {

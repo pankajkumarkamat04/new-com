@@ -4,6 +4,37 @@ import { useEffect, useState } from "react";
 import { categoryApi, type Category } from "@/lib/api";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
 
+function getParentId(c: Category): string | null {
+  if (!c.parent) return null;
+  return typeof c.parent === "string" ? c.parent : c.parent._id;
+}
+
+function getParentName(c: Category): string {
+  if (!c.parent) return "—";
+  return typeof c.parent === "object" && c.parent ? c.parent.name : "—";
+}
+
+/** Flatten tree: roots first, then children under each root (by name order) */
+function orderedCategories(list: Category[]): Category[] {
+  const byParent = new Map<string | null, Category[]>();
+  for (const c of list) {
+    const pid = getParentId(c);
+    if (!byParent.has(pid)) byParent.set(pid, []);
+    byParent.get(pid)!.push(c);
+  }
+  for (const arr of byParent.values()) arr.sort((a, b) => a.name.localeCompare(b.name));
+  const roots = byParent.get(null) ?? [];
+  const out: Category[] = [];
+  function append(cats: Category[]) {
+    for (const c of cats) {
+          out.push(c);
+          append(byParent.get(c._id) ?? []);
+        }
+  }
+  append(roots);
+  return out;
+}
+
 export default function AdminCategoriesPage() {
   const [mounted, setMounted] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -16,6 +47,7 @@ export default function AdminCategoriesPage() {
     image: "",
     isActive: true,
     showOnHomepage: false,
+    parent: "" as string,
   });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -39,7 +71,7 @@ export default function AdminCategoriesPage() {
   };
 
   const resetForm = () => {
-    setForm({ name: "", description: "", image: "", isActive: true, showOnHomepage: false });
+    setForm({ name: "", description: "", image: "", isActive: true, showOnHomepage: false, parent: "" });
     setEditing(null);
     setShowForm(false);
     setError("");
@@ -53,6 +85,7 @@ export default function AdminCategoriesPage() {
       image: category.image || "",
       isActive: category.isActive,
       showOnHomepage: !!category.showOnHomepage,
+      parent: getParentId(category) ?? "",
     });
     setShowForm(true);
   };
@@ -67,6 +100,7 @@ export default function AdminCategoriesPage() {
       image: form.image.trim() || undefined,
       isActive: form.isActive,
       showOnHomepage: form.showOnHomepage,
+      parent: form.parent || undefined,
     };
     if (!payload.name) {
       setError("Name is required");
@@ -91,6 +125,18 @@ export default function AdminCategoriesPage() {
       }
     }
   };
+
+  function isDescendantOf(cat: Category, ancestorId: string): boolean {
+    const pid = getParentId(cat);
+    if (!pid) return false;
+    if (pid === ancestorId) return true;
+    const parentCat = categories.find((c) => c._id === pid);
+    return parentCat ? isDescendantOf(parentCat, ancestorId) : false;
+  }
+
+  const parentOptions = editing
+    ? categories.filter((c) => c._id !== editing._id && !isDescendantOf(c, editing._id))
+    : categories;
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this category? Products with this category will keep the category name.")) return;
@@ -130,6 +176,22 @@ export default function AdminCategoriesPage() {
                 className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                 required
               />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-600">Parent category</label>
+              <select
+                value={form.parent}
+                onChange={(e) => setForm({ ...form, parent: e.target.value })}
+                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              >
+                <option value="">None (top-level category)</option>
+                {orderedCategories(parentOptions).map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {getParentId(c) ? "↳ " : ""}{c.name}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-0.5 text-xs text-slate-500">Leave as &quot;None&quot; for a main category; choose a category to create a subcategory.</p>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-600">Image</label>
@@ -237,6 +299,7 @@ export default function AdminCategoriesPage() {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">Image</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">Parent</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">Slug</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">Description</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">On Homepage</th>
@@ -245,8 +308,10 @@ export default function AdminCategoriesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
-              {categories.map((category) => (
-                <tr key={category._id}>
+              {orderedCategories(categories).map((category) => {
+                const isSub = !!getParentId(category);
+                return (
+                <tr key={category._id} className={isSub ? "bg-slate-50/50" : ""}>
                   {/* Image */}
                   <td className="whitespace-nowrap px-6 py-4">
                     {category.image ? (
@@ -263,7 +328,12 @@ export default function AdminCategoriesPage() {
                   </td>
                   {/* Name */}
                   <td className="whitespace-nowrap px-6 py-4 font-medium text-slate-900">
+                    {isSub && <span className="mr-2 text-slate-400">↳</span>}
                     {category.name}
+                  </td>
+                  {/* Parent */}
+                  <td className="whitespace-nowrap px-6 py-4 text-slate-600">
+                    {getParentName(category)}
                   </td>
                   {/* Slug */}
                   <td className="whitespace-nowrap px-6 py-4 text-slate-600">
@@ -311,7 +381,8 @@ export default function AdminCategoriesPage() {
                     </button>
                   </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
         </div>

@@ -4,12 +4,23 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { ordersApi, type Order } from "@/lib/api";
+import { useSettings } from "@/contexts/SettingsContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+
+function paymentMethodLabel(method: string | undefined): string {
+  if (!method) return "—";
+  const m = (method || "").toLowerCase();
+  if (m === "cod") return "Cash on Delivery (COD)";
+  if (m === "razorpay") return "Razorpay";
+  if (m === "cashfree") return "Cashfree";
+  return method;
+}
 
 export default function UserOrderDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const { formatCurrency } = useSettings();
   const id = (params?.id as string | undefined) || "";
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
@@ -73,6 +84,9 @@ export default function UserOrderDetailPage() {
             </h1>
             <p className="mt-1 text-sm text-slate-600">
               Placed on {new Date(order.createdAt).toLocaleString()}
+              {order.paymentMethod && (
+                <> · Payment: {paymentMethodLabel(order.paymentMethod)}</>
+              )}
             </p>
           </div>
           <span
@@ -100,18 +114,18 @@ export default function UserOrderDetailPage() {
                     <div>
                       <p className="font-medium text-slate-900">{item.name}</p>
                       <p className="text-xs text-slate-500">
-                        {item.quantity} × ${item.price.toFixed(2)}
+                        {item.quantity} × {formatCurrency(item.price)}
                       </p>
                     </div>
                     <div className="text-right text-sm font-semibold text-slate-900">
-                      ${(item.price * item.quantity).toFixed(2)}
+                      {formatCurrency(item.price * item.quantity)}
                     </div>
                   </li>
                 ))}
               </ul>
               <div className="mt-4 border-t border-slate-200 pt-4 text-right">
                 <p className="text-sm text-slate-600">Total</p>
-                <p className="text-xl font-bold text-slate-900">${order.total.toFixed(2)}</p>
+                <p className="text-xl font-bold text-slate-900">{formatCurrency(order.total)}</p>
               </div>
             </div>
           </div>

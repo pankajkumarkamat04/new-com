@@ -96,6 +96,13 @@ const updateCheckoutValidation = [
   body('customFields.*.required').optional().isBoolean().withMessage('customFields.required must be boolean'),
 ];
 
+const updatePaymentValidation = [
+  body('currency').optional().trim().isIn(['INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD', 'CAD', 'AUD', 'JPY']).withMessage('Invalid currency'),
+  body('cod.enabled').optional().isBoolean().withMessage('cod.enabled must be boolean'),
+  body('razorpay.enabled').optional().isBoolean().withMessage('razorpay.enabled must be boolean'),
+  body('cashfree.enabled').optional().isBoolean().withMessage('cashfree.enabled must be boolean'),
+];
+
 // Public - get full settings document (mostly for admin/tools)
 router.get('/', settingsController.getSettings);
 
@@ -124,6 +131,10 @@ router.put('/header', protectAdmin, updateHeaderValidation, settingsController.u
 // Checkout - public get, admin update
 router.get('/checkout', settingsController.getCheckoutSettings);
 router.put('/checkout', protectAdmin, updateCheckoutValidation, settingsController.updateCheckoutSettings);
+
+// Payment - public get (via /public), admin get/update
+router.get('/payment', settingsController.getPaymentSettings);
+router.put('/payment', protectAdmin, updatePaymentValidation, settingsController.updatePaymentSettings);
 
 // Admin - update settings
 router.put('/', protectAdmin, updateSettingsValidation, settingsController.updateSettings);

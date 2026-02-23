@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/contexts/CartContext";
+import { useSettings } from "@/contexts/SettingsContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export default function CartPage() {
   const { items, loading, updateQuantity, removeFromCart } = useCart();
+  const { formatCurrency } = useSettings();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -64,7 +66,7 @@ export default function CartPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <h3 className="font-semibold text-slate-900">{name}</h3>
-                        <p className="mt-1 text-lg font-bold text-emerald-600">${price.toFixed(2)}</p>
+                        <p className="mt-1 text-lg font-bold text-emerald-600">{formatCurrency(price)}</p>
                         <div className="mt-2 flex items-center gap-2">
                           <div className="flex items-center rounded-lg border border-slate-300">
                             <button
@@ -93,7 +95,7 @@ export default function CartPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-slate-900">${subtotal.toFixed(2)}</p>
+                        <p className="font-semibold text-slate-900">{formatCurrency(subtotal)}</p>
                       </div>
                     </div>
                   );
@@ -108,10 +110,7 @@ export default function CartPage() {
                   {items.reduce((sum, i) => sum + i.quantity, 0)} item(s)
                 </p>
                 <p className="text-xl font-bold text-slate-900">
-                  Total: $
-                  {items
-                    .reduce((sum, i) => sum + (i.product?.price ?? 0) * i.quantity, 0)
-                    .toFixed(2)}
+                  Total: {formatCurrency(items.reduce((sum, i) => sum + (i.product?.price ?? 0) * i.quantity, 0))}
                 </p>
                 <Link
                   href="/checkout"

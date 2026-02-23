@@ -9,6 +9,7 @@ import {
   type HomeCategorySettings,
   type HeaderSettings,
   type CheckoutSettings,
+  type PaymentSettings,
   type PublicSettings,
 } from "@/lib/api";
 
@@ -38,12 +39,23 @@ const defaultCheckoutSettings: CheckoutSettings = {
   customFields: [],
 };
 
+const defaultPaymentSettings: PaymentSettings = {
+  currency: "INR",
+  cod: { enabled: true },
+  razorpay: { enabled: false },
+  cashfree: { enabled: false },
+};
+
 type SettingsContextType = {
   settings: Settings;
   hero: HeroSettings;
   homeCategorySettings: HomeCategorySettings;
   headerSettings: HeaderSettings;
   checkoutSettings: CheckoutSettings;
+  paymentSettings: PaymentSettings;
+  currency: string;
+  paymentMethods: { id: string; label: string }[];
+  formatCurrency: (amount: number) => string;
   loading: boolean;
   refresh: () => Promise<void>;
 };
@@ -62,6 +74,14 @@ const defaultSettings: Settings = {
   linkedinUrl: "",
 };
 
+function buildPaymentMethods(p: PaymentSettings): { id: string; label: string }[] {
+  const out: { id: string; label: string }[] = [];
+  if (p.cod?.enabled) out.push({ id: "cod", label: "Cash on Delivery (COD)" });
+  if (p.razorpay?.enabled) out.push({ id: "razorpay", label: "Razorpay" });
+  if (p.cashfree?.enabled) out.push({ id: "cashfree", label: "Cashfree" });
+  return out.length ? out : [{ id: "cod", label: "Cash on Delivery (COD)" }];
+}
+
 const SettingsContext = createContext<SettingsContextType>({
   settings: defaultSettings as Settings,
   hero: defaultHero,
@@ -73,7 +93,12 @@ const SettingsContext = createContext<SettingsContextType>({
     showImage: true,
   },
   headerSettings: defaultHeaderSettings,
-   checkoutSettings: defaultCheckoutSettings,
+  checkoutSettings: defaultCheckoutSettings,
+  paymentSettings: defaultPaymentSettings,
+  currency: "INR",
+  paymentMethods: [{ id: "cod", label: "Cash on Delivery (COD)" }],
+  formatCurrency: (amount: number) =>
+    new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount),
   loading: true,
   refresh: async () => {},
 });
@@ -90,6 +115,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   });
   const [headerSettings, setHeaderSettings] = useState<HeaderSettings>(defaultHeaderSettings);
   const [checkoutSettings, setCheckoutSettings] = useState<CheckoutSettings>(defaultCheckoutSettings);
+  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(defaultPaymentSettings);
   const [loading, setLoading] = useState(true);
 
   const refresh = async () => {
@@ -180,7 +206,24 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     } else {
       setCheckoutSettings(defaultCheckoutSettings);
     }
+
+    const payment = publicData?.payment;
+    if (payment) {
+      setPaymentSettings({
+        currency: payment.currency || "INR",
+        cod: { enabled: payment.cod?.enabled !== false },
+        razorpay: { enabled: !!payment.razorpay?.enabled },
+        cashfree: { enabled: !!payment.cashfree?.enabled },
+      });
+    } else {
+      setPaymentSettings(defaultPaymentSettings);
+    }
   };
+
+  const currency = paymentSettings.currency || "INR";
+  const paymentMethods = buildPaymentMethods(paymentSettings);
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
 
   useEffect(() => {
     refresh().finally(() => setLoading(false));
@@ -194,6 +237,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         homeCategorySettings,
         headerSettings,
         checkoutSettings,
+        paymentSettings: paymentSettings ?? defaultPaymentSettings,
+        currency,
+        paymentMethods,
+        formatCurrency,
         loading,
         refresh,
       }}

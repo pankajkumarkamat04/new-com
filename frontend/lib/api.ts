@@ -153,11 +153,19 @@ export type SeoSettings = {
   robots?: string;
 };
 
+export type PaymentSettings = {
+  currency: string;
+  cod: { enabled: boolean };
+  razorpay: { enabled: boolean };
+  cashfree: { enabled: boolean };
+};
+
 export type PublicSettings = {
   general: Settings;
   seo: SeoSettings;
   header: HeaderSettings;
   checkout?: CheckoutSettings;
+  payment?: PaymentSettings;
 };
 
 export const settingsApi = {
@@ -180,12 +188,16 @@ export const settingsApi = {
   getCheckout: () => api<{ data: CheckoutSettings }>('/settings/checkout'),
   updateCheckout: (body: Partial<CheckoutSettings>) =>
     api<{ data: CheckoutSettings }>('/settings/checkout', { method: 'PUT', body: JSON.stringify(body) }),
+  getPayment: () => api<{ data: PaymentSettings }>('/settings/payment'),
+  updatePayment: (body: Partial<PaymentSettings>) =>
+    api<{ data: PaymentSettings }>('/settings/payment', { method: 'PUT', body: JSON.stringify(body) }),
   getPublic: () => api<{ data: PublicSettings }>('/settings/public'),
 };
 
 // Categories
 export type Category = {
   _id: string;
+  parent?: string | { _id: string; name: string; slug: string } | null;
   name: string;
   slug: string;
   description?: string;
@@ -197,16 +209,17 @@ export type Category = {
 };
 
 export const categoryApi = {
-  list: (params?: { isActive?: boolean }) => {
+  list: (params?: { isActive?: boolean; parent?: string | null }) => {
     const searchParams = new URLSearchParams();
     if (params?.isActive !== undefined) searchParams.set('isActive', String(params.isActive));
+    if (params?.parent !== undefined) searchParams.set('parent', params.parent === null || params.parent === '' ? 'null' : params.parent);
     const query = searchParams.toString();
     return api<{ data: Category[] }>(`/categories${query ? `?${query}` : ''}`);
   },
   get: (id: string) => api<{ data: Category }>(`/categories/${id}`),
-  create: (body: { name: string; description?: string; image?: string; isActive?: boolean; showOnHomepage?: boolean }) =>
+  create: (body: { name: string; description?: string; image?: string; isActive?: boolean; showOnHomepage?: boolean; parent?: string | null }) =>
     api<{ data: Category }>('/categories', { method: 'POST', body: JSON.stringify(body) }),
-  update: (id: string, body: Partial<{ name: string; description: string; image: string; isActive: boolean; showOnHomepage: boolean }>) =>
+  update: (id: string, body: Partial<{ name: string; description: string; image: string; isActive: boolean; showOnHomepage: boolean; parent?: string | null }>) =>
     api<{ data: Category }>(`/categories/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   delete: (id: string) => api(`/categories/${id}`, { method: 'DELETE' }),
 };
@@ -298,23 +311,27 @@ export type Order = {
     customFields?: { key: string; label: string; value: string }[];
   };
   status: string;
+  paymentMethod?: string;
   createdAt: string;
   updatedAt: string;
 };
 
 export const ordersApi = {
-  placeOrder: (shippingAddress: {
-    name: string;
-    address: string;
-    city: string;
-    state?: string;
-    zip: string;
-    phone: string;
-    customFields?: { key: string; label: string; value: string }[];
+  placeOrder: (params: {
+    shippingAddress: {
+      name: string;
+      address: string;
+      city: string;
+      state?: string;
+      zip: string;
+      phone: string;
+      customFields?: { key: string; label: string; value: string }[];
+    };
+    paymentMethod?: string;
   }) =>
     api<{ data: Order }>('/orders', {
       method: 'POST',
-      body: JSON.stringify({ shippingAddress }),
+      body: JSON.stringify({ shippingAddress: params.shippingAddress, paymentMethod: params.paymentMethod || 'cod' }),
     }),
   getMyOrders: () => api<{ data: Order[] }>('/orders'),
   getOrder: (id: string) => api<{ data: Order }>(`/orders/${id}`),

@@ -8,12 +8,14 @@ const router = express.Router();
 const createCategoryValidation = [
   body('name').trim().notEmpty().withMessage('Name is required'),
   body('description').optional().trim(),
+  body('parent').optional().isMongoId().withMessage('Parent must be a valid category ID'),
   body('isActive').optional().isBoolean().withMessage('isActive must be boolean'),
 ];
 
 const updateCategoryValidation = [
   body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
   body('description').optional().trim(),
+  body('parent').optional().isMongoId().withMessage('Parent must be a valid category ID'),
   body('isActive').optional().isBoolean().withMessage('isActive must be boolean'),
 ];
 

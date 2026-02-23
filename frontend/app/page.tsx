@@ -14,7 +14,7 @@ export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const { homeCategorySettings } = useSettings();
+  const { homeCategorySettings, formatCurrency } = useSettings();
 
   useEffect(() => {
     Promise.all([
@@ -140,7 +140,7 @@ export default function Home() {
                     <h3 className="mt-1 font-semibold text-slate-900 group-hover:text-emerald-600">
                       {product.name}
                     </h3>
-                    <p className="mt-2 text-lg font-bold text-slate-900">${product.price.toFixed(2)}</p>
+                    <p className="mt-2 text-lg font-bold text-slate-900">{formatCurrency(product.price)}</p>
                   </div>
                 </Link>
               ))}

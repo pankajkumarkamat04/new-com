@@ -12,11 +12,12 @@ import Footer from "@/components/Footer";
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, loading, refreshCart } = useCart();
-  const { checkoutSettings } = useSettings();
+  const { checkoutSettings, paymentMethods, formatCurrency } = useSettings();
   const [mounted, setMounted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<string>("cod");
   const [form, setForm] = useState({
     name: "",
     address: "",
@@ -34,6 +35,12 @@ export default function CheckoutPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (paymentMethods.length > 0 && !paymentMethods.some((m) => m.id === paymentMethod)) {
+      setPaymentMethod(paymentMethods[0].id);
+    }
+  }, [paymentMethods, paymentMethod]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -70,22 +77,28 @@ export default function CheckoutPage() {
       setError("Please fill in all required shipping fields.");
       return;
     }
+    const allowedIds = paymentMethods.map((m) => m.id);
+    const chosen = allowedIds.includes(paymentMethod) ? paymentMethod : (allowedIds[0] || "cod");
+
     setSubmitting(true);
     const res = await ordersApi.placeOrder({
-      name: form.name.trim(),
-      address: form.address.trim(),
-      city: form.city.trim(),
-      state: form.state.trim(),
-      zip: form.zip.trim(),
-      phone: form.phone.trim(),
-      customFields: (checkoutSettings.customFields || [])
-        .filter((f) => f.enabled !== false && (f.key || f.label))
-        .map((f) => ({
-          key: f.key || f.label || "",
-          label: f.label || f.key || "",
-          value: (customValues[f.key || ""] || "").trim(),
-        }))
-        .filter((f) => f.value),
+      shippingAddress: {
+        name: form.name.trim(),
+        address: form.address.trim(),
+        city: form.city.trim(),
+        state: form.state.trim(),
+        zip: form.zip.trim(),
+        phone: form.phone.trim(),
+        customFields: (checkoutSettings.customFields || [])
+          .filter((f) => f.enabled !== false && (f.key || f.label))
+          .map((f) => ({
+            key: f.key || f.label || "",
+            label: f.label || f.key || "",
+            value: (customValues[f.key || ""] || "").trim(),
+          }))
+          .filter((f) => f.value),
+      },
+      paymentMethod: chosen,
     });
     setSubmitting(false);
     if (res.error) {
@@ -297,22 +310,42 @@ export default function CheckoutPage() {
           </div>
 
           <div className="lg:col-span-1">
-            <div className="sticky top-24 rounded-xl border border-slate-200 bg-slate-50 p-6">
-              <h2 className="mb-4 text-lg font-semibold text-slate-900">Order Summary</h2>
-              <ul className="space-y-2 border-b border-slate-200 pb-4">
-                {items.map((item) => (
-                  <li key={item.productId} className="flex justify-between text-sm">
-                    <span className="text-slate-700">
-                      {item.product?.name || "Product"} × {item.quantity}
-                    </span>
-                    <span className="font-medium text-slate-900">
-                      ${((item.product?.price ?? 0) * item.quantity).toFixed(2)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-4 text-xl font-bold text-slate-900">Total: ${total.toFixed(2)}</p>
-              {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+            <div className="sticky top-24 space-y-6 rounded-xl border border-slate-200 bg-slate-50 p-6">
+              <div>
+                <h2 className="mb-3 text-lg font-semibold text-slate-900">Payment method</h2>
+                <div className="space-y-2">
+                  {paymentMethods.map((m) => (
+                    <label key={m.id} className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition hover:bg-slate-50">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value={m.id}
+                        checked={paymentMethod === m.id}
+                        onChange={() => setPaymentMethod(m.id)}
+                        className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <span className="text-sm font-medium text-slate-900">{m.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h2 className="mb-4 text-lg font-semibold text-slate-900">Order Summary</h2>
+                <ul className="space-y-2 border-b border-slate-200 pb-4">
+                  {items.map((item) => (
+                    <li key={item.productId} className="flex justify-between text-sm">
+                      <span className="text-slate-700">
+                        {item.product?.name || "Product"} × {item.quantity}
+                      </span>
+                      <span className="font-medium text-slate-900">
+                        {formatCurrency((item.product?.price ?? 0) * item.quantity)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 text-xl font-bold text-slate-900">Total: {formatCurrency(total)}</p>
+              </div>
+              {error && <p className="text-sm text-red-600">{error}</p>}
               <button
                 type="submit"
                 disabled={submitting}

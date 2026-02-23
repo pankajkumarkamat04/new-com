@@ -4,11 +4,22 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { adminOrdersApi, type Order } from "@/lib/api";
+import { useSettings } from "@/contexts/SettingsContext";
+
+function paymentMethodLabel(method: string | undefined): string {
+  if (!method) return "—";
+  const m = (method || "").toLowerCase();
+  if (m === "cod") return "Cash on Delivery (COD)";
+  if (m === "razorpay") return "Razorpay";
+  if (m === "cashfree") return "Cashfree";
+  return method;
+}
 
 export default function AdminOrderDetailPage() {
   const router = useRouter();
   const params = useParams();
   const id = (params?.id as string | undefined) || "";
+  const { formatCurrency } = useSettings();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -80,6 +91,9 @@ export default function AdminOrderDetailPage() {
           </h1>
           <p className="mt-1 text-sm text-slate-600">
             Placed on {new Date(order.createdAt).toLocaleString()}
+            {order.paymentMethod && (
+              <> · Payment: {paymentMethodLabel(order.paymentMethod)}</>
+            )}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -130,18 +144,18 @@ export default function AdminOrderDetailPage() {
                   <div>
                     <p className="font-medium text-slate-900">{item.name}</p>
                     <p className="text-xs text-slate-500">
-                      {item.quantity} × ${item.price.toFixed(2)}
+                      {item.quantity} × {formatCurrency(item.price)}
                     </p>
                   </div>
                   <div className="text-right text-sm font-semibold text-slate-900">
-                    ${(item.price * item.quantity).toFixed(2)}
+                    {formatCurrency(item.price * item.quantity)}
                   </div>
                 </li>
               ))}
             </ul>
             <div className="mt-4 border-t border-slate-200 pt-4 text-right">
               <p className="text-sm text-slate-600">Total</p>
-              <p className="text-xl font-bold text-slate-900">${order.total.toFixed(2)}</p>
+              <p className="text-xl font-bold text-slate-900">{formatCurrency(order.total)}</p>
             </div>
           </div>
 
@@ -174,6 +188,12 @@ export default function AdminOrderDetailPage() {
         </div>
 
         <div className="space-y-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-3 text-lg font-semibold text-slate-900">Payment</h2>
+            <p className="text-sm text-slate-700">
+              {paymentMethodLabel(order.paymentMethod)}
+            </p>
+          </div>
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-3 text-lg font-semibold text-slate-900">Customer</h2>
             {user ? (

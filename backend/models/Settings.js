@@ -151,6 +151,12 @@ const settingsSchema = new mongoose.Schema({
       required: { type: Boolean, default: false },
     }],
   },
+  payment: {
+    currency: { type: String, trim: true, default: 'INR' },
+    cod: { enabled: { type: Boolean, default: true } },
+    razorpay: { enabled: { type: Boolean, default: false } },
+    cashfree: { enabled: { type: Boolean, default: false } },
+  },
 }, {
   timestamps: true,
   collection: 'settings',
