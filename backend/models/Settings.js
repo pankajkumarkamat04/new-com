@@ -98,6 +98,20 @@ const settingsSchema = new mongoose.Schema({
     showBrowseButton: { type: Boolean, default: true },
     showCartIcon: { type: Boolean, default: true },
   },
+  footer: {
+    columns: [{
+      type: { type: String, enum: ['links', 'about', 'social', 'contact'], default: 'links' },
+      title: { type: String, trim: true, default: '' },
+      content: { type: String, trim: true, default: '' },
+      links: [{
+        label: { type: String, trim: true, default: '' },
+        href: { type: String, trim: true, default: '' },
+      }],
+    }],
+    copyrightText: { type: String, trim: true, default: '' },
+    showSocial: { type: Boolean, default: true },
+    variant: { type: String, enum: ['light', 'dark'], default: 'dark' },
+  },
   seo: {
     metaTitle: { type: String, trim: true, default: '' },
     metaDescription: { type: String, trim: true, default: '' },

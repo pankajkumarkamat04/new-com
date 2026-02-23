@@ -306,6 +306,81 @@ export const updateHeaderSettings = async (req, res) => {
   }
 };
 
+// ============ Footer Settings Controller ============
+
+const FOOTER_COLUMN_TYPES = ['links', 'about', 'social', 'contact'];
+
+const defaultFooterColumns = () => [
+  { type: 'links', title: 'Need Help', content: '', links: [{ label: 'Contact Us', href: '#' }, { label: 'Track Order', href: '#' }, { label: 'FAQs', href: '#' }] },
+  { type: 'links', title: 'Company', content: '', links: [{ label: 'About Us', href: '#' }, { label: 'Blogs', href: '#' }] },
+  { type: 'links', title: 'More Info', content: '', links: [{ label: 'T&C', href: '#' }, { label: 'Privacy Policy', href: '#' }, { label: 'Shipping Policy', href: '#' }, { label: 'Refund & Return Policy', href: '#' }] },
+  { type: 'contact', title: 'Contact', content: '', links: [] },
+];
+
+function normalizeFooterColumn(col) {
+  const type = col?.type && FOOTER_COLUMN_TYPES.includes(col.type) ? col.type : 'links';
+  return {
+    type,
+    title: String(col?.title || '').trim(),
+    content: type === 'about' ? String(col?.content || '').trim() : '',
+    links: Array.isArray(col.links)
+      ? col.links.filter((l) => l && (l.label || l.href)).map((l) => ({ label: String(l.label || '').trim(), href: String(l.href || '').trim() }))
+      : [],
+  };
+}
+
+function buildDefaultFooterSettings(raw) {
+  const columns = Array.isArray(raw?.columns) && raw.columns.length > 0
+    ? raw.columns.map(normalizeFooterColumn)
+    : defaultFooterColumns();
+  return {
+    columns,
+    copyrightText: raw?.copyrightText != null ? String(raw.copyrightText).trim() : '',
+    showSocial: raw?.showSocial !== false,
+    variant: raw?.variant === 'light' ? 'light' : 'dark',
+  };
+}
+
+export const getFooterSettings = async (req, res) => {
+  try {
+    const settings = await Settings.getSettings();
+    const footer = settings.footer || {};
+    const data = buildDefaultFooterSettings(footer);
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateFooterSettings = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+    const { columns, copyrightText, showSocial, variant } = req.body;
+    const footerUpdate = {};
+    if (Array.isArray(columns)) {
+      footerUpdate['footer.columns'] = columns
+        .filter((col) => col && (col.title || (col.type === 'about' && col.content) || (col.links && col.links.length) || ['social', 'contact'].includes(col.type)))
+        .map(normalizeFooterColumn);
+    }
+    if (copyrightText !== undefined) footerUpdate['footer.copyrightText'] = String(copyrightText).trim();
+    if (showSocial !== undefined) footerUpdate['footer.showSocial'] = !!showSocial;
+    if (variant !== undefined) footerUpdate['footer.variant'] = variant === 'light' ? 'light' : 'dark';
+
+    await Settings.findOneAndUpdate(
+      { key: 'site' },
+      { $set: footerUpdate },
+      { returnDocument: 'after', upsert: true, runValidators: true }
+    );
+    const settings = await Settings.getSettings();
+    const data = buildDefaultFooterSettings(settings.footer || {});
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 // ============ Checkout Settings Controller ============
 
@@ -518,12 +593,16 @@ export const getPublicSettings = async (req, res) => {
     const paymentRaw = settings.payment || {};
     const payment = buildDefaultPaymentSettings(paymentRaw);
 
+    const footerRaw = settings.footer || {};
+    const footer = buildDefaultFooterSettings(footerRaw);
+
     res.json({
       success: true,
       data: {
         general,
         seo: seoData,
         header: headerData,
+        footer,
         checkout,
         payment,
       },

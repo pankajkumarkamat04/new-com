@@ -132,7 +132,7 @@ export default function CheckoutPage() {
             </Link>
           </div>
         </div>
-        <Footer variant="light" />
+        <Footer />
       </div>
     );
   }
@@ -157,7 +157,7 @@ export default function CheckoutPage() {
             </Link>
           </div>
         </div>
-        <Footer variant="light" />
+        <Footer />
       </div>
     );
   }
@@ -172,7 +172,7 @@ export default function CheckoutPage() {
             {!loading && <Link href="/cart" className="ml-2 text-emerald-600 hover:underline">Go to cart</Link>}
           </div>
         </div>
-        <Footer variant="light" />
+        <Footer />
       </div>
     );
   }
@@ -364,7 +364,7 @@ export default function CheckoutPage() {
         </form>
       </div>
 
-      <Footer variant="light" />
+      <Footer />
     </div>
   );
 }

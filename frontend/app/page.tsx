@@ -165,7 +165,7 @@ export default function Home() {
         </div>
       </section>
 
-      <Footer variant="light" />
+      <Footer />
     </div>
   );
 }

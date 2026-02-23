@@ -156,7 +156,7 @@ function ShopContent() {
           </div>
         </div>
       </div>
-      <Footer variant="light" />
+      <Footer />
     </div>
   );
 }

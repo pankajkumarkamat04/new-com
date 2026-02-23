@@ -114,6 +114,27 @@ export type HeaderSettings = {
   showCartIcon?: boolean;
 };
 
+export type FooterLink = {
+  label: string;
+  href: string;
+};
+
+export type FooterColumnType = 'links' | 'about' | 'social' | 'contact';
+
+export type FooterColumn = {
+  type?: FooterColumnType;
+  title: string;
+  content?: string;
+  links: FooterLink[];
+};
+
+export type FooterSettings = {
+  columns: FooterColumn[];
+  copyrightText: string;
+  showSocial: boolean;
+  variant: 'light' | 'dark';
+};
+
 export type CheckoutFieldConfig = {
   enabled?: boolean;
   required?: boolean;
@@ -164,6 +185,7 @@ export type PublicSettings = {
   general: Settings;
   seo: SeoSettings;
   header: HeaderSettings;
+  footer?: FooterSettings;
   checkout?: CheckoutSettings;
   payment?: PaymentSettings;
 };
@@ -185,6 +207,9 @@ export const settingsApi = {
   getHeader: () => api<{ data: HeaderSettings }>('/settings/header'),
   updateHeader: (body: Partial<HeaderSettings>) =>
     api<{ data: HeaderSettings }>('/settings/header', { method: 'PUT', body: JSON.stringify(body) }),
+  getFooter: () => api<{ data: FooterSettings }>('/settings/footer'),
+  updateFooter: (body: Partial<FooterSettings>) =>
+    api<{ data: FooterSettings }>('/settings/footer', { method: 'PUT', body: JSON.stringify(body) }),
   getCheckout: () => api<{ data: CheckoutSettings }>('/settings/checkout'),
   updateCheckout: (body: Partial<CheckoutSettings>) =>
     api<{ data: CheckoutSettings }>('/settings/checkout', { method: 'PUT', body: JSON.stringify(body) }),

@@ -42,7 +42,7 @@ export default function UserOrderDetailPage() {
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <p className="text-slate-600">Loading order...</p>
         </div>
-        <Footer variant="light" />
+        <Footer />
       </div>
     );
   }
@@ -60,7 +60,7 @@ export default function UserOrderDetailPage() {
             Go back
           </button>
         </div>
-        <Footer variant="light" />
+        <Footer />
       </div>
     );
   }
@@ -161,7 +161,7 @@ export default function UserOrderDetailPage() {
         </div>
       </div>
 
-      <Footer variant="light" />
+      <Footer />
     </div>
   );
 }

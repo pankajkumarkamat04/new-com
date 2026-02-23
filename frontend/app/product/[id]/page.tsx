@@ -45,7 +45,7 @@ export default function ProductPage() {
         <div className="mx-auto flex min-h-[60vh] max-w-7xl items-center justify-center px-4 sm:px-6 lg:px-8">
           <div className="text-slate-600">Loading product...</div>
         </div>
-        <Footer variant="light" />
+        <Footer />
       </div>
     );
   }
@@ -65,7 +65,7 @@ export default function ProductPage() {
             </Link>
           </div>
         </div>
-        <Footer variant="light" />
+        <Footer />
       </div>
     );
   }
@@ -185,7 +185,7 @@ export default function ProductPage() {
         </div>
       </div>
 
-      <Footer variant="light" />
+      <Footer />
     </div>
   );
 }

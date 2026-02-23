@@ -56,7 +56,7 @@ export default function UserLayout({
   const initial = (user?.name || "U").charAt(0).toUpperCase();
 
   const header = <Header isLoggedIn={!isAuthPage} userType={isAuthPage ? null : "user"} />;
-  const footer = <Footer variant="dark" />;
+  const footer = <Footer />;
 
   if (isAuthPage) {
     return (

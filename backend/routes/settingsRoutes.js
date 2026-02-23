@@ -70,6 +70,19 @@ const updateHeaderValidation = [
   body('showCartIcon').optional().isBoolean().withMessage('showCartIcon must be boolean'),
 ];
 
+const updateFooterValidation = [
+  body('columns').optional().isArray().withMessage('columns must be array'),
+  body('columns.*.type').optional().isIn(['links', 'about', 'social', 'contact']).withMessage('column type must be links, about, social, or contact'),
+  body('columns.*.title').optional().trim(),
+  body('columns.*.content').optional().trim(),
+  body('columns.*.links').optional().isArray(),
+  body('columns.*.links.*.label').optional().trim(),
+  body('columns.*.links.*.href').optional().trim(),
+  body('copyrightText').optional().trim(),
+  body('showSocial').optional().isBoolean().withMessage('showSocial must be boolean'),
+  body('variant').optional().isIn(['light', 'dark']).withMessage('variant must be light or dark'),
+];
+
 const updateCheckoutValidation = [
   body('name.enabled').optional().isBoolean().withMessage('name.enabled must be boolean'),
   body('name.required').optional().isBoolean().withMessage('name.required must be boolean'),
@@ -127,6 +140,10 @@ router.put('/seo', protectAdmin, updateSeoValidation, settingsController.updateS
 // Header - public get, admin update
 router.get('/header', settingsController.getHeaderSettings);
 router.put('/header', protectAdmin, updateHeaderValidation, settingsController.updateHeaderSettings);
+
+// Footer - public get (via /public), admin get/update
+router.get('/footer', settingsController.getFooterSettings);
+router.put('/footer', protectAdmin, updateFooterValidation, settingsController.updateFooterSettings);
 
 // Checkout - public get, admin update
 router.get('/checkout', settingsController.getCheckoutSettings);

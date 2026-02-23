@@ -8,6 +8,7 @@ import {
   type HomePageSettings,
   type HomeCategorySettings,
   type HeaderSettings,
+  type FooterSettings,
   type CheckoutSettings,
   type PaymentSettings,
   type PublicSettings,
@@ -46,11 +47,24 @@ const defaultPaymentSettings: PaymentSettings = {
   cashfree: { enabled: false },
 };
 
+const defaultFooterSettings: FooterSettings = {
+  columns: [
+    { type: "links", title: "Need Help", content: "", links: [{ label: "Contact Us", href: "#" }, { label: "Track Order", href: "#" }, { label: "FAQs", href: "#" }] },
+    { type: "links", title: "Company", content: "", links: [{ label: "About Us", href: "#" }, { label: "Blogs", href: "#" }] },
+    { type: "links", title: "More Info", content: "", links: [{ label: "T&C", href: "#" }, { label: "Privacy Policy", href: "#" }, { label: "Shipping Policy", href: "#" }, { label: "Refund & Return Policy", href: "#" }] },
+    { type: "contact", title: "Contact", content: "", links: [] },
+  ],
+  copyrightText: "",
+  showSocial: true,
+  variant: "dark",
+};
+
 type SettingsContextType = {
   settings: Settings;
   hero: HeroSettings;
   homeCategorySettings: HomeCategorySettings;
   headerSettings: HeaderSettings;
+  footerSettings: FooterSettings;
   checkoutSettings: CheckoutSettings;
   paymentSettings: PaymentSettings;
   currency: string;
@@ -93,6 +107,7 @@ const SettingsContext = createContext<SettingsContextType>({
     showImage: true,
   },
   headerSettings: defaultHeaderSettings,
+  footerSettings: defaultFooterSettings,
   checkoutSettings: defaultCheckoutSettings,
   paymentSettings: defaultPaymentSettings,
   currency: "INR",
@@ -114,6 +129,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     showImage: true,
   });
   const [headerSettings, setHeaderSettings] = useState<HeaderSettings>(defaultHeaderSettings);
+  const [footerSettings, setFooterSettings] = useState<FooterSettings>(defaultFooterSettings);
   const [checkoutSettings, setCheckoutSettings] = useState<CheckoutSettings>(defaultCheckoutSettings);
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(defaultPaymentSettings);
   const [loading, setLoading] = useState(true);
@@ -157,6 +173,24 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       });
     } else {
       setHeaderSettings(defaultHeaderSettings);
+    }
+
+    const footer = publicData?.footer;
+    if (footer && Array.isArray(footer.columns) && footer.columns.length > 0) {
+      const colTypes = ["links", "about", "social", "contact"];
+      setFooterSettings({
+        columns: footer.columns.map((col: { type?: string; title?: string; content?: string; links?: { label: string; href: string }[] }) => ({
+          type: col.type && colTypes.includes(col.type) ? col.type : "links",
+          title: col.title || "",
+          content: col.content ?? "",
+          links: Array.isArray(col.links) ? col.links.map((l: { label?: string; href?: string }) => ({ label: l.label || "", href: l.href || "" })) : [],
+        })),
+        copyrightText: footer.copyrightText ?? "",
+        showSocial: footer.showSocial !== false,
+        variant: footer.variant === "light" ? "light" : "dark",
+      });
+    } else {
+      setFooterSettings(defaultFooterSettings);
     }
 
     const checkout = publicData?.checkout;
@@ -236,6 +270,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         hero: hero ?? defaultHero,
         homeCategorySettings,
         headerSettings,
+        footerSettings: footerSettings ?? defaultFooterSettings,
         checkoutSettings,
         paymentSettings: paymentSettings ?? defaultPaymentSettings,
         currency,

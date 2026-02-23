@@ -35,6 +35,7 @@ function SettingsNav({ pathname }: { pathname: string }) {
     pathname === "/admin/settings/general" ||
     pathname === "/admin/settings/seo" ||
     pathname === "/admin/settings/header" ||
+    pathname === "/admin/settings/footer" ||
     pathname === "/admin/settings/payment";
   const isOrderGroupActive = pathname.startsWith("/admin/settings/checkout");
   const [expanded, setExpanded] = useState(isSettingsActive);
@@ -49,6 +50,7 @@ function SettingsNav({ pathname }: { pathname: string }) {
       pathname === "/admin/settings/general" ||
       pathname === "/admin/settings/seo" ||
       pathname === "/admin/settings/header" ||
+      pathname === "/admin/settings/footer" ||
       pathname === "/admin/settings/payment"
     ) {
       setGeneralExpanded(true);
@@ -124,6 +126,15 @@ function SettingsNav({ pathname }: { pathname: string }) {
                     }`}
                 >
                   Header
+                </Link>
+                <Link
+                  href="/admin/settings/footer"
+                  className={`block rounded px-2 py-1.5 text-sm ${pathname === "/admin/settings/footer"
+                      ? "font-medium text-amber-700"
+                      : "text-slate-600 hover:text-slate-900"
+                    }`}
+                >
+                  Footer
                 </Link>
                 <Link
                   href="/admin/settings/payment"

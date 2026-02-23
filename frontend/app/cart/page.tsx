@@ -130,7 +130,7 @@ export default function CartPage() {
         )}
       </div>
 
-      <Footer variant="light" />
+      <Footer />
     </div>
   );
 }
