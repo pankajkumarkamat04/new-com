@@ -102,6 +102,41 @@ export type HomePageSettings = {
   homeCategorySettings?: HomeCategorySettings;
 };
 
+export type HeaderNavLink = {
+  label: string;
+  href: string;
+};
+
+export type HeaderSettings = {
+  logoImageUrl?: string;
+  navLinks: HeaderNavLink[];
+  showBrowseButton?: boolean;
+  showCartIcon?: boolean;
+};
+
+export type CheckoutFieldConfig = {
+  enabled?: boolean;
+  required?: boolean;
+  label?: string;
+};
+
+export type CheckoutCustomField = {
+  key: string;
+  label: string;
+  enabled?: boolean;
+  required?: boolean;
+};
+
+export type CheckoutSettings = {
+  name: CheckoutFieldConfig;
+  address: CheckoutFieldConfig;
+  city: CheckoutFieldConfig;
+  state: CheckoutFieldConfig;
+  zip: CheckoutFieldConfig;
+  phone: CheckoutFieldConfig;
+  customFields?: CheckoutCustomField[];
+};
+
 export type SeoSettings = {
   metaTitle?: string;
   metaDescription?: string;
@@ -118,6 +153,13 @@ export type SeoSettings = {
   robots?: string;
 };
 
+export type PublicSettings = {
+  general: Settings;
+  seo: SeoSettings;
+  header: HeaderSettings;
+  checkout?: CheckoutSettings;
+};
+
 export const settingsApi = {
   get: () => api<{ data: Settings }>('/settings'),
   update: (body: Partial<Settings>) =>
@@ -132,6 +174,13 @@ export const settingsApi = {
   getSeo: () => api<{ data: SeoSettings }>('/settings/seo'),
   updateSeo: (body: Partial<SeoSettings>) =>
     api<{ data: SeoSettings }>('/settings/seo', { method: 'PUT', body: JSON.stringify(body) }),
+  getHeader: () => api<{ data: HeaderSettings }>('/settings/header'),
+  updateHeader: (body: Partial<HeaderSettings>) =>
+    api<{ data: HeaderSettings }>('/settings/header', { method: 'PUT', body: JSON.stringify(body) }),
+  getCheckout: () => api<{ data: CheckoutSettings }>('/settings/checkout'),
+  updateCheckout: (body: Partial<CheckoutSettings>) =>
+    api<{ data: CheckoutSettings }>('/settings/checkout', { method: 'PUT', body: JSON.stringify(body) }),
+  getPublic: () => api<{ data: PublicSettings }>('/settings/public'),
 };
 
 // Categories
@@ -224,6 +273,68 @@ export const cartApi = {
       body: JSON.stringify({ items }),
     }),
   clear: () => api<{ data: { items: CartItem[] } }>('/cart', { method: 'DELETE' }),
+};
+
+// Orders
+export type OrderItem = {
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+};
+
+export type Order = {
+  _id: string;
+  userId: string | { _id: string; name: string; email?: string; phone?: string };
+  items: OrderItem[];
+  total: number;
+  shippingAddress: {
+    name: string;
+    address: string;
+    city: string;
+    state?: string;
+    zip: string;
+    phone: string;
+    customFields?: { key: string; label: string; value: string }[];
+  };
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export const ordersApi = {
+  placeOrder: (shippingAddress: {
+    name: string;
+    address: string;
+    city: string;
+    state?: string;
+    zip: string;
+    phone: string;
+    customFields?: { key: string; label: string; value: string }[];
+  }) =>
+    api<{ data: Order }>('/orders', {
+      method: 'POST',
+      body: JSON.stringify({ shippingAddress }),
+    }),
+  getMyOrders: () => api<{ data: Order[] }>('/orders'),
+  getOrder: (id: string) => api<{ data: Order }>(`/orders/${id}`),
+};
+
+// Admin orders (under /orders/admin)
+export const adminOrdersApi = {
+  list: (params?: { status?: string; page?: number; limit?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.status && params.status !== 'all') searchParams.set('status', params.status);
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const query = searchParams.toString();
+    return api<{ data: Order[]; pagination: { page: number; limit: number; total: number; pages: number } }>(
+      `/orders/admin${query ? `?${query}` : ''}`
+    );
+  },
+  get: (id: string) => api<{ data: Order }>(`/orders/admin/${id}`),
+  updateStatus: (id: string, status: string) =>
+    api<{ data: Order }>(`/orders/admin/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),
 };
 
 // Users (admin only)

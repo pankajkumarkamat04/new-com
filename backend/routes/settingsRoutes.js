@@ -61,8 +61,46 @@ const updateHomeCategoriesValidation = [
   body('showImage').optional().isBoolean().withMessage('showImage must be boolean'),
 ];
 
-// Public - get settings (for header, footer, etc.)
+const updateHeaderValidation = [
+  body('logoImageUrl').optional().trim(),
+  body('navLinks').optional().isArray().withMessage('navLinks must be array'),
+  body('navLinks.*.label').optional().trim(),
+  body('navLinks.*.href').optional().trim(),
+  body('showBrowseButton').optional().isBoolean().withMessage('showBrowseButton must be boolean'),
+  body('showCartIcon').optional().isBoolean().withMessage('showCartIcon must be boolean'),
+];
+
+const updateCheckoutValidation = [
+  body('name.enabled').optional().isBoolean().withMessage('name.enabled must be boolean'),
+  body('name.required').optional().isBoolean().withMessage('name.required must be boolean'),
+  body('name.label').optional().trim(),
+  body('address.enabled').optional().isBoolean().withMessage('address.enabled must be boolean'),
+  body('address.required').optional().isBoolean().withMessage('address.required must be boolean'),
+  body('address.label').optional().trim(),
+  body('city.enabled').optional().isBoolean().withMessage('city.enabled must be boolean'),
+  body('city.required').optional().isBoolean().withMessage('city.required must be boolean'),
+  body('city.label').optional().trim(),
+  body('state.enabled').optional().isBoolean().withMessage('state.enabled must be boolean'),
+  body('state.required').optional().isBoolean().withMessage('state.required must be boolean'),
+  body('state.label').optional().trim(),
+  body('zip.enabled').optional().isBoolean().withMessage('zip.enabled must be boolean'),
+  body('zip.required').optional().isBoolean().withMessage('zip.required must be boolean'),
+  body('zip.label').optional().trim(),
+  body('phone.enabled').optional().isBoolean().withMessage('phone.enabled must be boolean'),
+  body('phone.required').optional().isBoolean().withMessage('phone.required must be boolean'),
+  body('phone.label').optional().trim(),
+  body('customFields').optional().isArray().withMessage('customFields must be array'),
+  body('customFields.*.key').optional().trim(),
+  body('customFields.*.label').optional().trim(),
+  body('customFields.*.enabled').optional().isBoolean().withMessage('customFields.enabled must be boolean'),
+  body('customFields.*.required').optional().isBoolean().withMessage('customFields.required must be boolean'),
+];
+
+// Public - get full settings document (mostly for admin/tools)
 router.get('/', settingsController.getSettings);
+
+// Public - combined basic settings (general, seo, header)
+router.get('/public', settingsController.getPublicSettings);
 
 // Home page combined settings (hero, homeCategories, etc.)
 router.get('/homepage', settingsController.getHomePageSettings);
@@ -78,6 +116,14 @@ router.put('/home-categories', protectAdmin, updateHomeCategoriesValidation, set
 // SEO - public get, admin update
 router.get('/seo', settingsController.getSeoSettings);
 router.put('/seo', protectAdmin, updateSeoValidation, settingsController.updateSeoSettings);
+
+// Header - public get, admin update
+router.get('/header', settingsController.getHeaderSettings);
+router.put('/header', protectAdmin, updateHeaderValidation, settingsController.updateHeaderSettings);
+
+// Checkout - public get, admin update
+router.get('/checkout', settingsController.getCheckoutSettings);
+router.put('/checkout', protectAdmin, updateCheckoutValidation, settingsController.updateCheckoutSettings);
 
 // Admin - update settings
 router.put('/', protectAdmin, updateSettingsValidation, settingsController.updateSettings);

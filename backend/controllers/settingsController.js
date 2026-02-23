@@ -242,6 +242,238 @@ export const updateSeoSettings = async (req, res) => {
   }
 };
 
+// ============ Header Settings Controller ============
+
+export const getHeaderSettings = async (req, res) => {
+  try {
+    const settings = await Settings.getSettings();
+    const header = settings.header || {};
+    const navLinks = Array.isArray(header.navLinks) ? header.navLinks : [
+      { label: 'Shop', href: '/shop' },
+      { label: 'Electronics', href: '/shop?category=Electronics' },
+      { label: 'Fashion', href: '/shop?category=Fashion' },
+    ];
+    const data = {
+      logoImageUrl: header.logoImageUrl || '',
+      navLinks,
+      showBrowseButton: header.showBrowseButton !== false,
+      showCartIcon: header.showCartIcon !== false,
+    };
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateHeaderSettings = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const { logoImageUrl, navLinks, showBrowseButton, showCartIcon } = req.body;
+
+    const headerUpdate = {};
+    if (logoImageUrl !== undefined) headerUpdate['header.logoImageUrl'] = String(logoImageUrl).trim();
+    if (Array.isArray(navLinks)) {
+      headerUpdate['header.navLinks'] = navLinks
+        .filter((item) => item && (item.label || item.href))
+        .map((item) => ({
+          label: String(item.label || '').trim(),
+          href: String(item.href || '').trim(),
+        }));
+    }
+    if (showBrowseButton !== undefined) headerUpdate['header.showBrowseButton'] = !!showBrowseButton;
+    if (showCartIcon !== undefined) headerUpdate['header.showCartIcon'] = !!showCartIcon;
+
+    const settings = await Settings.findOneAndUpdate(
+      { key: 'site' },
+      { $set: headerUpdate },
+      { returnDocument: 'after', upsert: true, runValidators: true }
+    );
+
+    const header = settings.header || {};
+    const data = {
+      logoImageUrl: header.logoImageUrl || '',
+      navLinks: Array.isArray(header.navLinks) ? header.navLinks : [],
+      showBrowseButton: header.showBrowseButton !== false,
+      showCartIcon: header.showCartIcon !== false,
+    };
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+// ============ Checkout Settings Controller ============
+
+const buildDefaultCheckoutSettings = (raw = {}) => {
+  const toField = (fieldKey, defaults) => {
+    const field = raw[fieldKey] || {};
+    return {
+      enabled: field.enabled !== false,
+      required: field.required === true || (field.required === undefined ? defaults.required : !!field.required),
+      label: (field.label || defaults.label),
+    };
+  };
+
+  const base = {
+    name: toField('name', { label: 'Full Name', required: true }),
+    address: toField('address', { label: 'Address', required: true }),
+    city: toField('city', { label: 'City', required: true }),
+    state: toField('state', { label: 'State / Province', required: false }),
+    zip: toField('zip', { label: 'ZIP / Postal Code', required: true }),
+    phone: toField('phone', { label: 'Phone', required: true }),
+  };
+
+  const customFields = Array.isArray(raw.customFields)
+    ? raw.customFields
+      .filter((f) => f && (f.key || f.label))
+      .map((f) => ({
+        key: String(f.key || '').trim(),
+        label: String(f.label || '').trim() || String(f.key || '').trim(),
+        enabled: f.enabled !== false,
+        required: !!f.required,
+      }))
+    : [];
+
+  return {
+    ...base,
+    customFields,
+  };
+};
+
+export const getCheckoutSettings = async (req, res) => {
+  try {
+    const settings = await Settings.getSettings();
+    const checkout = settings.checkout || {};
+    const data = buildDefaultCheckoutSettings(checkout);
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateCheckoutSettings = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const allowedFields = ['name', 'address', 'city', 'state', 'zip', 'phone'];
+    const updates = {};
+
+    for (const field of allowedFields) {
+      const value = req.body[field];
+      if (value && typeof value === 'object') {
+        if (value.enabled !== undefined) {
+          updates[`checkout.${field}.enabled`] = !!value.enabled;
+        }
+        if (value.required !== undefined) {
+          updates[`checkout.${field}.required`] = !!value.required;
+        }
+        if (value.label !== undefined) {
+          updates[`checkout.${field}.label`] = String(value.label || '').trim();
+        }
+      }
+    }
+
+    if (Array.isArray(req.body.customFields)) {
+      updates['checkout.customFields'] = req.body.customFields
+        .filter((f) => f && (f.key || f.label))
+        .map((f) => ({
+          key: String(f.key || '').trim(),
+          label: String(f.label || '').trim() || String(f.key || '').trim(),
+          enabled: f.enabled !== false,
+          required: !!f.required,
+        }));
+    }
+
+    const settings = await Settings.findOneAndUpdate(
+      { key: 'site' },
+      { $set: updates },
+      { returnDocument: 'after', upsert: true, runValidators: true }
+    );
+
+    const checkout = settings.checkout || {};
+    const data = buildDefaultCheckoutSettings(checkout);
+
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+// ============ Public Combined Settings (General + SEO + Header) ============
+
+export const getPublicSettings = async (req, res) => {
+  try {
+    const settings = await Settings.getSettings();
+
+    const general = {
+      siteName: settings.siteName || 'ShopNow',
+      siteUrl: settings.siteUrl || '',
+      siteTagline: settings.siteTagline || 'Your trusted online shopping destination.',
+      contactEmail: settings.contactEmail || '',
+      contactPhone: settings.contactPhone || '',
+      contactAddress: settings.contactAddress || '',
+      facebookUrl: settings.facebookUrl || '',
+      instagramUrl: settings.instagramUrl || '',
+      twitterUrl: settings.twitterUrl || '',
+      linkedinUrl: settings.linkedinUrl || '',
+    };
+
+    const seo = settings.seo || {};
+    const seoData = {
+      metaTitle: seo.metaTitle || '',
+      metaDescription: seo.metaDescription || '',
+      metaKeywords: seo.metaKeywords || '',
+      ogTitle: seo.ogTitle || '',
+      ogDescription: seo.ogDescription || '',
+      ogImage: seo.ogImage || '',
+      ogType: seo.ogType || 'website',
+      twitterCard: seo.twitterCard || 'summary_large_image',
+      twitterTitle: seo.twitterTitle || '',
+      twitterDescription: seo.twitterDescription || '',
+      twitterImage: seo.twitterImage || '',
+      canonicalUrl: seo.canonicalUrl || '',
+      robots: seo.robots || 'index, follow',
+    };
+
+    const header = settings.header || {};
+    const navLinks = Array.isArray(header.navLinks) && header.navLinks.length > 0 ? header.navLinks : [
+      { label: 'Shop', href: '/shop' },
+      { label: 'Electronics', href: '/shop?category=Electronics' },
+      { label: 'Fashion', href: '/shop?category=Fashion' },
+    ];
+    const headerData = {
+      logoImageUrl: header.logoImageUrl || '',
+      navLinks,
+      showBrowseButton: header.showBrowseButton !== false,
+      showCartIcon: header.showCartIcon !== false,
+    };
+
+    const checkoutRaw = settings.checkout || {};
+    const checkout = buildDefaultCheckoutSettings(checkoutRaw);
+
+    res.json({
+      success: true,
+      data: {
+        general,
+        seo: seoData,
+        header: headerData,
+        checkout,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // ============ General Settings Controller ============
 
 export const getSettings = async (req, res) => {

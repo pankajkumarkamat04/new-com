@@ -89,6 +89,15 @@ const settingsSchema = new mongoose.Schema({
     limit: { type: Number, min: 1, max: 24, default: 8 },
     showImage: { type: Boolean, default: true },
   },
+  header: {
+    logoImageUrl: { type: String, trim: true, default: '' },
+    navLinks: [{
+      label: { type: String, trim: true, default: '' },
+      href: { type: String, trim: true, default: '' },
+    }],
+    showBrowseButton: { type: Boolean, default: true },
+    showCartIcon: { type: Boolean, default: true },
+  },
   seo: {
     metaTitle: { type: String, trim: true, default: '' },
     metaDescription: { type: String, trim: true, default: '' },
@@ -103,6 +112,44 @@ const settingsSchema = new mongoose.Schema({
     twitterImage: { type: String, trim: true, default: '' },
     canonicalUrl: { type: String, trim: true, default: '' },
     robots: { type: String, trim: true, default: 'index, follow' },
+  },
+  checkout: {
+    name: {
+      enabled: { type: Boolean, default: true },
+      required: { type: Boolean, default: true },
+      label: { type: String, trim: true, default: 'Full Name' },
+    },
+    address: {
+      enabled: { type: Boolean, default: true },
+      required: { type: Boolean, default: true },
+      label: { type: String, trim: true, default: 'Address' },
+    },
+    city: {
+      enabled: { type: Boolean, default: true },
+      required: { type: Boolean, default: true },
+      label: { type: String, trim: true, default: 'City' },
+    },
+    state: {
+      enabled: { type: Boolean, default: true },
+      required: { type: Boolean, default: false },
+      label: { type: String, trim: true, default: 'State / Province' },
+    },
+    zip: {
+      enabled: { type: Boolean, default: true },
+      required: { type: Boolean, default: true },
+      label: { type: String, trim: true, default: 'ZIP / Postal Code' },
+    },
+    phone: {
+      enabled: { type: Boolean, default: true },
+      required: { type: Boolean, default: true },
+      label: { type: String, trim: true, default: 'Phone' },
+    },
+    customFields: [{
+      key: { type: String, trim: true, default: '' },
+      label: { type: String, trim: true, default: '' },
+      enabled: { type: Boolean, default: true },
+      required: { type: Boolean, default: false },
+    }],
   },
 }, {
   timestamps: true,

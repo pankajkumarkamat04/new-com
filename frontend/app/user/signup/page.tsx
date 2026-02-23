@@ -8,7 +8,7 @@ import { useCart } from "@/contexts/CartContext";
 
 export default function UserSignupPage() {
   const router = useRouter();
-  const { mergeGuestCartThenRefresh } = useCart();
+  const cart = useCart();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -52,11 +52,14 @@ export default function UserSignupPage() {
       password,
     });
     setLoading(false);
+    const data = res.data as { token?: string } | undefined;
     if (res.error) setError(res.error);
-    else if (res.data?.token) {
-      localStorage.setItem("token", res.data.token);
+    else if (data?.token) {
+      localStorage.setItem("token", data.token);
       localStorage.setItem("userType", "user");
-      await mergeGuestCartThenRefresh();
+      if (typeof cart.mergeGuestCartThenRefresh === "function") {
+        await cart.mergeGuestCartThenRefresh();
+      }
       router.push("/user/dashboard");
     }
   };

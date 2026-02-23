@@ -14,8 +14,15 @@ type HeaderProps = {
 
 export default function Header({ isLoggedIn: propLoggedIn, userType: propUserType }: HeaderProps = {}) {
   const pathname = usePathname();
-  const { settings } = useSettings();
+  const { settings, headerSettings } = useSettings();
   const { count: cartCount } = useCart();
+  const navLinks = headerSettings?.navLinks?.length ? headerSettings.navLinks : [
+    { label: "Shop", href: "/shop" },
+    { label: "Electronics", href: "/shop?category=Electronics" },
+    { label: "Fashion", href: "/shop?category=Fashion" },
+  ];
+  const showBrowse = headerSettings?.showBrowseButton !== false;
+  const showCart = headerSettings?.showCartIcon !== false;
   const [mounted, setMounted] = useState(false);
   const [detectedLoggedIn, setDetectedLoggedIn] = useState(false);
   const [detectedUserType, setDetectedUserType] = useState<string | null>(null);
@@ -37,26 +44,29 @@ export default function Header({ isLoggedIn: propLoggedIn, userType: propUserTyp
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="text-2xl font-bold tracking-tight text-emerald-600">
-          {settings.siteName || "ShopNow"}
+          {headerSettings?.logoImageUrl ? (
+            <img src={headerSettings.logoImageUrl} alt={settings.siteName || "Logo"} className="h-10 w-auto max-w-[180px] object-contain" />
+          ) : (
+            settings.siteName || "ShopNow"
+          )}
         </Link>
         <nav className="hidden items-center gap-8 md:flex">
-          <Link href="/shop" className="text-sm font-medium text-slate-600 hover:text-slate-900">
-            Shop
-          </Link>
-          <Link href="/shop?category=Electronics" className="text-sm font-medium text-slate-600 hover:text-slate-900">
-            Electronics
-          </Link>
-          <Link href="/shop?category=Fashion" className="text-sm font-medium text-slate-600 hover:text-slate-900">
-            Fashion
-          </Link>
+          {navLinks.map((link) => (
+            <Link key={link.href + link.label} href={link.href} className="text-sm font-medium text-slate-600 hover:text-slate-900">
+              {link.label}
+            </Link>
+          ))}
         </nav>
         <div className="flex items-center gap-4">
-          <Link
-            href="/shop"
-            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-          >
-            Browse
-          </Link>
+          {showBrowse && (
+            <Link
+              href="/shop"
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              Browse
+            </Link>
+          )}
+          {showCart && (
           <Link href="/cart" className="relative text-slate-600 hover:text-slate-900">
             <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -67,6 +77,7 @@ export default function Header({ isLoggedIn: propLoggedIn, userType: propUserTyp
               </span>
             )}
           </Link>
+          )}
           {isLoggedIn ? (
             <>
               <Link href="/user/wishlist" className="text-slate-600 hover:text-slate-900">

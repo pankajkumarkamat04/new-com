@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { userApi } from "@/lib/api";
 import { useCart } from "@/contexts/CartContext";
 
 export default function UserLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/user/dashboard";
+  const cart = useCart();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -27,12 +30,15 @@ export default function UserLoginPage() {
     setLoading(true);
     const res = await userApi.loginPassword({ email: email.trim(), password });
     setLoading(false);
+    const data = res.data as { token?: string } | undefined;
     if (res.error) setError(res.error);
-    else if (res.data?.token) {
-      localStorage.setItem("token", res.data.token);
+    else if (data?.token) {
+      localStorage.setItem("token", data.token);
       localStorage.setItem("userType", "user");
-      await mergeGuestCartThenRefresh();
-      router.push("/user/dashboard");
+      if (typeof cart.mergeGuestCartThenRefresh === "function") {
+        await cart.mergeGuestCartThenRefresh();
+      }
+      router.push(redirectTo.startsWith("/") ? redirectTo : "/user/dashboard");
     }
   };
 
