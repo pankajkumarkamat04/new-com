@@ -1,26 +1,41 @@
-"use client";
-
 import Link from "next/link";
-import { useSettings } from "@/contexts/SettingsContext";
+import type { PublicSettings } from "@/lib/api";
 
-export default function Footer() {
-  const { settings, footerSettings } = useSettings();
-  const variant = footerSettings?.variant ?? "dark";
-  const backgroundColor = footerSettings?.backgroundColor?.trim();
-  const s = settings ?? {
-    siteName: "ShopNow",
-    siteTagline: "Your trusted online shopping destination.",
-    contactEmail: "",
-    contactPhone: "",
-    contactAddress: "",
-    facebookUrl: "",
-    instagramUrl: "",
-    twitterUrl: "",
-    linkedinUrl: "",
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
+async function fetchPublicSettings(): Promise<PublicSettings | null> {
+  try {
+    const res = await fetch(`${API_BASE}/settings/public`, { next: { revalidate: 60 } });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return (json?.data || null) as PublicSettings | null;
+  } catch {
+    return null;
+  }
+}
+
+export async function FooterSSR() {
+  const publicSettings = await fetchPublicSettings();
+  const general = publicSettings?.general;
+  const footer = publicSettings?.footer;
+
+  const s = {
+    siteName: general?.siteName || "ShopNow",
+    siteTagline: general?.siteTagline || "Your trusted online shopping destination.",
+    contactEmail: general?.contactEmail || "",
+    contactPhone: general?.contactPhone || "",
+    contactAddress: general?.contactAddress || "",
+    facebookUrl: general?.facebookUrl || "",
+    instagramUrl: general?.instagramUrl || "",
+    twitterUrl: general?.twitterUrl || "",
+    linkedinUrl: general?.linkedinUrl || "",
   };
-  const cols = footerSettings?.columns ?? [];
-  const showSocial = footerSettings?.showSocial !== false;
-  const copyrightRaw = footerSettings?.copyrightText?.trim();
+
+  const cols = Array.isArray(footer?.columns) ? footer.columns : [];
+  const variant = footer?.variant === "light" ? "light" : "dark";
+  const backgroundColor = footer?.backgroundColor?.trim();
+
+  const copyrightRaw = footer?.copyrightText?.trim();
   const copyrightText = copyrightRaw
     ? copyrightRaw
         .replace(/\{year\}/g, String(new Date().getFullYear()))
@@ -272,45 +287,11 @@ export default function Footer() {
           )}
         </div>
 
-        {showSocial && (s.facebookUrl || s.instagramUrl || s.twitterUrl || s.linkedinUrl) && (
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-4 border-t border-slate-200 pt-8">
-            <div className={`flex gap-4 ${isLight ? "text-slate-500" : "text-slate-400"}`}>
-              {s.facebookUrl && (
-                <a href={s.facebookUrl} target="_blank" rel="noopener noreferrer" className={isLight ? "hover:text-slate-900" : "hover:text-white"}>
-                  Facebook
-                </a>
-              )}
-              {s.instagramUrl && (
-                <a href={s.instagramUrl} target="_blank" rel="noopener noreferrer" className={isLight ? "hover:text-slate-900" : "hover:text-white"}>
-                  Instagram
-                </a>
-              )}
-              {s.twitterUrl && (
-                <a href={s.twitterUrl} target="_blank" rel="noopener noreferrer" className={isLight ? "hover:text-slate-900" : "hover:text-white"}>
-                  Twitter
-                </a>
-              )}
-              {s.linkedinUrl && (
-                <a href={s.linkedinUrl} target="_blank" rel="noopener noreferrer" className={isLight ? "hover:text-slate-900" : "hover:text-white"}>
-                  LinkedIn
-                </a>
-              )}
-            </div>
-          </div>
-        )}
-
-        <div
-          className={
-            (showSocial && (s.facebookUrl || s.instagramUrl || s.twitterUrl || s.linkedinUrl)
-              ? "mt-4 "
-              : "mt-12 ") +
-            "border-t pt-8 text-center text-sm text-slate-500 " +
-            (isLight ? "border-slate-200" : "border-slate-700")
-          }
-        >
+        <div className="mt-8 border-t border-slate-700/40 pt-6 text-center text-xs text-slate-400">
           {copyrightText}
         </div>
       </div>
     </footer>
   );
 }
+

@@ -133,6 +133,7 @@ export type FooterSettings = {
   copyrightText: string;
   showSocial: boolean;
   variant: 'light' | 'dark';
+  backgroundColor?: string;
 };
 
 export type CheckoutFieldConfig = {

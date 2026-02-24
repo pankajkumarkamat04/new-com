@@ -64,6 +64,7 @@ export default function AdminFooterSettingsPage() {
     copyrightText: "",
     showSocial: true,
     variant: "dark",
+    backgroundColor: "",
   });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -97,6 +98,7 @@ export default function AdminFooterSettingsPage() {
           copyrightText: d.copyrightText ?? "",
           showSocial: d.showSocial !== false,
           variant: d.variant === "light" ? "light" : "dark",
+          backgroundColor: typeof (d as any).backgroundColor === "string" ? (d as any).backgroundColor : prev.backgroundColor,
         }));
       }
     });
@@ -328,6 +330,43 @@ export default function AdminFooterSettingsPage() {
                   <option value="dark">Dark</option>
                   <option value="light">Light</option>
                 </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Footer background color</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={
+                      form.backgroundColor && /^#([0-9A-Fa-f]{3}){1,2}$/.test(form.backgroundColor)
+                        ? form.backgroundColor
+                        : form.variant === "light"
+                          ? "#ffffff"
+                          : "#0f172a"
+                    }
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        backgroundColor: e.target.value,
+                      }))
+                    }
+                    className="h-9 w-14 cursor-pointer rounded border border-slate-300 bg-white p-1"
+                  />
+                  <input
+                    type="text"
+                    value={form.backgroundColor}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        backgroundColor: e.target.value,
+                      }))
+                    }
+                    placeholder={form.variant === "light" ? "#ffffff" : "#0f172a"}
+                    className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+                  />
+                </div>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Leave empty to use the default theme color. Use a valid hex color (e.g. #0f172a).
+                </p>
               </div>
               <label className="flex cursor-pointer items-center gap-2">
                 <input

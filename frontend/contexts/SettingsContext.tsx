@@ -57,6 +57,7 @@ const defaultFooterSettings: FooterSettings = {
   copyrightText: "",
   showSocial: true,
   variant: "dark",
+  backgroundColor: "",
 };
 
 type SettingsContextType = {
@@ -188,6 +189,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         copyrightText: footer.copyrightText ?? "",
         showSocial: footer.showSocial !== false,
         variant: footer.variant === "light" ? "light" : "dark",
+        backgroundColor: typeof footer.backgroundColor === "string" ? footer.backgroundColor : "",
       });
     } else {
       setFooterSettings(defaultFooterSettings);

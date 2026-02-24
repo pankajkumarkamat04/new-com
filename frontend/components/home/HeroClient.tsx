@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useSettings } from "@/contexts/SettingsContext";
-import type { HeroSlide } from "@/lib/api";
+import type { HeroSettings, HeroSlide } from "@/lib/api";
 
 function SlideContent({ slide, showText, dark = false }: { slide: HeroSlide; showText: boolean; dark?: boolean }) {
   if (!showText) return null;
@@ -39,8 +38,11 @@ function SlideContent({ slide, showText, dark = false }: { slide: HeroSlide; sho
   );
 }
 
-export default function Hero() {
-  const { hero } = useSettings();
+type Props = {
+  hero: HeroSettings;
+};
+
+export function HeroClient({ hero }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const slides = hero.slides?.length ? hero.slides : [
@@ -167,3 +169,4 @@ export default function Hero() {
 
   return null;
 }
+
