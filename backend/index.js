@@ -21,29 +21,43 @@ connectDB();
 
 const app = express();
 
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.DOMAIN,
 ].filter(Boolean);
 
+// CORS configuration:
+// - development: allow all origins
+// - production/other: restrict to configured domains
 app.use(
-  cors({
-    origin: allowedOrigins.length > 0 ? allowedOrigins : 'http://localhost:3000',
-    credentials: true,
-  })
+  cors(
+    NODE_ENV === 'development'
+      ? {
+          origin: true, // reflect request origin (allows all)
+          credentials: true,
+        }
+      : {
+          origin: allowedOrigins.length > 0 ? allowedOrigins : 'http://localhost:3000',
+          credentials: true,
+        }
+  )
 );
 
-// Simple API request logger
-app.use((req, res, next) => {
-  const start = Date.now();
-  const { method, originalUrl } = req;
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    const status = res.statusCode;
-    console.log(`[API] ${method} ${originalUrl} ${status} - ${duration}ms`);
+// Simple API request logger (development only)
+if (NODE_ENV === 'development') {
+  app.use((req, res, next) => {
+    const start = Date.now();
+    const { method, originalUrl } = req;
+    res.on('finish', () => {
+      const duration = Date.now() - start;
+      const status = res.statusCode;
+      console.log(`[API] ${method} ${originalUrl} ${status} - ${duration}ms`);
+    });
+    next();
   });
-  next();
-});
+}
 
 app.use(express.json());
 
