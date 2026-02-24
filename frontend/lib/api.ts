@@ -447,7 +447,8 @@ export const mediaApi = {
     );
   },
   upload: async (file: File) => {
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    // Use same HTTPS-safe default as global API_BASE
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const formData = new FormData();
     formData.append('file', file);

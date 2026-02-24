@@ -27,11 +27,15 @@ export const list = async (req, res) => {
       Media.countDocuments(filter),
     ]);
 
-    // Return stored URL as-is (relative like /uploads/...), so frontend can use it
-    // relative to its current domain and avoid mixed-content or cross-app hosts.
+    // Always expose URLs under /api/uploads so they align with backend routing
+    // (Nginx proxies all /api/* to this app).
+    const itemsWithApiUrl = items.map((item) => ({
+      ...item,
+      url: `/api/uploads/${item.filename}`,
+    }));
     res.json({
       success: true,
-      data: items,
+      data: itemsWithApiUrl,
       pagination: {
         page: Number(page),
         limit: Number(limit),
@@ -50,7 +54,7 @@ export const upload = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
 
-    const url = `/uploads/${req.file.filename}`;
+    const url = `/api/uploads/${req.file.filename}`;
 
     const media = await Media.create({
       filename: req.file.filename,

@@ -61,7 +61,9 @@ if (NODE_ENV === 'development') {
 
 app.use(express.json());
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve uploaded media under /api/uploads so it goes through the same
+// /api/ prefix your Nginx is already proxying to the backend.
+app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth/user', userAuthRoutes);
 app.use('/api/auth/admin', adminAuthRoutes);
 app.use('/api/products', productRoutes);
