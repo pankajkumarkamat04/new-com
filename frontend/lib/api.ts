@@ -45,13 +45,25 @@ export const userApi = {
 export const adminApi = {
   getMe: () => api<{ admin: { id: string; name: string; email: string; phone?: string } }>('/auth/admin/me'),
   signup: (body: { name: string; email: string; phone?: string; password?: string }) =>
-    api('/auth/admin/signup', { method: 'POST', body: JSON.stringify(body) }),
+    api<{ success: boolean; message: string; token: string; admin: { id: string; name: string; email: string; phone?: string } }>(
+      '/auth/admin/signup',
+      { method: 'POST', body: JSON.stringify(body) }
+    ),
   loginPassword: (body: { email?: string; phone?: string; password: string }) =>
-    api('/auth/admin/login/password', { method: 'POST', body: JSON.stringify(body) }),
+    api<{ success: boolean; token: string; admin: { id: string; name: string; email: string; phone?: string } }>(
+      '/auth/admin/login/password',
+      { method: 'POST', body: JSON.stringify(body) }
+    ),
   requestOtp: (body: { email?: string; phone?: string }) =>
-    api('/auth/admin/login/otp/request', { method: 'POST', body: JSON.stringify(body) }),
+    api<{ success: boolean; message: string }>(
+      '/auth/admin/login/otp/request',
+      { method: 'POST', body: JSON.stringify(body) }
+    ),
   loginOtp: (body: { email?: string; phone?: string; otp: string }) =>
-    api('/auth/admin/login/otp', { method: 'POST', body: JSON.stringify(body) }),
+    api<{ success: boolean; token: string; admin: { id: string; name: string; email: string; phone?: string } }>(
+      '/auth/admin/login/otp',
+      { method: 'POST', body: JSON.stringify(body) }
+    ),
 };
 
 // Settings

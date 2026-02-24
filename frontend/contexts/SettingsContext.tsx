@@ -12,6 +12,7 @@ import {
   type CheckoutSettings,
   type PaymentSettings,
   type PublicSettings,
+  type FooterColumnType,
 } from "@/lib/api";
 
 const defaultHero: HeroSettings = {
@@ -178,14 +179,18 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
     const footer = publicData?.footer;
     if (footer && Array.isArray(footer.columns) && footer.columns.length > 0) {
-      const colTypes = ["links", "about", "social", "contact"];
+      const colTypes: FooterColumnType[] = ["links", "about", "social", "contact"];
       setFooterSettings({
-        columns: footer.columns.map((col: { type?: string; title?: string; content?: string; links?: { label: string; href: string }[] }) => ({
-          type: col.type && colTypes.includes(col.type) ? col.type : "links",
-          title: col.title || "",
-          content: col.content ?? "",
-          links: Array.isArray(col.links) ? col.links.map((l: { label?: string; href?: string }) => ({ label: l.label || "", href: l.href || "" })) : [],
-        })),
+        columns: footer.columns.map(
+          (col: { type?: FooterColumnType; title?: string; content?: string; links?: { label: string; href: string }[] }) => ({
+            type: col.type && colTypes.includes(col.type) ? col.type : "links",
+            title: col.title || "",
+            content: col.content ?? "",
+            links: Array.isArray(col.links)
+              ? col.links.map((l: { label?: string; href?: string }) => ({ label: l.label || "", href: l.href || "" }))
+              : [],
+          })
+        ),
         copyrightText: footer.copyrightText ?? "",
         showSocial: footer.showSocial !== false,
         variant: footer.variant === "light" ? "light" : "dark",
