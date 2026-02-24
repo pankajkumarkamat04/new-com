@@ -32,6 +32,19 @@ app.use(
     credentials: true,
   })
 );
+
+// Simple API request logger
+app.use((req, res, next) => {
+  const start = Date.now();
+  const { method, originalUrl } = req;
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const status = res.statusCode;
+    console.log(`[API] ${method} ${originalUrl} ${status} - ${duration}ms`);
+  });
+  next();
+});
+
 app.use(express.json());
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
