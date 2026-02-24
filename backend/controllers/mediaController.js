@@ -27,7 +27,8 @@ export const list = async (req, res) => {
       Media.countDocuments(filter),
     ]);
 
-    const baseUrl = process.env.API_URL || `http://localhost:${process.env.PORT || 5000}`;
+    // Build URLs from current request host to avoid pointing to any other app/domain.
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
     const itemsWithFullUrl = items.map((item) => ({
       ...item,
       url: item.url.startsWith('http') ? item.url : `${baseUrl}${item.url}`,
@@ -54,7 +55,8 @@ export const upload = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
 
-    const baseUrl = process.env.API_URL || `http://localhost:${process.env.PORT || 5000}`;
+    // Build URLs from current request host to avoid pointing to any other app/domain.
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
     const url = `/uploads/${req.file.filename}`;
 
     const media = await Media.create({
