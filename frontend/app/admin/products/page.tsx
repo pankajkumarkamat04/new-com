@@ -1,8 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { productApi, categoryApi, type Product, type Category } from "@/lib/api";
+import { productApi, categoryApi, getMediaUrl, type Product, type Category } from "@/lib/api";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
+
+type MediaPickerContext =
+  | { type: "product-main" }
+  | { type: "product-gallery" }
+  | { type: "variation-main"; index: number }
+  | { type: "variation-gallery"; index: number };
 
 export default function AdminProductsPage() {
   const [mounted, setMounted] = useState(false);
@@ -11,18 +17,49 @@ export default function AdminProductsPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
+
   const [form, setForm] = useState({
     name: "",
     description: "",
     price: "",
+    discountedPrice: "",
     category: "",
     stock: "0",
     image: "",
+    images: [] as string[],
+    attributes: [] as { name: string; terms: string[] }[],
+    variations: [] as {
+      price: string;
+      discountedPrice: string;
+      stock: string;
+      image: string;
+      images: string[];
+      attributes: { name: string; value: string }[];
+      isActive: boolean;
+    }[],
     isActive: true,
   });
+
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showMediaPicker, setShowMediaPicker] = useState(false);
+  const [mediaPickerCtx, setMediaPickerCtx] = useState<MediaPickerContext | null>(null);
+  const [newTermInputs, setNewTermInputs] = useState<Record<number, string>>({});
+  const [newAttrName, setNewAttrName] = useState("");
+
+  const ATTRIBUTE_PRESETS: { name: string; terms: string[] }[] = [
+    { name: "Size", terms: ["XS", "S", "M", "L", "XL", "XXL"] },
+    { name: "Color", terms: ["Red", "Blue", "Green", "Black", "White", "Yellow", "Pink", "Orange", "Purple", "Brown", "Grey", "Navy"] },
+    { name: "Material", terms: ["Cotton", "Polyester", "Silk", "Wool", "Linen", "Denim", "Leather", "Nylon"] },
+    { name: "Weight", terms: ["250g", "500g", "1kg", "2kg", "5kg"] },
+    { name: "Style", terms: ["Regular", "Slim Fit", "Relaxed", "Oversized"] },
+    { name: "Pattern", terms: ["Solid", "Striped", "Checked", "Printed", "Floral", "Polka Dot"] },
+    { name: "Sleeve", terms: ["Full Sleeve", "Half Sleeve", "Sleeveless", "3/4 Sleeve"] },
+    { name: "Fit", terms: ["Regular", "Slim", "Loose", "Tailored"] },
+    { name: "Storage", terms: ["32GB", "64GB", "128GB", "256GB", "512GB", "1TB"] },
+    { name: "RAM", terms: ["4GB", "6GB", "8GB", "12GB", "16GB", "32GB"] },
+    { name: "Pack", terms: ["Pack of 1", "Pack of 2", "Pack of 3", "Pack of 5", "Pack of 10"] },
+  ];
 
   useEffect(() => {
     setMounted(true);
@@ -53,14 +90,21 @@ export default function AdminProductsPage() {
       name: "",
       description: "",
       price: "",
+      discountedPrice: "",
       category: "",
       stock: "0",
       image: "",
+      images: [],
+      attributes: [],
+      variations: [],
       isActive: true,
     });
     setEditing(null);
     setShowForm(false);
     setShowMediaPicker(false);
+    setMediaPickerCtx(null);
+    setNewTermInputs({});
+    setNewAttrName("");
     setError("");
   };
 
@@ -70,9 +114,27 @@ export default function AdminProductsPage() {
       name: product.name,
       description: product.description || "",
       price: String(product.price),
+      discountedPrice: product.discountedPrice ? String(product.discountedPrice) : "",
       category: product.category || "",
       stock: String(product.stock),
       image: product.image || "",
+      images: Array.isArray(product.images) ? product.images.slice(0, 5) : [],
+      attributes: Array.isArray(product.attributes)
+        ? product.attributes.map((a) => ({ name: a.name, terms: [...a.terms] }))
+        : [],
+      variations: Array.isArray(product.variations)
+        ? product.variations.map((v) => ({
+            price: String(v.price),
+            discountedPrice: v.discountedPrice ? String(v.discountedPrice) : "",
+            stock: String(v.stock ?? 0),
+            image: v.image || "",
+            images: Array.isArray(v.images) ? v.images.slice(0, 5) : [],
+            attributes: Array.isArray(v.attributes)
+              ? v.attributes.map((a) => ({ name: a.name || "", value: a.value || "" }))
+              : [],
+            isActive: v.isActive !== false,
+          }))
+        : [],
       isActive: product.isActive,
     });
     setShowForm(true);
@@ -82,20 +144,59 @@ export default function AdminProductsPage() {
     e.preventDefault();
     setError("");
     setSubmitting(true);
+    const basePrice = parseFloat(form.price);
+    const baseDiscounted = form.discountedPrice ? parseFloat(form.discountedPrice) : undefined;
+
     const payload = {
       name: form.name.trim(),
       description: form.description.trim() || undefined,
-      price: parseFloat(form.price),
+      price: basePrice,
+      discountedPrice:
+        typeof baseDiscounted === "number" && !isNaN(baseDiscounted) && baseDiscounted >= 0
+          ? baseDiscounted
+          : undefined,
       category: form.category.trim() || undefined,
       stock: parseInt(form.stock, 10) || 0,
       image: form.image.trim() || undefined,
+      images: form.images.filter((url) => url.trim()).slice(0, 5),
+      attributes: form.attributes
+        .filter((a) => a.name.trim() && a.terms.length > 0)
+        .map((a) => ({
+          name: a.name.trim(),
+          terms: a.terms.map((t) => t.trim()).filter(Boolean),
+        })),
+      variations: form.variations
+        .map((v) => {
+          const vPrice = parseFloat(v.price);
+          const vDiscounted = v.discountedPrice ? parseFloat(v.discountedPrice) : undefined;
+          const attrs = v.attributes
+            .map((a) => ({ name: a.name.trim(), value: a.value.trim() }))
+            .filter((a) => a.name && a.value);
+          const autoName = attrs.map((a) => a.value).join(" / ") || "Variation";
+          return {
+            name: autoName,
+            price: vPrice,
+            discountedPrice:
+              typeof vDiscounted === "number" && !isNaN(vDiscounted) && vDiscounted >= 0
+                ? vDiscounted
+                : undefined,
+            stock: parseInt(v.stock, 10) || 0,
+            image: v.image.trim() || undefined,
+            images: v.images.filter((url) => url.trim()).slice(0, 5),
+            attributes: attrs.length ? attrs : undefined,
+            isActive: v.isActive,
+          };
+        })
+        .filter((v) => !isNaN(v.price) && v.price >= 0),
       isActive: form.isActive,
     };
-    if (!payload.name || isNaN(payload.price) || payload.price < 0) {
+
+    if (!payload.name || isNaN(basePrice) || basePrice < 0) {
       setError("Name and valid price are required");
       setSubmitting(false);
       return;
     }
+
     if (editing) {
       const res = await productApi.update(editing._id, payload);
       setSubmitting(false);
@@ -121,221 +222,1070 @@ export default function AdminProductsPage() {
     if (!res.error) fetchProducts();
   };
 
+  // --- Media picker helpers ---
+  const openMediaPicker = (ctx: MediaPickerContext) => {
+    setMediaPickerCtx(ctx);
+    setShowMediaPicker(true);
+  };
+
+  const handleMediaSelect = (url: string) => {
+    if (!mediaPickerCtx) return;
+    setForm((prev) => {
+      if (mediaPickerCtx.type === "product-main") {
+        return { ...prev, image: url };
+      }
+      if (mediaPickerCtx.type === "product-gallery") {
+        const imgs = prev.images || [];
+        if (imgs.length < 5 && !imgs.includes(url)) {
+          return { ...prev, images: [...imgs, url] };
+        }
+        return prev;
+      }
+      if (mediaPickerCtx.type === "variation-main") {
+        const next = [...prev.variations];
+        next[mediaPickerCtx.index] = { ...next[mediaPickerCtx.index], image: url };
+        return { ...prev, variations: next };
+      }
+      if (mediaPickerCtx.type === "variation-gallery") {
+        const next = [...prev.variations];
+        const v = next[mediaPickerCtx.index];
+        if (v.images.length < 5 && !v.images.includes(url)) {
+          next[mediaPickerCtx.index] = { ...v, images: [...v.images, url] };
+        }
+        return { ...prev, variations: next };
+      }
+      return prev;
+    });
+    setShowMediaPicker(false);
+    setMediaPickerCtx(null);
+  };
+
+  // --- Attribute helpers ---
+  const addPresetAttribute = (preset: { name: string; terms: string[] }) => {
+    if (form.attributes.some((a) => a.name.toLowerCase() === preset.name.toLowerCase())) return;
+    setForm((prev) => ({
+      ...prev,
+      attributes: [...prev.attributes, { name: preset.name, terms: [...preset.terms] }],
+    }));
+  };
+
+  const addAttribute = () => {
+    const trimmed = newAttrName.trim();
+    if (!trimmed) return;
+    if (form.attributes.some((a) => a.name.toLowerCase() === trimmed.toLowerCase())) return;
+    setForm((prev) => ({
+      ...prev,
+      attributes: [...prev.attributes, { name: trimmed, terms: [] }],
+    }));
+    setNewAttrName("");
+  };
+
+  const removeAttribute = (attrIdx: number) => {
+    setForm((prev) => {
+      const removedName = prev.attributes[attrIdx].name;
+      return {
+        ...prev,
+        attributes: prev.attributes.filter((_, i) => i !== attrIdx),
+        variations: prev.variations.map((v) => ({
+          ...v,
+          attributes: v.attributes.filter((a) => a.name !== removedName),
+        })),
+      };
+    });
+  };
+
+  const addTerm = (attrIdx: number) => {
+    const term = (newTermInputs[attrIdx] || "").trim();
+    if (!term) return;
+    setForm((prev) => {
+      const attrs = [...prev.attributes];
+      if (attrs[attrIdx].terms.some((t) => t.toLowerCase() === term.toLowerCase())) return prev;
+      attrs[attrIdx] = { ...attrs[attrIdx], terms: [...attrs[attrIdx].terms, term] };
+      return { ...prev, attributes: attrs };
+    });
+    setNewTermInputs((prev) => ({ ...prev, [attrIdx]: "" }));
+  };
+
+  const removeTerm = (attrIdx: number, termIdx: number) => {
+    setForm((prev) => {
+      const attrs = [...prev.attributes];
+      const removedTerm = attrs[attrIdx].terms[termIdx];
+      const attrName = attrs[attrIdx].name;
+      attrs[attrIdx] = {
+        ...attrs[attrIdx],
+        terms: attrs[attrIdx].terms.filter((_, i) => i !== termIdx),
+      };
+      return {
+        ...prev,
+        attributes: attrs,
+        variations: prev.variations.filter(
+          (v) => !v.attributes.some((a) => a.name === attrName && a.value === removedTerm)
+        ),
+      };
+    });
+  };
+
+  // --- Variation helpers ---
+  const addVariation = () => {
+    setForm((prev) => ({
+      ...prev,
+      variations: [
+        ...prev.variations,
+        {
+          price: prev.price || "",
+          discountedPrice: prev.discountedPrice || "",
+          stock: "0",
+          image: "",
+          images: [],
+          attributes: prev.attributes.map((a) => ({
+            name: a.name,
+            value: a.terms[0] || "",
+          })),
+          isActive: true,
+        },
+      ],
+    }));
+  };
+
+  const generateAllCombinations = () => {
+    const attrs = form.attributes.filter((a) => a.terms.length > 0);
+    if (attrs.length === 0) return;
+
+    let combos: { name: string; value: string }[][] = [[]];
+    for (const attr of attrs) {
+      const next: { name: string; value: string }[][] = [];
+      for (const combo of combos) {
+        for (const term of attr.terms) {
+          next.push([...combo, { name: attr.name, value: term }]);
+        }
+      }
+      combos = next;
+    }
+
+    const existingKeys = new Set(
+      form.variations.map((v) =>
+        v.attributes
+          .map((a) => `${a.name}:${a.value}`)
+          .sort()
+          .join("|")
+      )
+    );
+
+    const newVariations = combos
+      .filter((combo) => {
+        const key = combo
+          .map((a) => `${a.name}:${a.value}`)
+          .sort()
+          .join("|");
+        return !existingKeys.has(key);
+      })
+      .map((combo) => ({
+        price: form.price || "",
+        discountedPrice: form.discountedPrice || "",
+        stock: "0",
+        image: "",
+        images: [] as string[],
+        attributes: combo,
+        isActive: true,
+      }));
+
+    if (newVariations.length === 0) return;
+    setForm((prev) => ({
+      ...prev,
+      variations: [...prev.variations, ...newVariations],
+    }));
+  };
+
+  // --- Bulk pricing state ---
+  const [bulkAttr, setBulkAttr] = useState("");
+  const [bulkTerm, setBulkTerm] = useState("");
+  const [bulkPrice, setBulkPrice] = useState("");
+  const [bulkDiscounted, setBulkDiscounted] = useState("");
+  const [bulkStock, setBulkStock] = useState("");
+
+  const bulkTermOptions: string[] = (() => {
+    if (bulkAttr === "__all__") return [];
+    const attr = form.attributes.find((a) => a.name === bulkAttr);
+    return attr?.terms || [];
+  })();
+
+  const applyBulkPricing = () => {
+    setForm((prev) => ({
+      ...prev,
+      variations: prev.variations.map((v) => {
+        const matches =
+          bulkAttr === "__all__" ||
+          v.attributes.some((a) => a.name === bulkAttr && a.value === bulkTerm);
+        if (!matches) return v;
+        return {
+          ...v,
+          ...(bulkPrice !== "" && { price: bulkPrice }),
+          ...(bulkDiscounted !== "" && { discountedPrice: bulkDiscounted }),
+          ...(bulkStock !== "" && { stock: bulkStock }),
+        };
+      }),
+    }));
+  };
+
+  const resetBulkForm = () => {
+    setBulkAttr("");
+    setBulkTerm("");
+    setBulkPrice("");
+    setBulkDiscounted("");
+    setBulkStock("");
+  };
+
   if (!mounted) return null;
+
+  const hasAttributes = form.attributes.length > 0;
+  const hasTerms = form.attributes.some((a) => a.terms.length > 0);
 
   return (
     <div className="px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-slate-900">Products</h1>
-          <button
-            onClick={() => {
-              resetForm();
-              setShowForm(true);
-            }}
-            className="rounded-lg bg-amber-600 px-4 py-2 font-medium text-white transition hover:bg-amber-500"
-          >
-            Add Product
-          </button>
-        </div>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-slate-900">Products</h1>
+        <button
+          onClick={() => {
+            resetForm();
+            setShowForm(true);
+          }}
+          className="rounded-lg bg-amber-600 px-4 py-2 font-medium text-white transition hover:bg-amber-500"
+        >
+          Add Product
+        </button>
+      </div>
 
-        {showForm && (
-          <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-semibold text-slate-900">
-              {editing ? "Edit Product" : "Add Product"}
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-600">Name *</label>
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-600">Price *</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={form.price}
-                    onChange={(e) => setForm({ ...form, price: e.target.value })}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    required
-                  />
-                </div>
+      {showForm && (
+        <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-lg font-semibold text-slate-900">
+            {editing ? "Edit Product" : "Add Product"}
+          </h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Basic fields */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-600">Name *</label>
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  required
+                />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Description</label>
-                <textarea
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  rows={2}
+                <label className="mb-1 block text-sm font-medium text-slate-600">Price *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.price}
+                  onChange={(e) => setForm({ ...form, price: e.target.value })}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-600">
+                  Discounted price
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.discountedPrice}
+                  onChange={(e) => setForm({ ...form, discountedPrice: e.target.value })}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  placeholder="Optional"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-600">Description</label>
+              <textarea
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                rows={2}
+                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-600">Category</label>
+                <select
+                  value={form.category}
+                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                >
+                  <option value="">Select category</option>
+                  {categories.map((cat) => (
+                    <option key={cat._id} value={cat.name}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-600">Stock</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.stock}
+                  onChange={(e) => setForm({ ...form, stock: e.target.value })}
                   className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                 />
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-600">Category</label>
-                  <select
-                    value={form.category}
-                    onChange={(e) => setForm({ ...form, category: e.target.value })}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                  >
-                    <option value="">Select category</option>
-                    {categories.map((cat) => (
-                      <option key={cat._id} value={cat.name}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-600">Stock</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.stock}
-                    onChange={(e) => setForm({ ...form, stock: e.target.value })}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Image</label>
-                <div className="flex items-center gap-2">
+            </div>
+
+            {/* Main image */}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-600">Main image</label>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openMediaPicker({ type: "product-main" })}
+                  className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  {form.image ? (
+                    <>
+                      <img src={getMediaUrl(form.image)} alt="" className="h-10 w-10 rounded object-cover" />
+                      Change image
+                    </>
+                  ) : (
+                    "Choose from media"
+                  )}
+                </button>
+                {form.image && (
                   <button
                     type="button"
-                    onClick={() => setShowMediaPicker(true)}
-                    className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    onClick={() => setForm({ ...form, image: "" })}
+                    className="text-sm text-red-600 hover:underline"
                   >
-                    {form.image ? (
-                      <>
-                        <img src={form.image} alt="" className="h-10 w-10 rounded object-cover" />
-                        Change image
-                      </>
-                    ) : (
-                      "Choose from media"
-                    )}
+                    Remove
                   </button>
-                  {form.image && (
+                )}
+              </div>
+            </div>
+
+            {/* Additional images */}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-600">
+                Additional images (up to 5)
+              </label>
+              <div className="flex flex-wrap gap-3">
+                    {form.images.map((img, idx) => (
+                  <div key={idx} className="flex flex-col items-center gap-1">
+                    <div className="h-16 w-16 overflow-hidden rounded border border-slate-300 bg-slate-50">
+                          <img src={getMediaUrl(img)} alt={`Image ${idx + 1}`} className="h-full w-full object-cover" />
+                    </div>
                     <button
                       type="button"
-                      onClick={() => setForm({ ...form, image: "" })}
-                      className="text-sm text-red-600 hover:underline"
+                      onClick={() =>
+                        setForm({ ...form, images: form.images.filter((_, i) => i !== idx) })
+                      }
+                      className="text-xs text-red-600 hover:underline"
                     >
                       Remove
                     </button>
-                  )}
+                  </div>
+                ))}
+                {form.images.length < 5 && (
+                  <button
+                    type="button"
+                    onClick={() => openMediaPicker({ type: "product-gallery" })}
+                    className="flex h-16 w-16 items-center justify-center rounded border border-dashed border-slate-300 text-xs text-slate-500 hover:border-amber-400 hover:text-amber-600"
+                  >
+                    + Add
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* ========== STEP 1: ATTRIBUTES ========== */}
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <h3 className="mb-1 text-sm font-semibold text-slate-700">Step 1: Attributes</h3>
+              <p className="mb-3 text-xs text-slate-500">
+                Define attribute types for this product (e.g. Size, Color, Material).
+              </p>
+              {form.attributes.length > 0 && (
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {form.attributes.map((attr, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800"
+                    >
+                      {attr.name}
+                      <button
+                        type="button"
+                        onClick={() => removeAttribute(idx)}
+                        className="text-amber-600 hover:text-red-600"
+                      >
+                        &times;
+                      </button>
+                    </span>
+                  ))}
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  checked={form.isActive}
-                  onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-                  className="h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
-                />
-                <label htmlFor="isActive" className="text-sm text-slate-600">
-                  Active
-                </label>
-              </div>
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              )}
               <div className="flex gap-2">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="rounded-lg bg-amber-600 px-4 py-2 font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
-                >
-                  {submitting ? "Saving..." : editing ? "Update" : "Create"}
-                </button>
+                <input
+                  type="text"
+                  value={newAttrName}
+                  onChange={(e) => setNewAttrName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addAttribute();
+                    }
+                  }}
+                  placeholder="Attribute name (e.g. Size)"
+                  className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
                 <button
                   type="button"
-                  onClick={resetForm}
-                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-100"
+                  onClick={addAttribute}
+                  className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-500"
                 >
-                  Cancel
+                  Add
                 </button>
               </div>
-            </form>
-          </div>
-        )}
+              {/* Presets */}
+              {ATTRIBUTE_PRESETS.filter(
+                (p) => !form.attributes.some((a) => a.name.toLowerCase() === p.name.toLowerCase())
+              ).length > 0 && (
+                <div className="mt-3 border-t border-slate-200 pt-3">
+                  <span className="mb-1.5 block text-[11px] font-medium text-slate-400 uppercase">
+                    Quick add presets
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {ATTRIBUTE_PRESETS.filter(
+                      (p) =>
+                        !form.attributes.some(
+                          (a) => a.name.toLowerCase() === p.name.toLowerCase()
+                        )
+                    ).map((preset) => (
+                      <button
+                        key={preset.name}
+                        type="button"
+                        onClick={() => addPresetAttribute(preset)}
+                        className="rounded-full border border-dashed border-slate-300 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 transition hover:border-amber-400 hover:bg-amber-50 hover:text-amber-700"
+                      >
+                        + {preset.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
-        <MediaPickerModal
-          open={showMediaPicker}
-          onClose={() => setShowMediaPicker(false)}
-          onSelect={(url) => setForm((f) => ({ ...f, image: url }))}
-          title="Select product image"
-          type="image"
-        />
+            {/* ========== STEP 2: TERMS ========== */}
+            {hasAttributes && (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <h3 className="mb-1 text-sm font-semibold text-slate-700">Step 2: Terms</h3>
+                <p className="mb-3 text-xs text-slate-500">
+                  Add values for each attribute (e.g. S, M, L, XL for Size).
+                </p>
+                <div className="space-y-3">
+                  {form.attributes.map((attr, attrIdx) => (
+                    <div key={attrIdx}>
+                      <label className="mb-1 block text-xs font-medium text-slate-600">
+                        {attr.name}
+                      </label>
+                      {attr.terms.length > 0 && (
+                        <div className="mb-2 flex flex-wrap gap-1.5">
+                          {attr.terms.map((term, termIdx) => (
+                            <span
+                              key={termIdx}
+                              className="inline-flex items-center gap-1 rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-medium text-slate-700"
+                            >
+                              {term}
+                              <button
+                                type="button"
+                                onClick={() => removeTerm(attrIdx, termIdx)}
+                                className="text-slate-400 hover:text-red-600"
+                              >
+                                &times;
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newTermInputs[attrIdx] || ""}
+                          onChange={(e) =>
+                            setNewTermInputs((prev) => ({ ...prev, [attrIdx]: e.target.value }))
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              addTerm(attrIdx);
+                            }
+                          }}
+                          placeholder={`Add ${attr.name} value...`}
+                          className="flex-1 rounded border border-slate-300 bg-white px-2.5 py-1 text-xs text-slate-900 focus:border-amber-500 focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => addTerm(attrIdx)}
+                          className="rounded bg-slate-700 px-2.5 py-1 text-xs font-medium text-white hover:bg-slate-600"
+                        >
+                          Add
+                        </button>
+                      </div>
+                      {/* Preset term suggestions */}
+                      {(() => {
+                        const preset = ATTRIBUTE_PRESETS.find(
+                          (p) => p.name.toLowerCase() === attr.name.toLowerCase()
+                        );
+                        if (!preset) return null;
+                        const suggestions = preset.terms.filter(
+                          (t) =>
+                            !attr.terms.some(
+                              (existing) => existing.toLowerCase() === t.toLowerCase()
+                            )
+                        );
+                        if (suggestions.length === 0) return null;
+                        return (
+                          <div className="mt-1.5 flex flex-wrap gap-1">
+                            {suggestions.map((term) => (
+                              <button
+                                key={term}
+                                type="button"
+                                onClick={() =>
+                                  setForm((prev) => {
+                                    const attrs = [...prev.attributes];
+                                    if (
+                                      attrs[attrIdx].terms.some(
+                                        (t) => t.toLowerCase() === term.toLowerCase()
+                                      )
+                                    )
+                                      return prev;
+                                    attrs[attrIdx] = {
+                                      ...attrs[attrIdx],
+                                      terms: [...attrs[attrIdx].terms, term],
+                                    };
+                                    return { ...prev, attributes: attrs };
+                                  })
+                                }
+                                className="rounded-full border border-dashed border-slate-300 px-2 py-0.5 text-[10px] text-slate-500 transition hover:border-amber-400 hover:bg-amber-50 hover:text-amber-700"
+                              >
+                                + {term}
+                              </button>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-        {loading ? (
-          <div className="py-12 text-center text-slate-600">Loading products...</div>
-        ) : products.length === 0 ? (
-          <div className="rounded-xl border border-slate-200 bg-white p-12 text-center text-slate-500">
-            No products yet. Click &quot;Add Product&quot; to create one.
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">Category</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">Price</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">Stock</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">Status</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium uppercase text-slate-500">Actions</th>
+            {/* ========== STEP 3: VARIATIONS ========== */}
+            {hasTerms && (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <h3 className="mb-1 text-sm font-semibold text-slate-700">Step 3: Variations</h3>
+                <p className="mb-3 text-xs text-slate-500">
+                  Create variations by picking terms. Each variation has its own pricing, stock, and
+                  images.
+                </p>
+                <div className="mb-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={addVariation}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    + Add Variation
+                  </button>
+                  <button
+                    type="button"
+                    onClick={generateAllCombinations}
+                    className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-500"
+                  >
+                    Generate All Combinations
+                  </button>
+                </div>
+                {/* Bulk Set Pricing */}
+                {form.variations.length > 0 && (
+                  <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                    <h4 className="mb-2 text-xs font-semibold text-amber-800">
+                      Bulk Set Pricing
+                    </h4>
+                    <div className="grid gap-2 sm:grid-cols-6">
+                      <div>
+                        <label className="mb-0.5 block text-[10px] font-medium text-amber-700">
+                          Attribute
+                        </label>
+                        <select
+                          value={bulkAttr}
+                          onChange={(e) => {
+                            setBulkAttr(e.target.value);
+                            setBulkTerm("");
+                          }}
+                          className="w-full rounded border border-amber-300 bg-white px-2 py-1 text-xs text-slate-900 focus:border-amber-500 focus:outline-none"
+                        >
+                          <option value="">Select...</option>
+                          <option value="__all__">All Variations</option>
+                          {form.attributes.map((attr) => (
+                            <option key={attr.name} value={attr.name}>
+                              {attr.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="mb-0.5 block text-[10px] font-medium text-amber-700">
+                          Term
+                        </label>
+                        <select
+                          value={bulkTerm}
+                          onChange={(e) => setBulkTerm(e.target.value)}
+                          disabled={!bulkAttr || bulkAttr === "__all__"}
+                          className="w-full rounded border border-amber-300 bg-white px-2 py-1 text-xs text-slate-900 focus:border-amber-500 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                        >
+                          <option value="">
+                            {bulkAttr === "__all__" ? "N/A" : "Select..."}
+                          </option>
+                          {bulkTermOptions.map((t) => (
+                            <option key={t} value={t}>
+                              {t}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="mb-0.5 block text-[10px] font-medium text-amber-700">
+                          Price
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={bulkPrice}
+                          onChange={(e) => setBulkPrice(e.target.value)}
+                          placeholder="Price"
+                          className="w-full rounded border border-amber-300 bg-white px-2 py-1 text-xs text-slate-900 focus:border-amber-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-0.5 block text-[10px] font-medium text-amber-700">
+                          Discounted
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={bulkDiscounted}
+                          onChange={(e) => setBulkDiscounted(e.target.value)}
+                          placeholder="Optional"
+                          className="w-full rounded border border-amber-300 bg-white px-2 py-1 text-xs text-slate-900 focus:border-amber-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-0.5 block text-[10px] font-medium text-amber-700">
+                          Stock
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={bulkStock}
+                          onChange={(e) => setBulkStock(e.target.value)}
+                          placeholder="Stock"
+                          className="w-full rounded border border-amber-300 bg-white px-2 py-1 text-xs text-slate-900 focus:border-amber-500 focus:outline-none"
+                        />
+                      </div>
+                      <div className="flex items-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!bulkAttr) return;
+                            if (bulkAttr !== "__all__" && !bulkTerm) return;
+                            if (!bulkPrice && !bulkDiscounted && !bulkStock) return;
+                            applyBulkPricing();
+                            resetBulkForm();
+                          }}
+                          disabled={
+                            !bulkAttr ||
+                            (bulkAttr !== "__all__" && !bulkTerm) ||
+                            (!bulkPrice && !bulkDiscounted && !bulkStock)
+                          }
+                          className="rounded bg-amber-600 px-3 py-1 text-xs font-medium text-white transition hover:bg-amber-500 disabled:opacity-40"
+                        >
+                          Apply
+                        </button>
+                        <button
+                          type="button"
+                          onClick={resetBulkForm}
+                          className="rounded border border-amber-300 bg-white px-2 py-1 text-xs text-amber-700 transition hover:bg-amber-100"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+                    <p className="mt-1.5 text-[10px] text-amber-600">
+                      Select &quot;All Variations&quot; to set the same price for every variation, or pick a
+                      specific attribute + term (e.g. Color = Red) to update only matching ones. Leave
+                      fields empty to skip them.
+                    </p>
+                  </div>
+                )}
+
+                {form.variations.length === 0 ? (
+                  <p className="text-xs text-slate-500">No variations yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {form.variations.map((v, idx) => {
+                      const varName =
+                        v.attributes
+                          .map((a) => a.value)
+                          .filter(Boolean)
+                          .join(" / ") || `Variation ${idx + 1}`;
+                      return (
+                        <div
+                          key={idx}
+                          className="rounded-lg border border-slate-200 bg-white p-3"
+                        >
+                          {/* Header */}
+                          <div className="mb-2 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={v.isActive}
+                                onChange={(e) =>
+                                  setForm((prev) => {
+                                    const next = [...prev.variations];
+                                    next[idx] = { ...next[idx], isActive: e.target.checked };
+                                    return { ...prev, variations: next };
+                                  })
+                                }
+                                className="h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+                              />
+                              <span className="text-xs font-semibold text-slate-800">
+                                {varName}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setForm((prev) => ({
+                                  ...prev,
+                                  variations: prev.variations.filter((_, i) => i !== idx),
+                                }))
+                              }
+                              className="text-xs text-red-600 hover:underline"
+                            >
+                              Remove
+                            </button>
+                          </div>
+
+                          {/* Attribute selectors */}
+                          <div className="mb-2 grid gap-2 sm:grid-cols-2">
+                            {form.attributes.map((attr) => (
+                              <div key={attr.name}>
+                                <label className="mb-0.5 block text-[11px] font-medium text-slate-500">
+                                  {attr.name}
+                                </label>
+                                <select
+                                  value={
+                                    v.attributes.find((a) => a.name === attr.name)?.value || ""
+                                  }
+                                  onChange={(e) =>
+                                    setForm((prev) => {
+                                      const next = [...prev.variations];
+                                      const cur = next[idx];
+                                      const attrs = cur.attributes.filter(
+                                        (a) => a.name !== attr.name
+                                      );
+                                      if (e.target.value)
+                                        attrs.push({ name: attr.name, value: e.target.value });
+                                      next[idx] = { ...cur, attributes: attrs };
+                                      return { ...prev, variations: next };
+                                    })
+                                  }
+                                  className="w-full rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900 focus:border-amber-500 focus:outline-none"
+                                >
+                                  <option value="">Select {attr.name}</option>
+                                  {attr.terms.map((term) => (
+                                    <option key={term} value={term}>
+                                      {term}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Price / stock */}
+                          <div className="grid gap-2 sm:grid-cols-4">
+                            <div>
+                              <label className="mb-0.5 block text-[11px] font-medium text-slate-500">
+                                Price *
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={v.price}
+                                onChange={(e) =>
+                                  setForm((prev) => {
+                                    const next = [...prev.variations];
+                                    next[idx] = { ...next[idx], price: e.target.value };
+                                    return { ...prev, variations: next };
+                                  })
+                                }
+                                className="w-full rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900 focus:border-amber-500 focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-0.5 block text-[11px] font-medium text-slate-500">
+                                Discounted
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={v.discountedPrice}
+                                onChange={(e) =>
+                                  setForm((prev) => {
+                                    const next = [...prev.variations];
+                                    next[idx] = { ...next[idx], discountedPrice: e.target.value };
+                                    return { ...prev, variations: next };
+                                  })
+                                }
+                                className="w-full rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900 focus:border-amber-500 focus:outline-none"
+                                placeholder="Optional"
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-0.5 block text-[11px] font-medium text-slate-500">
+                                Stock
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={v.stock}
+                                onChange={(e) =>
+                                  setForm((prev) => {
+                                    const next = [...prev.variations];
+                                    next[idx] = { ...next[idx], stock: e.target.value };
+                                    return { ...prev, variations: next };
+                                  })
+                                }
+                                className="w-full rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900 focus:border-amber-500 focus:outline-none"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Images */}
+                          <div className="mt-2 grid gap-2 sm:grid-cols-[auto,1fr]">
+                            <div>
+                              <label className="mb-0.5 block text-[11px] font-medium text-slate-500">
+                                Image
+                              </label>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    openMediaPicker({ type: "variation-main", index: idx })
+                                  }
+                                  className="flex items-center gap-1.5 rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
+                                >
+                                  {v.image ? (
+                                    <>
+                                      <img
+                                        src={v.image}
+                                        alt=""
+                                        className="h-6 w-6 rounded object-cover"
+                                      />
+                                      Change
+                                    </>
+                                  ) : (
+                                    "Choose"
+                                  )}
+                                </button>
+                                {v.image && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setForm((prev) => {
+                                        const next = [...prev.variations];
+                                        next[idx] = { ...next[idx], image: "" };
+                                        return { ...prev, variations: next };
+                                      })
+                                    }
+                                    className="text-[10px] text-red-600 hover:underline"
+                                  >
+                                    Remove
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                            <div>
+                              <label className="mb-0.5 block text-[11px] font-medium text-slate-500">
+                                Gallery (up to 5)
+                              </label>
+                              <div className="flex flex-wrap gap-1.5">
+                                {v.images.map((img, imgIdx) => (
+                                  <div key={imgIdx} className="flex flex-col items-center gap-0.5">
+                                    <div className="h-8 w-8 overflow-hidden rounded border border-slate-300 bg-slate-50">
+                                      <img
+                                        src={img}
+                                        alt=""
+                                        className="h-full w-full object-cover"
+                                      />
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setForm((prev) => {
+                                          const next = [...prev.variations];
+                                          next[idx] = {
+                                            ...next[idx],
+                                            images: next[idx].images.filter(
+                                              (_, i) => i !== imgIdx
+                                            ),
+                                          };
+                                          return { ...prev, variations: next };
+                                        })
+                                      }
+                                      className="text-[9px] text-red-600 hover:underline"
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                ))}
+                                {v.images.length < 5 && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      openMediaPicker({ type: "variation-gallery", index: idx })
+                                    }
+                                    className="flex h-8 w-8 items-center justify-center rounded border border-dashed border-slate-300 text-[10px] text-slate-500 hover:border-amber-400 hover:text-amber-600"
+                                  >
+                                    +
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="isActive"
+                checked={form.isActive}
+                onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+                className="h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+              />
+              <label htmlFor="isActive" className="text-sm text-slate-600">
+                Active
+              </label>
+            </div>
+
+            {error && <p className="text-sm text-red-600">{error}</p>}
+
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="rounded-lg bg-amber-600 px-4 py-2 font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
+              >
+                {submitting ? "Saving..." : editing ? "Update" : "Create"}
+              </button>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <MediaPickerModal
+        open={showMediaPicker}
+        onClose={() => {
+          setShowMediaPicker(false);
+          setMediaPickerCtx(null);
+        }}
+        onSelect={handleMediaSelect}
+        title="Select product image"
+        type="image"
+      />
+
+      {loading ? (
+        <div className="py-12 text-center text-slate-600">Loading products...</div>
+      ) : products.length === 0 ? (
+        <div className="rounded-xl border border-slate-200 bg-white p-12 text-center text-slate-500">
+          No products yet. Click &quot;Add Product&quot; to create one.
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">Category</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">Price</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">Stock</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">Status</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase text-slate-500">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 bg-white">
+              {products.map((product) => (
+                <tr key={product._id}>
+                  <td className="whitespace-nowrap px-6 py-4 font-medium text-slate-900">
+                    {product.name}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-slate-600">
+                    {product.category || "—"}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-slate-600">
+                    ${product.price.toFixed(2)}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-slate-600">{product.stock}</td>
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <span
+                      className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                        product.isActive
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-slate-100 text-slate-800"
+                      }`}
+                    >
+                      {product.isActive ? "Active" : "Inactive"}
+                    </span>
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-right">
+                    <button
+                      onClick={() => handleEdit(product)}
+                      className="mr-2 text-amber-600 hover:underline"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(product._id)}
+                      className="text-red-600 hover:underline"
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 bg-white">
-                {products.map((product) => (
-                  <tr key={product._id}>
-                    <td className="whitespace-nowrap px-6 py-4 font-medium text-slate-900">
-                      {product.name}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-slate-600">
-                      {product.category || "—"}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-slate-600">
-                      ${product.price.toFixed(2)}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-slate-600">
-                      {product.stock}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                          product.isActive ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-800"
-                        }`}
-                      >
-                        {product.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-right">
-                      <button
-                        onClick={() => handleEdit(product)}
-                        className="mr-2 text-amber-600 hover:underline"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(product._id)}
-                        className="text-red-600 hover:underline"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

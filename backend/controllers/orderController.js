@@ -2,6 +2,7 @@ import Order from '../models/Order.js';
 import Cart from '../models/Cart.js';
 import User from '../models/User.js';
 import Settings from '../models/Settings.js';
+import Coupon from '../models/Coupon.js';
 
 const getEffectiveCheckoutConfig = async () => {
   const settings = await Settings.getSettings();
@@ -36,7 +37,7 @@ const getEffectivePaymentConfig = async () => {
 
 export const placeOrder = async (req, res) => {
   try {
-    const { shippingAddress, paymentMethod: requestedMethod } = req.body;
+    const { shippingAddress, paymentMethod: requestedMethod, couponCode: rawCouponCode } = req.body;
     const { name, address, city, state, zip, phone, customFields } = shippingAddress || {};
 
     const checkout = await getEffectiveCheckoutConfig();
@@ -100,6 +101,39 @@ export const placeOrder = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No valid items in cart' });
     }
 
+    let discountAmount = 0;
+    let appliedCouponCode = null;
+
+    if (rawCouponCode && typeof rawCouponCode === 'string' && rawCouponCode.trim()) {
+      const settings = await Settings.getSettings();
+      if (settings.couponEnabled) {
+        const coupon = await Coupon.findOne({ code: rawCouponCode.trim().toUpperCase(), isActive: true });
+        if (coupon) {
+          const now = new Date();
+          const notStarted = coupon.startDate && now < coupon.startDate;
+          const expired = coupon.endDate && now > coupon.endDate;
+          const limitReached = coupon.usageLimit > 0 && coupon.usedCount >= coupon.usageLimit;
+          const belowMin = coupon.minOrderAmount > 0 && total < coupon.minOrderAmount;
+
+          if (!notStarted && !expired && !limitReached && !belowMin) {
+            if (coupon.discountType === 'percentage') {
+              discountAmount = (total * coupon.discountValue) / 100;
+              if (coupon.maxDiscount > 0 && discountAmount > coupon.maxDiscount) {
+                discountAmount = coupon.maxDiscount;
+              }
+            } else {
+              discountAmount = coupon.discountValue;
+            }
+            discountAmount = Math.min(Math.round(discountAmount * 100) / 100, total);
+            appliedCouponCode = coupon.code;
+            await Coupon.findByIdAndUpdate(coupon._id, { $inc: { usedCount: 1 } });
+          }
+        }
+      }
+    }
+
+    const finalTotal = Math.round((total - discountAmount) * 100) / 100;
+
     const normalizedCustomFields = Array.isArray(customFields)
       ? customFields
           .filter((f) => f && (f.key || f.label) && f.value)
@@ -113,7 +147,9 @@ export const placeOrder = async (req, res) => {
     const order = await Order.create({
       userId: req.user._id,
       items: orderItems,
-      total,
+      total: finalTotal,
+      ...(appliedCouponCode && { couponCode: appliedCouponCode }),
+      ...(discountAmount > 0 && { discountAmount }),
       shippingAddress: {
         name: name.trim(),
         address: address.trim(),

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { mediaApi, type MediaItem } from "@/lib/api";
+import { mediaApi, getMediaUrl, type MediaItem } from "@/lib/api";
 
 function formatSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -71,7 +71,7 @@ export default function AdminMediaPage() {
   };
 
   const copyUrl = (url: string) => {
-    navigator.clipboard.writeText(url);
+    navigator.clipboard.writeText(getMediaUrl(url) || url);
     setCopyFeedback(true);
     setTimeout(() => setCopyFeedback(false), 1500);
   };
@@ -144,13 +144,13 @@ export default function AdminMediaPage() {
                 >
                   {isImage(item.mimeType) ? (
                     <img
-                      src={item.url}
+                      src={getMediaUrl(item.url)}
                       alt={item.originalName}
                       className="h-full w-full object-contain"
                     />
                   ) : isVideo(item.mimeType) ? (
                     <video
-                      src={item.url}
+                      src={getMediaUrl(item.url)}
                       className="h-full w-full object-contain"
                       muted
                       playsInline
@@ -232,12 +232,12 @@ export default function AdminMediaPage() {
         >
           <div className="relative max-h-full max-w-full" onClick={(e) => e.stopPropagation()}>
             {selectedUrl.match(/\.(jpg|jpeg|png|gif|webp|avif)(\?|$)/i) ? (
-              <img src={selectedUrl} alt="" className="max-h-[90vh] max-w-full object-contain" />
+              <img src={getMediaUrl(selectedUrl)} alt="" className="max-h-[90vh] max-w-full object-contain" />
             ) : selectedUrl.match(/\.(mp4|webm|ogg)(\?|$)/i) ? (
-              <video src={selectedUrl} controls autoPlay className="max-h-[90vh] max-w-full" />
+              <video src={getMediaUrl(selectedUrl)} controls autoPlay className="max-h-[90vh] max-w-full" />
             ) : (
               <a
-                href={selectedUrl}
+                href={getMediaUrl(selectedUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block rounded-lg bg-white px-6 py-4 text-amber-600 hover:underline"

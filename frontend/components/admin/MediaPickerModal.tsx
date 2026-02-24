@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { mediaApi, type MediaItem } from "@/lib/api";
+import { mediaApi, getMediaUrl, type MediaItem } from "@/lib/api";
 
 type MediaType = "image" | "video" | "document" | "all";
 
@@ -169,7 +169,7 @@ export default function MediaPickerModal({
                   >
                     {item.mimeType.startsWith("image/") ? (
                       <img
-                        src={item.url}
+                        src={getMediaUrl(item.url)}
                         alt={item.originalName}
                         className="h-full w-full object-contain"
                       />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { settingsApi, type HeaderSettings, type HeaderNavLink } from "@/lib/api";
+import { settingsApi, getMediaUrl, type HeaderSettings, type HeaderNavLink } from "@/lib/api";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
 
 const defaultNavLink: HeaderNavLink = { label: "", href: "" };
@@ -116,7 +116,7 @@ export default function AdminHeaderSettingsPage() {
             <div className="flex items-center gap-4">
               {form.logoImageUrl ? (
                 <div className="h-16 w-32 flex-shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
-                  <img src={form.logoImageUrl} alt="Logo" className="h-full w-full object-contain" />
+                  <img src={getMediaUrl(form.logoImageUrl)} alt="Logo" className="h-full w-full object-contain" />
                 </div>
               ) : null}
               <div className="flex gap-2">

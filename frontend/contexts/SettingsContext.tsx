@@ -69,6 +69,7 @@ type SettingsContextType = {
   footerSettings: FooterSettings;
   checkoutSettings: CheckoutSettings;
   paymentSettings: PaymentSettings;
+  couponEnabled: boolean;
   currency: string;
   paymentMethods: { id: string; label: string }[];
   formatCurrency: (amount: number) => string;
@@ -112,6 +113,7 @@ const SettingsContext = createContext<SettingsContextType>({
   footerSettings: defaultFooterSettings,
   checkoutSettings: defaultCheckoutSettings,
   paymentSettings: defaultPaymentSettings,
+  couponEnabled: false,
   currency: "INR",
   paymentMethods: [{ id: "cod", label: "Cash on Delivery (COD)" }],
   formatCurrency: (amount: number) =>
@@ -134,6 +136,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [footerSettings, setFooterSettings] = useState<FooterSettings>(defaultFooterSettings);
   const [checkoutSettings, setCheckoutSettings] = useState<CheckoutSettings>(defaultCheckoutSettings);
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(defaultPaymentSettings);
+  const [couponEnabled, setCouponEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const refresh = async () => {
@@ -146,8 +149,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
     if (publicData?.general) {
       setSettings({ ...defaultSettings, ...publicData.general });
+      setCouponEnabled(!!publicData.general.couponEnabled);
     } else {
       setSettings(defaultSettings);
+      setCouponEnabled(false);
     }
 
     const homeData = (homePageRes.data?.data || null) as HomePageSettings | null;
@@ -280,6 +285,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         footerSettings: footerSettings ?? defaultFooterSettings,
         checkoutSettings,
         paymentSettings: paymentSettings ?? defaultPaymentSettings,
+        couponEnabled,
         currency,
         paymentMethods,
         formatCurrency,

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Category, HomeCategorySettings } from "@/lib/api";
+import { getMediaUrl } from "@/lib/api";
 
 const CATEGORY_ICON = "M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z";
 
@@ -52,7 +53,7 @@ export function CategoriesSection({ categories, homeCategorySettings }: Props) {
               >
                 {showImages && cat.image ? (
                   <div className="mb-4 h-20 w-20 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
-                    <img src={cat.image} alt={cat.name} className="h-full w-full object-cover" />
+                    <img src={getMediaUrl(cat.image)} alt={cat.name} className="h-full w-full object-cover" />
                   </div>
                 ) : (
                   <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 transition group-hover:bg-emerald-200">

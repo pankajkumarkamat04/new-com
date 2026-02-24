@@ -6,6 +6,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useSettings } from "@/contexts/SettingsContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { getMediaUrl } from "@/lib/api";
 
 export default function CartPage() {
   const { items, loading, updateQuantity, removeFromCart } = useCart();
@@ -55,7 +56,7 @@ export default function CartPage() {
                     >
                       <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
                         {image ? (
-                          <img src={image} alt={name} className="h-full w-full object-cover" />
+                          <img src={getMediaUrl(image)} alt={name} className="h-full w-full object-cover" />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-slate-400">
                             <svg className="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">

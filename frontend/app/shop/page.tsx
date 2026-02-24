@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { productApi, categoryApi, type Product, type Category } from "@/lib/api";
+import { productApi, categoryApi, getMediaUrl, type Product, type Category } from "@/lib/api";
 import { useSettings } from "@/contexts/SettingsContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -69,7 +69,7 @@ function ShopContent() {
                 >
                   {cat.image ? (
                     <span className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-md border border-slate-200">
-                      <img src={cat.image} alt={cat.name} className="h-full w-full object-cover" />
+                      <img src={getMediaUrl(cat.image)} alt={cat.name} className="h-full w-full object-cover" />
                     </span>
                   ) : null}
                   {cat.name}
@@ -123,9 +123,9 @@ function ShopContent() {
                 href={`/product/${product._id}`}
                 className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-lg"
               >
-                {product.image ? (
+                {product.image || (product.images && product.images.length > 0) ? (
                   <img
-                    src={product.image}
+                    src={product.image || (product.images && product.images[0]) || ""}
                     alt={product.name}
                     className="h-48 w-full object-cover transition group-hover:scale-105"
                   />
@@ -143,7 +143,18 @@ function ShopContent() {
                     <p className="mt-2 line-clamp-2 text-sm text-slate-600">{product.description}</p>
                   )}
                   <div className="mt-4 flex items-center justify-between">
-                    <p className="text-lg font-bold text-slate-900">{formatCurrency(product.price)}</p>
+                    <p className="text-lg font-bold text-slate-900">
+                      {product.discountedPrice && product.discountedPrice < product.price ? (
+                        <>
+                          <span className="mr-2 text-sm text-slate-400 line-through">
+                            {formatCurrency(product.price)}
+                          </span>
+                          <span>{formatCurrency(product.discountedPrice)}</span>
+                        </>
+                      ) : (
+                        formatCurrency(product.price)
+                      )}
+                    </p>
                     <span className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white group-hover:bg-emerald-500">
                       View Details
                     </span>

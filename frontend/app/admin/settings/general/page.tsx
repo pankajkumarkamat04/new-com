@@ -14,6 +14,7 @@ const defaultForm: Partial<Settings> = {
   instagramUrl: "",
   twitterUrl: "",
   linkedinUrl: "",
+  couponEnabled: false,
 };
 
 export default function AdminGeneralSettingsPage() {
@@ -43,6 +44,7 @@ export default function AdminGeneralSettingsPage() {
           instagramUrl: res.data.data.instagramUrl || "",
           twitterUrl: res.data.data.twitterUrl || "",
           linkedinUrl: res.data.data.linkedinUrl || "",
+          couponEnabled: !!res.data.data.couponEnabled,
         });
       }
     });
@@ -211,6 +213,31 @@ export default function AdminGeneralSettingsPage() {
                   className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                 />
               </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-lg font-semibold text-slate-900">Features</h2>
+            <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <div>
+                <p className="text-sm font-medium text-slate-900">Coupon Management</p>
+                <p className="text-xs text-slate-500">
+                  Enable coupon codes for discounts at checkout. When enabled, the Coupons page
+                  appears in admin and customers can apply coupon codes.
+                </p>
+              </div>
+              <label className="relative inline-flex cursor-pointer items-center">
+                <input
+                  type="checkbox"
+                  checked={!!form.couponEnabled}
+                  onChange={(e) => {
+                    setForm((prev) => ({ ...prev, couponEnabled: e.target.checked }));
+                    setMessage(null);
+                  }}
+                  className="peer sr-only"
+                />
+                <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-600 peer-checked:after:translate-x-full" />
+              </label>
             </div>
           </div>
 

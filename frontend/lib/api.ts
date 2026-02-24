@@ -5,6 +5,32 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ||
   (process.env.NODE_ENV === "development" ? "http://localhost:5000/api" : "/api");
 
+/**
+ * Resolve a media URL to a full backend URL when needed.
+ *
+ * Rules:
+ * - Absolute URLs (http/https) are returned as-is.
+ * - Relative URLs that do NOT start with `/api/` or `/uploads/` are returned as-is
+ *   (so `/logo.png` and other frontend assets keep using the frontend origin).
+ * - Relative URLs that begin with `/api/` or `/uploads/` are resolved against the
+ *   API_BASE origin when API_BASE is absolute (different backend origin).
+ */
+export function getMediaUrl(url: string | undefined | null): string {
+  if (!url || typeof url !== "string") return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const isBackendPath = url.startsWith("/api/") || url.startsWith("/uploads/");
+  if (!isBackendPath) return url;
+  if (API_BASE.startsWith("http")) {
+    try {
+      const origin = new URL(API_BASE).origin;
+      return `${origin}${url.startsWith("/") ? url : `/${url}`}`;
+    } catch {
+      return url;
+    }
+  }
+  return url;
+}
+
 export async function api<T>(
   path: string,
   options: RequestInit = {}
@@ -84,6 +110,7 @@ export type Settings = {
   instagramUrl: string;
   twitterUrl: string;
   linkedinUrl: string;
+  couponEnabled?: boolean;
 };
 
 export type HeroSlide = {
@@ -268,14 +295,35 @@ export const categoryApi = {
 };
 
 // Products
+export type ProductAttribute = {
+  name: string;
+  terms: string[];
+};
+
+export type ProductVariation = {
+  _id?: string;
+  name: string;
+  price: number;
+  discountedPrice?: number;
+  stock?: number;
+  image?: string;
+  images?: string[];
+  attributes?: { name: string; value: string }[];
+  isActive?: boolean;
+};
+
 export type Product = {
   _id: string;
   name: string;
   description?: string;
   price: number;
+  discountedPrice?: number;
   category?: string;
   stock: number;
   image?: string;
+  images?: string[];
+  attributes?: ProductAttribute[];
+  variations?: ProductVariation[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -295,9 +343,36 @@ export const productApi = {
     );
   },
   get: (id: string) => api<{ data: Product }>(`/products/${id}`),
-  create: (body: { name: string; description?: string; price: number; category?: string; stock?: number; image?: string; isActive?: boolean }) =>
+  create: (body: {
+    name: string;
+    description?: string;
+    price: number;
+    discountedPrice?: number;
+    category?: string;
+    stock?: number;
+    image?: string;
+    images?: string[];
+    attributes?: ProductAttribute[];
+    variations?: ProductVariation[];
+    isActive?: boolean;
+  }) =>
     api<{ data: Product }>('/products', { method: 'POST', body: JSON.stringify(body) }),
-  update: (id: string, body: Partial<{ name: string; description: string; price: number; category: string; stock: number; image: string; isActive: boolean }>) =>
+  update: (
+    id: string,
+    body: Partial<{
+      name: string;
+      description: string;
+      price: number;
+      discountedPrice: number;
+      category: string;
+      stock: number;
+      image: string;
+      images: string[];
+      attributes: ProductAttribute[];
+      variations: ProductVariation[];
+      isActive: boolean;
+    }>
+  ) =>
     api<{ data: Product }>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   delete: (id: string) => api(`/products/${id}`, { method: 'DELETE' }),
 };
@@ -344,6 +419,8 @@ export type Order = {
   userId: string | { _id: string; name: string; email?: string; phone?: string };
   items: OrderItem[];
   total: number;
+  couponCode?: string;
+  discountAmount?: number;
   shippingAddress: {
     name: string;
     address: string;
@@ -371,10 +448,15 @@ export const ordersApi = {
       customFields?: { key: string; label: string; value: string }[];
     };
     paymentMethod?: string;
+    couponCode?: string;
   }) =>
     api<{ data: Order }>('/orders', {
       method: 'POST',
-      body: JSON.stringify({ shippingAddress: params.shippingAddress, paymentMethod: params.paymentMethod || 'cod' }),
+      body: JSON.stringify({
+        shippingAddress: params.shippingAddress,
+        paymentMethod: params.paymentMethod || 'cod',
+        ...(params.couponCode && { couponCode: params.couponCode }),
+      }),
     }),
   getMyOrders: () => api<{ data: Order[] }>('/orders'),
   getOrder: (id: string) => api<{ data: Order }>(`/orders/${id}`),
@@ -423,6 +505,64 @@ export const usersApi = {
   update: (id: string, body: { name?: string; email?: string; phone?: string }) =>
     api<{ data: UserItem }>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   delete: (id: string) => api(`/users/${id}`, { method: 'DELETE' }),
+};
+
+// Coupons
+export type Coupon = {
+  _id: string;
+  code: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  minOrderAmount?: number;
+  maxDiscount?: number;
+  usageLimit?: number;
+  usedCount?: number;
+  startDate?: string;
+  endDate?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export const couponApi = {
+  list: (params?: { page?: number; limit?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const query = searchParams.toString();
+    return api<{ data: Coupon[]; pagination: { page: number; limit: number; total: number; pages: number } }>(
+      `/coupons${query ? `?${query}` : ''}`
+    );
+  },
+  get: (id: string) => api<{ data: Coupon }>(`/coupons/${id}`),
+  create: (body: {
+    code: string;
+    discountType: 'percentage' | 'fixed';
+    discountValue: number;
+    minOrderAmount?: number;
+    maxDiscount?: number;
+    usageLimit?: number;
+    startDate?: string;
+    endDate?: string;
+    isActive?: boolean;
+  }) => api<{ data: Coupon }>('/coupons', { method: 'POST', body: JSON.stringify(body) }),
+  update: (id: string, body: Partial<{
+    code: string;
+    discountType: 'percentage' | 'fixed';
+    discountValue: number;
+    minOrderAmount: number;
+    maxDiscount: number;
+    usageLimit: number;
+    startDate: string;
+    endDate: string;
+    isActive: boolean;
+  }>) => api<{ data: Coupon }>(`/coupons/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  delete: (id: string) => api(`/coupons/${id}`, { method: 'DELETE' }),
+  validate: (code: string, orderTotal: number) =>
+    api<{ data: { code: string; discountType: string; discountValue: number; discount: number } }>(
+      '/coupons/validate',
+      { method: 'POST', body: JSON.stringify({ code, orderTotal }) }
+    ),
 };
 
 // Media

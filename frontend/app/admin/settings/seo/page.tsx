@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { settingsApi, type SeoSettings } from "@/lib/api";
+import { settingsApi, getMediaUrl, type SeoSettings } from "@/lib/api";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
 
 const defaultForm: SeoSettings = {
@@ -182,7 +182,7 @@ export default function AdminSeoSettingsPage() {
                 <div className="flex items-center gap-3">
                   {form.ogImage ? (
                     <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-slate-200">
-                      <img src={form.ogImage} alt="OG" className="h-full w-full object-cover" />
+                      <img src={getMediaUrl(form.ogImage)} alt="OG" className="h-full w-full object-cover" />
                     </div>
                   ) : null}
                   <div className="flex gap-2">
@@ -264,7 +264,7 @@ export default function AdminSeoSettingsPage() {
                 <div className="flex items-center gap-3">
                   {form.twitterImage ? (
                     <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-slate-200">
-                      <img src={form.twitterImage} alt="X" className="h-full w-full object-cover" />
+                      <img src={getMediaUrl(form.twitterImage)} alt="X" className="h-full w-full object-cover" />
                     </div>
                   ) : null}
                   <div className="flex gap-2">

@@ -172,6 +172,10 @@ const settingsSchema = new mongoose.Schema({
     razorpay: { enabled: { type: Boolean, default: false } },
     cashfree: { enabled: { type: Boolean, default: false } },
   },
+  couponEnabled: {
+    type: Boolean,
+    default: false,
+  },
 }, {
   timestamps: true,
   collection: 'settings',

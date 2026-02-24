@@ -581,6 +581,7 @@ export const getPublicSettings = async (req, res) => {
       instagramUrl: settings.instagramUrl || '',
       twitterUrl: settings.twitterUrl || '',
       linkedinUrl: settings.linkedinUrl || '',
+      couponEnabled: !!settings.couponEnabled,
     };
 
     const seo = settings.seo || {};
@@ -665,6 +666,7 @@ export const updateSettings = async (req, res) => {
       'siteName', 'siteUrl', 'siteTagline',
       'contactEmail', 'contactPhone', 'contactAddress',
       'facebookUrl', 'instagramUrl', 'twitterUrl', 'linkedinUrl',
+      'couponEnabled',
     ];
 
     const updates = {};

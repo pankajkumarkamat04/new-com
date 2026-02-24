@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { PublicSettings } from "@/lib/api";
+import { getMediaUrl } from "@/lib/api";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -38,7 +39,7 @@ export async function HeaderSSR() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="text-2xl font-bold tracking-tight text-emerald-600">
           {logoImageUrl ? (
-            <img src={logoImageUrl} alt={siteName} className="h-10 w-auto max-w-[180px] object-contain" />
+            <img src={getMediaUrl(logoImageUrl)} alt={siteName} className="h-10 w-auto max-w-[180px] object-contain" />
           ) : (
             siteName
           )}

@@ -5,14 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
 import { useSettings } from "@/contexts/SettingsContext";
-import { ordersApi } from "@/lib/api";
+import { ordersApi, couponApi } from "@/lib/api";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, loading, refreshCart } = useCart();
-  const { checkoutSettings, paymentMethods, formatCurrency } = useSettings();
+  const { checkoutSettings, paymentMethods, formatCurrency, couponEnabled } = useSettings();
   const [mounted, setMounted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -27,10 +27,42 @@ export default function CheckoutPage() {
     phone: "",
   });
   const [customValues, setCustomValues] = useState<Record<string, string>>({});
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discount: number;
+    discountType: string;
+    discountValue: number;
+  } | null>(null);
+  const [couponError, setCouponError] = useState("");
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
 
   const isLoggedIn = mounted && typeof window !== "undefined" && !!localStorage.getItem("token") && localStorage.getItem("userType") === "user";
-  const total = items.reduce((sum, i) => sum + (i.product?.price ?? 0) * i.quantity, 0);
+  const subtotal = items.reduce((sum, i) => sum + (i.product?.price ?? 0) * i.quantity, 0);
+  const discount = appliedCoupon?.discount ?? 0;
+  const total = Math.max(0, subtotal - discount);
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
+
+  const handleApplyCoupon = async () => {
+    setCouponError("");
+    if (!couponCode.trim()) return;
+    setApplyingCoupon(true);
+    const res = await couponApi.validate(couponCode.trim(), subtotal);
+    setApplyingCoupon(false);
+    if (res.error) {
+      setCouponError(res.error);
+      setAppliedCoupon(null);
+    } else if (res.data?.data) {
+      setAppliedCoupon(res.data.data);
+      setCouponError("");
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    setCouponError("");
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -99,6 +131,7 @@ export default function CheckoutPage() {
           .filter((f) => f.value),
       },
       paymentMethod: chosen,
+      ...(appliedCoupon && { couponCode: appliedCoupon.code }),
     });
     setSubmitting(false);
     if (res.error) {
@@ -343,7 +376,83 @@ export default function CheckoutPage() {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-4 text-xl font-bold text-slate-900">Total: {formatCurrency(total)}</p>
+
+                {couponEnabled && (
+                  <div className="mt-4 border-b border-slate-200 pb-4">
+                    {appliedCoupon ? (
+                      <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                        <div>
+                          <span className="text-sm font-medium text-emerald-800">
+                            {appliedCoupon.code}
+                          </span>
+                          <span className="ml-2 text-xs text-emerald-600">
+                            {appliedCoupon.discountType === "percentage"
+                              ? `${appliedCoupon.discountValue}% off`
+                              : `${formatCurrency(appliedCoupon.discountValue)} off`}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleRemoveCoupon}
+                          className="text-xs font-medium text-red-600 hover:underline"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-slate-600">
+                          Coupon Code
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={couponCode}
+                            onChange={(e) => {
+                              setCouponCode(e.target.value.toUpperCase());
+                              setCouponError("");
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleApplyCoupon();
+                              }
+                            }}
+                            placeholder="Enter code"
+                            className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm uppercase text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleApplyCoupon}
+                            disabled={applyingCoupon || !couponCode.trim()}
+                            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50"
+                          >
+                            {applyingCoupon ? "..." : "Apply"}
+                          </button>
+                        </div>
+                        {couponError && (
+                          <p className="mt-1 text-xs text-red-600">{couponError}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="mt-4 space-y-1">
+                  <div className="flex justify-between text-sm text-slate-600">
+                    <span>Subtotal</span>
+                    <span>{formatCurrency(subtotal)}</span>
+                  </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between text-sm text-emerald-600">
+                      <span>Discount</span>
+                      <span>-{formatCurrency(discount)}</span>
+                    </div>
+                  )}
+                  <p className="pt-2 text-xl font-bold text-slate-900">
+                    Total: {formatCurrency(total)}
+                  </p>
+                </div>
               </div>
               {error && <p className="text-sm text-red-600">{error}</p>}
               <button

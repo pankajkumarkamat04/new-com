@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { categoryApi, type Category } from "@/lib/api";
+import { categoryApi, getMediaUrl, type Category } from "@/lib/api";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
 
 function getParentId(c: Category): string | null {
@@ -198,7 +198,7 @@ export default function AdminCategoriesPage() {
               <div className="flex items-center gap-3">
                 {form.image ? (
                   <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
-                    <img src={form.image} alt="Category" className="h-full w-full object-cover" />
+                    <img src={getMediaUrl(form.image)} alt="Category" className="h-full w-full object-cover" />
                   </div>
                 ) : null}
                 <div className="flex gap-2">
@@ -316,7 +316,7 @@ export default function AdminCategoriesPage() {
                   <td className="whitespace-nowrap px-6 py-4">
                     {category.image ? (
                       <div className="h-10 w-10 overflow-hidden rounded-lg border border-slate-200">
-                        <img src={category.image} alt={category.name} className="h-full w-full object-cover" />
+                        <img src={getMediaUrl(category.image)} alt={category.name} className="h-full w-full object-cover" />
                       </div>
                     ) : (
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-400">

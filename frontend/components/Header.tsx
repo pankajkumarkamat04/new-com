@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useCart } from "@/contexts/CartContext";
+import { getMediaUrl } from "@/lib/api";
 
 type HeaderProps = {
   /** When true, show logged-in UI. When false, show login/signup. When undefined, detect from localStorage. */
@@ -45,7 +46,7 @@ export default function Header({ isLoggedIn: propLoggedIn, userType: propUserTyp
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="text-2xl font-bold tracking-tight text-emerald-600">
           {headerSettings?.logoImageUrl ? (
-            <img src={headerSettings.logoImageUrl} alt={settings.siteName || "Logo"} className="h-10 w-auto max-w-[180px] object-contain" />
+            <img src={getMediaUrl(headerSettings.logoImageUrl)} alt={settings.siteName || "Logo"} className="h-10 w-auto max-w-[180px] object-contain" />
           ) : (
             settings.siteName || "ShopNow"
           )}

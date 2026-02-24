@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { settingsApi, type HeroSettings, type HeroSlide } from "@/lib/api";
+import { settingsApi, getMediaUrl, type HeroSettings, type HeroSlide } from "@/lib/api";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
 
 const defaultSlide = { image: "", title: "Discover Amazing Products", subtitle: "Shop the latest trends.", textColor: "", buttonText: "Shop Now", buttonLink: "/shop", buttonTextColor: "#ffffff", buttonBgColor: "#059669", showText: true };
@@ -265,7 +265,7 @@ export default function AdminHeroSettingsPage() {
                           >
                             {slide.image ? (
                               <>
-                                <img src={slide.image} alt="" className="h-10 w-10 rounded object-cover" />
+                                <img src={getMediaUrl(slide.image)} alt="" className="h-10 w-10 rounded object-cover" />
                                 Change image
                               </>
                             ) : (
