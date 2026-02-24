@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { settingsApi, getMediaUrl, type SeoSettings } from "@/lib/api";
+import { settingsApi, getMediaUrl } from "@/lib/api";
+import type { SeoSettings } from "@/lib/types";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
 
 const defaultForm: SeoSettings = {

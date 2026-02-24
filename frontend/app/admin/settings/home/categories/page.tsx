@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { settingsApi, type HomeCategorySettings } from "@/lib/api";
+import { settingsApi } from "@/lib/api";
+import type { HomeCategorySettings } from "@/lib/types";
 
 export default function AdminHomeCategoriesSettingsPage() {
   const [title, setTitle] = useState<string>("Shop by Category");

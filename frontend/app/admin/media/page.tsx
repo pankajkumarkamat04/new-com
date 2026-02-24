@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { mediaApi, getMediaUrl, type MediaItem } from "@/lib/api";
+import { mediaApi, getMediaUrl } from "@/lib/api";
+import type { MediaItem } from "@/lib/types";
 
 function formatSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;

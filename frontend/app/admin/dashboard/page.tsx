@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { adminApi, adminOrdersApi, usersApi, type Order } from "@/lib/api";
+import { adminApi, adminOrdersApi, usersApi } from "@/lib/api";
+import type { Order } from "@/lib/types";
 import { useSettings } from "@/contexts/SettingsContext";
 
 type ChartRange = "daily" | "monthly" | "yearly";

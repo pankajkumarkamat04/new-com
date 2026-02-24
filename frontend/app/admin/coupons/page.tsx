@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { couponApi, settingsApi, type Coupon } from "@/lib/api";
+import { couponApi, settingsApi } from "@/lib/api";
+import type { Coupon } from "@/lib/types";
 
 export default function AdminCouponsPage() {
   const [mounted, setMounted] = useState(false);

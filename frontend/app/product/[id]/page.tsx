@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { productApi, getMediaUrl, type Product } from "@/lib/api";
+import { productApi, getMediaUrl } from "@/lib/api";
+import type { Product } from "@/lib/types";
 import { useCart } from "@/contexts/CartContext";
 import { useSettings } from "@/contexts/SettingsContext";
 import Header from "@/components/Header";

@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
-import { ordersApi, type Order } from "@/lib/api";
+import { ordersApi } from "@/lib/api";
+import type { Order } from "@/lib/types";
 import { useSettings } from "@/contexts/SettingsContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";

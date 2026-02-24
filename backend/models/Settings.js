@@ -176,6 +176,10 @@ const settingsSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  blogEnabled: {
+    type: Boolean,
+    default: false,
+  },
 }, {
   timestamps: true,
   collection: 'settings',

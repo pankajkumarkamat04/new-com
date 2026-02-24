@@ -8,7 +8,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { cartApi, type CartItem } from "@/lib/api";
+import { cartApi } from "@/lib/api";
+import type { CartItem } from "@/lib/types";
 
 const CART_STORAGE_KEY = "guest_cart";
 

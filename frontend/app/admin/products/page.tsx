@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { productApi, categoryApi, getMediaUrl, type Product, type Category } from "@/lib/api";
+import { productApi, categoryApi, getMediaUrl } from "@/lib/api";
+import type { Product, Category } from "@/lib/types";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
 
 type MediaPickerContext =

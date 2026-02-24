@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { adminOrdersApi, type Order } from "@/lib/api";
+import { adminOrdersApi } from "@/lib/api";
+import type { Order } from "@/lib/types";
 import { useSettings } from "@/contexts/SettingsContext";
 
 const STATUS_OPTIONS = ["all", "pending", "confirmed", "shipped", "delivered", "cancelled"] as const;

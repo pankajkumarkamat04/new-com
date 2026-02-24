@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ordersApi, type Order } from "@/lib/api";
+import { ordersApi } from "@/lib/api";
+import type { Order } from "@/lib/types";
 import { useSettings } from "@/contexts/SettingsContext";
 
 export default function UserOrdersPage() {

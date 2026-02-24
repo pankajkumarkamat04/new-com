@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { categoryApi, getMediaUrl, type Category } from "@/lib/api";
+import { categoryApi, getMediaUrl } from "@/lib/api";
+import type { Category } from "@/lib/types";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
 
 function getParentId(c: Category): string | null {

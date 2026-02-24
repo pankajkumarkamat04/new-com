@@ -1,6 +1,7 @@
 "use server";
 
-import { productApi, categoryApi, settingsApi, type Product, type Category, type HomeCategorySettings } from "@/lib/api";
+import { productApi, categoryApi, settingsApi } from "@/lib/api";
+import type { Product, Category, HomeCategorySettings, PublicSettings } from "@/lib/types";
 import Hero from "@/components/home/Hero";
 import { CategoriesSection } from "@/components/home/CategoriesSection";
 import { FeaturedProductsSection } from "@/components/home/FeaturedProductsSection";
@@ -19,15 +20,16 @@ function buildHomeCategorySettings(raw?: HomeCategorySettings | null): HomeCateg
 }
 
 export default async function Home() {
-  const [productRes, categoryRes, homePageRes] = await Promise.all([
+  const [productRes, categoryRes, publicRes] = await Promise.all([
     productApi.list({ isActive: true, limit: 8 }),
     categoryApi.list({ isActive: true }),
-    settingsApi.getHomePage(),
+    settingsApi.getPublic(),
   ]);
 
   const products: Product[] = productRes.data?.data ?? [];
   const categories: Category[] = categoryRes.data?.data ?? [];
-  const rawHomeSettings = (homePageRes.data?.data?.homeCategorySettings ?? null) as HomeCategorySettings | null;
+  const publicData = (publicRes.data?.data || null) as PublicSettings | null;
+  const rawHomeSettings = (publicData?.homepage?.homeCategorySettings ?? null) as HomeCategorySettings | null;
   const homeCategorySettings = buildHomeCategorySettings(rawHomeSettings);
 
   return (

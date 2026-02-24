@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { settingsApi, type CheckoutSettings } from "@/lib/api";
+import { settingsApi } from "@/lib/api";
+import type { CheckoutSettings } from "@/lib/types";
 
 const defaultForm: CheckoutSettings = {
   name: { enabled: true, required: true, label: "Full Name" },

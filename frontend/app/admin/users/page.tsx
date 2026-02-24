@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usersApi, type UserItem } from "@/lib/api";
+import { usersApi } from "@/lib/api";
+import type { UserItem } from "@/lib/types";
 
 export default function AdminUsersPage() {
   const [mounted, setMounted] = useState(false);

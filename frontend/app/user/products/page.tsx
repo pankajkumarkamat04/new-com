@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { productApi, type Product } from "@/lib/api";
+import { productApi } from "@/lib/api";
+import type { Product } from "@/lib/types";
 
 export default function UserProductsPage() {
   const [mounted, setMounted] = useState(false);

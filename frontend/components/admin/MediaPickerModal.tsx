@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { mediaApi, getMediaUrl, type MediaItem } from "@/lib/api";
+import { mediaApi, getMediaUrl } from "@/lib/api";
+import type { MediaItem } from "@/lib/types";
 
 type MediaType = "image" | "video" | "document" | "all";
 

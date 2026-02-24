@@ -1,19 +1,19 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import {
-  settingsApi,
-  type Settings,
-  type HeroSettings,
-  type HomePageSettings,
-  type HomeCategorySettings,
-  type HeaderSettings,
-  type FooterSettings,
-  type CheckoutSettings,
-  type PaymentSettings,
-  type PublicSettings,
-  type FooterColumnType,
-} from "@/lib/api";
+import { settingsApi } from "@/lib/api";
+import type {
+  Settings,
+  HeroSettings,
+  HomePageSettings,
+  HomeCategorySettings,
+  HeaderSettings,
+  FooterSettings,
+  CheckoutSettings,
+  PaymentSettings,
+  PublicSettings,
+  FooterColumnType,
+} from "@/lib/types";
 
 const defaultHero: HeroSettings = {
   layout: 'single',
@@ -70,6 +70,7 @@ type SettingsContextType = {
   checkoutSettings: CheckoutSettings;
   paymentSettings: PaymentSettings;
   couponEnabled: boolean;
+  blogEnabled: boolean;
   currency: string;
   paymentMethods: { id: string; label: string }[];
   formatCurrency: (amount: number) => string;
@@ -114,6 +115,7 @@ const SettingsContext = createContext<SettingsContextType>({
   checkoutSettings: defaultCheckoutSettings,
   paymentSettings: defaultPaymentSettings,
   couponEnabled: false,
+  blogEnabled: false,
   currency: "INR",
   paymentMethods: [{ id: "cod", label: "Cash on Delivery (COD)" }],
   formatCurrency: (amount: number) =>
@@ -137,25 +139,24 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [checkoutSettings, setCheckoutSettings] = useState<CheckoutSettings>(defaultCheckoutSettings);
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(defaultPaymentSettings);
   const [couponEnabled, setCouponEnabled] = useState(false);
+  const [blogEnabled, setBlogEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const refresh = async () => {
-    const [publicRes, homePageRes] = await Promise.all([
-      settingsApi.getPublic(),
-      settingsApi.getHomePage(),
-    ]);
-
+    const publicRes = await settingsApi.getPublic();
     const publicData = (publicRes.data?.data || null) as PublicSettings | null;
 
     if (publicData?.general) {
       setSettings({ ...defaultSettings, ...publicData.general });
       setCouponEnabled(!!publicData.general.couponEnabled);
+      setBlogEnabled(!!publicData.general.blogEnabled);
     } else {
       setSettings(defaultSettings);
       setCouponEnabled(false);
+      setBlogEnabled(false);
     }
 
-    const homeData = (homePageRes.data?.data || null) as HomePageSettings | null;
+    const homeData = publicData?.homepage;
     if (homeData?.hero) {
       setHero({ ...defaultHero, ...homeData.hero });
     } else {
@@ -240,8 +241,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         },
         customFields: Array.isArray(checkout.customFields)
           ? checkout.customFields
-              .filter((f) => f && (f.key || f.label))
-              .map((f) => ({
+              .filter((f: any) => f && (f.key || f.label))
+              .map((f: any) => ({
                 key: f.key || f.label || "",
                 label: f.label || f.key || "",
                 enabled: f.enabled !== false,
@@ -286,6 +287,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         checkoutSettings,
         paymentSettings: paymentSettings ?? defaultPaymentSettings,
         couponEnabled,
+        blogEnabled,
         currency,
         paymentMethods,
         formatCurrency,

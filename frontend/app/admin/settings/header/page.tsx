@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { settingsApi, getMediaUrl, type HeaderSettings, type HeaderNavLink } from "@/lib/api";
+import { settingsApi, getMediaUrl } from "@/lib/api";
+import type { HeaderSettings, HeaderNavLink } from "@/lib/types";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
 
 const defaultNavLink: HeaderNavLink = { label: "", href: "" };

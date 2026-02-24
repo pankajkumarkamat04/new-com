@@ -1,6 +1,7 @@
 "use server";
 
-import { settingsApi, type HeroSettings } from "@/lib/api";
+import { settingsApi } from "@/lib/api";
+import type { HeroSettings, HomePageSettings, PublicSettings } from "@/lib/types";
 import { HeroClient } from "./HeroClient";
 
 function buildDefaultHero(raw?: HeroSettings | null): HeroSettings {
@@ -29,8 +30,10 @@ function buildDefaultHero(raw?: HeroSettings | null): HeroSettings {
 }
 
 export default async function Hero() {
-  const res = await settingsApi.getHomePage();
-  const raw = (res.data?.data?.hero ?? null) as HeroSettings | null;
+  const res = await settingsApi.getPublic();
+  const publicData = (res.data?.data || null) as PublicSettings | null;
+  const homeData = publicData?.homepage as HomePageSettings | undefined;
+  const raw = (homeData?.hero ?? null) as HeroSettings | null;
   const hero = buildDefaultHero(raw);
 
   return <HeroClient hero={hero} />;

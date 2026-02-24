@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { settingsApi, type Settings } from "@/lib/api";
+import { settingsApi } from "@/lib/api";
+import type { Settings } from "@/lib/types";
 
 const defaultForm: Partial<Settings> = {
   siteName: "",
@@ -15,6 +16,7 @@ const defaultForm: Partial<Settings> = {
   twitterUrl: "",
   linkedinUrl: "",
   couponEnabled: false,
+  blogEnabled: false,
 };
 
 export default function AdminGeneralSettingsPage() {
@@ -45,6 +47,7 @@ export default function AdminGeneralSettingsPage() {
           twitterUrl: res.data.data.twitterUrl || "",
           linkedinUrl: res.data.data.linkedinUrl || "",
           couponEnabled: !!res.data.data.couponEnabled,
+          blogEnabled: !!res.data.data.blogEnabled,
         });
       }
     });
@@ -218,26 +221,49 @@ export default function AdminGeneralSettingsPage() {
 
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-lg font-semibold text-slate-900">Features</h2>
-            <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-              <div>
-                <p className="text-sm font-medium text-slate-900">Coupon Management</p>
-                <p className="text-xs text-slate-500">
-                  Enable coupon codes for discounts at checkout. When enabled, the Coupons page
-                  appears in admin and customers can apply coupon codes.
-                </p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Coupon Management</p>
+                  <p className="text-xs text-slate-500">
+                    Enable coupon codes for discounts at checkout. When enabled, the Coupons page
+                    appears in admin and customers can apply coupon codes.
+                  </p>
+                </div>
+                <label className="relative inline-flex cursor-pointer items-center">
+                  <input
+                    type="checkbox"
+                    checked={!!form.couponEnabled}
+                    onChange={(e) => {
+                      setForm((prev) => ({ ...prev, couponEnabled: e.target.checked }));
+                      setMessage(null);
+                    }}
+                    className="peer sr-only"
+                  />
+                  <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-600 peer-checked:after:translate-x-full" />
+                </label>
               </div>
-              <label className="relative inline-flex cursor-pointer items-center">
-                <input
-                  type="checkbox"
-                  checked={!!form.couponEnabled}
-                  onChange={(e) => {
-                    setForm((prev) => ({ ...prev, couponEnabled: e.target.checked }));
-                    setMessage(null);
-                  }}
-                  className="peer sr-only"
-                />
-                <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-600 peer-checked:after:translate-x-full" />
-              </label>
+              <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Blog Module</p>
+                  <p className="text-xs text-slate-500">
+                    Enable a blog section for publishing articles. When enabled, the Blogs page appears
+                    in admin and the public blog pages are accessible.
+                  </p>
+                </div>
+                <label className="relative inline-flex cursor-pointer items-center">
+                  <input
+                    type="checkbox"
+                    checked={!!form.blogEnabled}
+                    onChange={(e) => {
+                      setForm((prev) => ({ ...prev, blogEnabled: e.target.checked }));
+                      setMessage(null);
+                    }}
+                    className="peer sr-only"
+                  />
+                  <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-emerald-600 peer-checked:after:translate-x-full" />
+                </label>
+              </div>
             </div>
           </div>
 

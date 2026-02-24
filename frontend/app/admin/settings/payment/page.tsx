@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { settingsApi, type PaymentSettings } from "@/lib/api";
+import { settingsApi } from "@/lib/api";
+import type { PaymentSettings } from "@/lib/types";
 
 const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AED", "SGD", "CAD", "AUD", "JPY"] as const;
 

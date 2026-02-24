@@ -582,6 +582,7 @@ export const getPublicSettings = async (req, res) => {
       twitterUrl: settings.twitterUrl || '',
       linkedinUrl: settings.linkedinUrl || '',
       couponEnabled: !!settings.couponEnabled,
+      blogEnabled: !!settings.blogEnabled,
     };
 
     const seo = settings.seo || {};
@@ -623,6 +624,29 @@ export const getPublicSettings = async (req, res) => {
     const footerRaw = settings.footer || {};
     const footer = buildDefaultFooterSettings(footerRaw);
 
+    const hero = settings.hero || {
+      layout: 'single',
+      slides: [
+        {
+          image: '',
+          title: 'Discover Amazing Products',
+          subtitle: 'Shop the latest trends.',
+          buttonText: 'Shop Now',
+          buttonLink: '/shop',
+          showText: true,
+        },
+      ],
+    };
+
+    const homeSection = settings.homeCategorySettings || {};
+    const homeCategorySettings = {
+      title: homeSection.title || 'Shop by Category',
+      description: homeSection.description || '',
+      columns: homeSection.columns || 4,
+      limit: homeSection.limit || 8,
+      showImage: homeSection.showImage !== false,
+    };
+
     const data = {
       general,
       seo: seoData,
@@ -630,6 +654,10 @@ export const getPublicSettings = async (req, res) => {
       footer,
       checkout,
       payment,
+      homepage: {
+        hero,
+        homeCategorySettings,
+      },
     };
 
     // Store in Redis for faster subsequent reads
@@ -666,7 +694,7 @@ export const updateSettings = async (req, res) => {
       'siteName', 'siteUrl', 'siteTagline',
       'contactEmail', 'contactPhone', 'contactAddress',
       'facebookUrl', 'instagramUrl', 'twitterUrl', 'linkedinUrl',
-      'couponEnabled',
+      'couponEnabled', 'blogEnabled',
     ];
 
     const updates = {};

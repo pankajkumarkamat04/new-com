@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { PublicSettings } from "@/lib/api";
+import type { PublicSettings } from "@/lib/types";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ||

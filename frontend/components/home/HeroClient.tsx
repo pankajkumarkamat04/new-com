@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import type { HeroSettings, HeroSlide } from "@/lib/api";
+import type { HeroSettings, HeroSlide } from "@/lib/types";
 
 function SlideContent({ slide, showText, dark = false }: { slide: HeroSlide; showText: boolean; dark?: boolean }) {
   if (!showText) return null;

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { PublicSettings } from "@/lib/api";
+import type { PublicSettings } from "@/lib/types";
 import { getMediaUrl } from "@/lib/api";
 
 const API_BASE =

@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
-import { adminOrdersApi, type Order } from "@/lib/api";
+import { adminOrdersApi } from "@/lib/api";
+import type { Order } from "@/lib/types";
 import { useSettings } from "@/contexts/SettingsContext";
 
 function paymentMethodLabel(method: string | undefined): string {

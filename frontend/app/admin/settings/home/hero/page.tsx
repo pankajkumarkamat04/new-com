@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { settingsApi, getMediaUrl, type HeroSettings, type HeroSlide } from "@/lib/api";
+import { settingsApi, getMediaUrl } from "@/lib/api";
+import type { HeroSettings, HeroSlide } from "@/lib/types";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
 
 const defaultSlide = { image: "", title: "Discover Amazing Products", subtitle: "Shop the latest trends.", textColor: "", buttonText: "Shop Now", buttonLink: "/shop", buttonTextColor: "#ffffff", buttonBgColor: "#059669", showText: true };
