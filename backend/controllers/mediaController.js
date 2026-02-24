@@ -27,16 +27,11 @@ export const list = async (req, res) => {
       Media.countDocuments(filter),
     ]);
 
-    // Build URLs from current request host to avoid pointing to any other app/domain.
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
-    const itemsWithFullUrl = items.map((item) => ({
-      ...item,
-      url: item.url.startsWith('http') ? item.url : `${baseUrl}${item.url}`,
-    }));
-
+    // Return stored URL as-is (relative like /uploads/...), so frontend can use it
+    // relative to its current domain and avoid mixed-content or cross-app hosts.
     res.json({
       success: true,
-      data: itemsWithFullUrl,
+      data: items,
       pagination: {
         page: Number(page),
         limit: Number(limit),
@@ -55,8 +50,6 @@ export const upload = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
 
-    // Build URLs from current request host to avoid pointing to any other app/domain.
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
     const url = `/uploads/${req.file.filename}`;
 
     const media = await Media.create({
@@ -72,7 +65,7 @@ export const upload = async (req, res) => {
       success: true,
       data: {
         ...media.toObject(),
-        url: `${baseUrl}${url}`,
+        url,
       },
     });
   } catch (error) {
