@@ -1,5 +1,6 @@
 import { validationResult } from 'express-validator';
 import Category from '../models/Category.js';
+import { redisGetJson, redisSetJson, redisDel, redisDeleteByPattern } from '../utils/redisClient.js';
 
 export const getCategories = async (req, res) => {
   try {
@@ -11,8 +12,19 @@ export const getCategories = async (req, res) => {
       else query.parent = parent;
     }
 
+    const cacheKey = `categories:list:isActive=${isActive ?? 'any'}:parent=${parent ?? 'any'}`;
+
+    const cached = await redisGetJson(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
     const categories = await Category.find(query).populate('parent', 'name slug').sort({ name: 1 }).lean();
-    res.json({ success: true, data: categories });
+    const response = { success: true, data: categories };
+
+    await redisSetJson(cacheKey, response, 300);
+
+    res.json(response);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -20,11 +32,23 @@ export const getCategories = async (req, res) => {
 
 export const getCategoryById = async (req, res) => {
   try {
-    const category = await Category.findById(req.params.id).populate('parent', 'name slug').lean();
+    const id = req.params.id;
+    const cacheKey = `categories:item:${id}`;
+
+    const cached = await redisGetJson(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    const category = await Category.findById(id).populate('parent', 'name slug').lean();
     if (!category) {
       return res.status(404).json({ success: false, message: 'Category not found' });
     }
-    res.json({ success: true, data: category });
+    const response = { success: true, data: category };
+
+    await redisSetJson(cacheKey, response, 600);
+
+    res.json(response);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -55,6 +79,10 @@ export const createCategory = async (req, res) => {
       showOnHomepage: !!showOnHomepage,
     });
     const populated = await Category.findById(category._id).populate('parent', 'name slug').lean();
+
+    // Invalidate cached category lists so new category appears
+    await redisDeleteByPattern('categories:list:');
+
     res.status(201).json({ success: true, data: populated });
   } catch (error) {
     if (error.code === 11000) {
@@ -103,6 +131,11 @@ export const updateCategory = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Category not found' });
     }
     const populated = await Category.findById(category._id).populate('parent', 'name slug').lean();
+
+    // Invalidate caches for this category and any lists
+    await redisDel(`categories:item:${req.params.id}`);
+    await redisDeleteByPattern('categories:list:');
+
     res.json({ success: true, data: populated });
   } catch (error) {
     if (error.code === 11000) {
@@ -122,6 +155,11 @@ export const deleteCategory = async (req, res) => {
     if (!category) {
       return res.status(404).json({ success: false, message: 'Category not found' });
     }
+
+    // Invalidate caches for this category and any lists
+    await redisDel(`categories:item:${req.params.id}`);
+    await redisDeleteByPattern('categories:list:');
+
     res.json({ success: true, message: 'Category deleted' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

@@ -1,5 +1,6 @@
 import { validationResult } from 'express-validator';
 import Settings from '../models/Settings.js';
+import { PUBLIC_SETTINGS_CACHE_KEY, redisGetJson, redisSetJson, redisDel } from '../utils/redisClient.js';
 
 // ============ Hero Section Controller ============
 
@@ -158,6 +159,9 @@ export const updateHomeCategories = async (req, res) => {
       showImage: section.showImage !== false,
     };
 
+    // Invalidate cached public settings so next request rebuilds from DB
+    await redisDel(PUBLIC_SETTINGS_CACHE_KEY);
+
     res.json({ success: true, data: config });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -219,6 +223,10 @@ export const updateSeoSettings = async (req, res) => {
     );
 
     const seo = settings.seo || {};
+
+    // Invalidate cached public settings so next request rebuilds from DB
+    await redisDel(PUBLIC_SETTINGS_CACHE_KEY);
+
     res.json({
       success: true,
       data: {
@@ -300,6 +308,10 @@ export const updateHeaderSettings = async (req, res) => {
       showBrowseButton: header.showBrowseButton !== false,
       showCartIcon: header.showCartIcon !== false,
     };
+
+    // Invalidate cached public settings so next request rebuilds from DB
+    await redisDel(PUBLIC_SETTINGS_CACHE_KEY);
+
     res.json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -338,6 +350,7 @@ function buildDefaultFooterSettings(raw) {
     copyrightText: raw?.copyrightText != null ? String(raw.copyrightText).trim() : '',
     showSocial: raw?.showSocial !== false,
     variant: raw?.variant === 'light' ? 'light' : 'dark',
+    backgroundColor: raw?.backgroundColor != null ? String(raw.backgroundColor).trim() : '',
   };
 }
 
@@ -358,7 +371,7 @@ export const updateFooterSettings = async (req, res) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({ success: false, errors: errors.array() });
     }
-    const { columns, copyrightText, showSocial, variant } = req.body;
+    const { columns, copyrightText, showSocial, variant, backgroundColor } = req.body;
     const footerUpdate = {};
     if (Array.isArray(columns)) {
       footerUpdate['footer.columns'] = columns
@@ -368,6 +381,9 @@ export const updateFooterSettings = async (req, res) => {
     if (copyrightText !== undefined) footerUpdate['footer.copyrightText'] = String(copyrightText).trim();
     if (showSocial !== undefined) footerUpdate['footer.showSocial'] = !!showSocial;
     if (variant !== undefined) footerUpdate['footer.variant'] = variant === 'light' ? 'light' : 'dark';
+    if (backgroundColor !== undefined) {
+      footerUpdate['footer.backgroundColor'] = String(backgroundColor || '').trim();
+    }
 
     await Settings.findOneAndUpdate(
       { key: 'site' },
@@ -376,6 +392,8 @@ export const updateFooterSettings = async (req, res) => {
     );
     const settings = await Settings.getSettings();
     const data = buildDefaultFooterSettings(settings.footer || {});
+    // Invalidate cached public settings so next request rebuilds from DB
+    await redisDel(PUBLIC_SETTINGS_CACHE_KEY);
     res.json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -532,6 +550,8 @@ export const updatePaymentSettings = async (req, res) => {
     );
     const settings = await Settings.getSettings();
     const data = buildDefaultPaymentSettings(settings.payment || {});
+    // Invalidate cached public settings so next request rebuilds from DB
+    await redisDel(PUBLIC_SETTINGS_CACHE_KEY);
     res.json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -542,6 +562,12 @@ export const updatePaymentSettings = async (req, res) => {
 
 export const getPublicSettings = async (req, res) => {
   try {
+    // Try Redis cache first
+    const cached = await redisGetJson(PUBLIC_SETTINGS_CACHE_KEY);
+    if (cached) {
+      return res.json({ success: true, data: cached });
+    }
+
     const settings = await Settings.getSettings();
 
     const general = {
@@ -596,16 +622,21 @@ export const getPublicSettings = async (req, res) => {
     const footerRaw = settings.footer || {};
     const footer = buildDefaultFooterSettings(footerRaw);
 
+    const data = {
+      general,
+      seo: seoData,
+      header: headerData,
+      footer,
+      checkout,
+      payment,
+    };
+
+    // Store in Redis for faster subsequent reads
+    await redisSetJson(PUBLIC_SETTINGS_CACHE_KEY, data, 300);
+
     res.json({
       success: true,
-      data: {
-        general,
-        seo: seoData,
-        header: headerData,
-        footer,
-        checkout,
-        payment,
-      },
+      data,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -648,6 +679,9 @@ export const updateSettings = async (req, res) => {
       { $set: updates },
       { returnDocument: 'after', upsert: true, runValidators: true }
     );
+
+    // Invalidate cached public settings so next request rebuilds from DB
+    await redisDel(PUBLIC_SETTINGS_CACHE_KEY);
 
     res.json({ success: true, data: settings });
   } catch (error) {

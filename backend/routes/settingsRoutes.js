@@ -81,6 +81,7 @@ const updateFooterValidation = [
   body('copyrightText').optional().trim(),
   body('showSocial').optional().isBoolean().withMessage('showSocial must be boolean'),
   body('variant').optional().isIn(['light', 'dark']).withMessage('variant must be light or dark'),
+  body('backgroundColor').optional().trim(),
 ];
 
 const updateCheckoutValidation = [

@@ -111,6 +111,7 @@ const settingsSchema = new mongoose.Schema({
     copyrightText: { type: String, trim: true, default: '' },
     showSocial: { type: Boolean, default: true },
     variant: { type: String, enum: ['light', 'dark'], default: 'dark' },
+    backgroundColor: { type: String, trim: true, default: '' },
   },
   seo: {
     metaTitle: { type: String, trim: true, default: '' },

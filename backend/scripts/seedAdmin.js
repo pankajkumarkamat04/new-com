@@ -11,8 +11,8 @@ const SEED_ADMIN = {
 
 const seedAdmin = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/new-com');
-    console.log('MongoDB Connected');
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://root:supersecret@localhost:27018/new-com?authSource=admin');
+    console.log('MongoDB Connected for seeding');
 
     const existing = await Admin.findOne({ email: SEED_ADMIN.email.toLowerCase() });
     if (existing) {
