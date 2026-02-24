@@ -1,6 +1,9 @@
-// Use HTTPS-safe relative default in production to avoid mixed content.
-// Configure NEXT_PUBLIC_API_URL (e.g. https://api.yourdomain.com) if your API is on a different origin.
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// Use HTTPS-safe default. In production, prefer a relative /api prefix so calls
+// go through the same domain as the frontend and avoid mixed content.
+// If your API is on a different origin, set NEXT_PUBLIC_API_URL to a full HTTPS URL.
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.NODE_ENV === "development" ? "http://localhost:5000/api" : "/api");
 
 export async function api<T>(
   path: string,
