@@ -1,8 +1,19 @@
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
 import User from '../../models/User.js';
+import Settings from '../../models/Settings.js';
 import { saveOtp, verifyOtp } from '../../utils/otp.js';
 import { sendOtp } from '../../utils/sendOtp.js';
+import { sendNotification } from '../../utils/notificationService.js';
+
+async function getLoginSettings() {
+  const settings = await Settings.getSettings();
+  const l = settings.login || {};
+  return {
+    loginIdentifier: l.loginIdentifier === 'phone' ? 'phone' : 'email',
+    loginMethod: l.loginMethod === 'otp' ? 'otp' : 'password',
+  };
+}
 
 const generateToken = (id) => {
   return jwt.sign(
@@ -119,6 +130,13 @@ export const signup = async (req, res) => {
       password: password || undefined,
     });
 
+    sendNotification({
+      email: user.email || undefined,
+      phone: user.phone || undefined,
+      type: 'signup',
+      data: { userName: user.name },
+    });
+
     const token = generateToken(user._id);
     res.status(201).json({
       success: true,
@@ -147,6 +165,23 @@ export const loginPassword = async (req, res) => {
 
     if (!email && !phone) {
       return res.status(400).json({ success: false, message: 'Email or phone is required' });
+    }
+
+    const loginCfg = await getLoginSettings();
+    if (loginCfg.loginMethod !== 'password') {
+      return res.status(400).json({ success: false, message: 'Password login is disabled. Please use OTP to sign in.' });
+    }
+    if (loginCfg.loginIdentifier === 'email' && phone) {
+      return res.status(400).json({ success: false, message: 'Login with phone is disabled. Use email.' });
+    }
+    if (loginCfg.loginIdentifier === 'phone' && email) {
+      return res.status(400).json({ success: false, message: 'Login with email is disabled. Use phone.' });
+    }
+    if (loginCfg.loginIdentifier === 'email' && !email) {
+      return res.status(400).json({ success: false, message: 'Email is required.' });
+    }
+    if (loginCfg.loginIdentifier === 'phone' && !phone) {
+      return res.status(400).json({ success: false, message: 'Phone is required.' });
     }
 
     const user = await User.findOne({
@@ -201,6 +236,17 @@ export const requestOtp = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email or phone is required' });
     }
 
+    const loginCfg = await getLoginSettings();
+    if (loginCfg.loginMethod !== 'otp') {
+      return res.status(400).json({ success: false, message: 'OTP login is disabled.' });
+    }
+    if (loginCfg.loginIdentifier === 'email' && (phone || !email)) {
+      return res.status(400).json({ success: false, message: 'Login with email only. Provide your email.' });
+    }
+    if (loginCfg.loginIdentifier === 'phone' && (email || !phone)) {
+      return res.status(400).json({ success: false, message: 'Login with phone only. Provide your phone.' });
+    }
+
     const identifier = email || phone;
     const type = email ? 'email' : 'phone';
 
@@ -238,6 +284,17 @@ export const loginOtp = async (req, res) => {
 
     if (!email && !phone) {
       return res.status(400).json({ success: false, message: 'Email or phone is required' });
+    }
+
+    const loginCfg = await getLoginSettings();
+    if (loginCfg.loginMethod !== 'otp') {
+      return res.status(400).json({ success: false, message: 'OTP login is disabled.' });
+    }
+    if (loginCfg.loginIdentifier === 'email' && (phone || !email)) {
+      return res.status(400).json({ success: false, message: 'Login with email only. Provide your email.' });
+    }
+    if (loginCfg.loginIdentifier === 'phone' && (email || !phone)) {
+      return res.status(400).json({ success: false, message: 'Login with phone only. Provide your phone.' });
     }
 
     const identifier = email || phone;

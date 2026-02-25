@@ -71,6 +71,8 @@ import type {
   CheckoutSettings,
   SeoSettings,
   PaymentSettings,
+  LoginSettings,
+  NotificationSettings,
   PublicSettings,
   Category,
   ProductAttribute,
@@ -154,6 +156,12 @@ export const settingsApi = {
   getPayment: () => api<{ data: PaymentSettings }>('/settings/payment'),
   updatePayment: (body: Partial<PaymentSettings>) =>
     api<{ data: PaymentSettings }>('/settings/payment', { method: 'PUT', body: JSON.stringify(body) }),
+  getNotifications: () => api<{ data: NotificationSettings }>('/settings/notifications'),
+  updateNotifications: (body: Partial<NotificationSettings>) =>
+    api<{ data: NotificationSettings }>('/settings/notifications', { method: 'PUT', body: JSON.stringify(body) }),
+  getLogin: () => api<{ data: LoginSettings }>('/settings/login'),
+  updateLogin: (body: Partial<LoginSettings>) =>
+    api<{ data: LoginSettings }>('/settings/login', { method: 'PUT', body: JSON.stringify(body) }),
   getPublic: () => api<{ data: PublicSettings }>('/settings/public'),
 };
 

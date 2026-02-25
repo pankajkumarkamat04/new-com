@@ -558,6 +558,149 @@ export const updatePaymentSettings = async (req, res) => {
   }
 };
 
+// ============ Login Settings Controller ============
+
+function buildDefaultLoginSettings(raw) {
+  const l = raw || {};
+  const id = l.loginIdentifier === 'phone' ? 'phone' : 'email';
+  const method = l.loginMethod === 'otp' ? 'otp' : 'password';
+  return {
+    loginIdentifier: id,
+    loginMethod: method,
+  };
+}
+
+export const getLoginSettings = async (req, res) => {
+  try {
+    const settings = await Settings.getSettings();
+    const login = settings.login || {};
+    const data = buildDefaultLoginSettings(login);
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateLoginSettings = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+    const { loginIdentifier, loginMethod } = req.body;
+
+    const updates = {};
+    if (loginIdentifier === 'email' || loginIdentifier === 'phone') updates['login.loginIdentifier'] = loginIdentifier;
+    if (loginMethod === 'password' || loginMethod === 'otp') updates['login.loginMethod'] = loginMethod;
+
+    await Settings.findOneAndUpdate(
+      { key: 'site' },
+      { $set: updates },
+      { returnDocument: 'after', upsert: true, runValidators: true }
+    );
+    const updated = await Settings.getSettings();
+    const data = buildDefaultLoginSettings(updated.login || {});
+    await redisDel(PUBLIC_SETTINGS_CACHE_KEY);
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ============ Notification Settings Controller ============
+
+function buildDefaultNotificationSettings(raw) {
+  const e = raw?.email || {};
+  const s = raw?.sms || {};
+  const w = raw?.whatsapp || {};
+  return {
+    email: {
+      enabled: !!e.enabled,
+      smtpHost: e.smtpHost || '',
+      smtpPort: typeof e.smtpPort === 'number' ? e.smtpPort : 587,
+      smtpSecure: !!e.smtpSecure,
+      smtpUser: e.smtpUser || '',
+      smtpPass: e.smtpPass || '',
+      fromEmail: e.fromEmail || '',
+      fromName: e.fromName || '',
+    },
+    sms: {
+      enabled: !!s.enabled,
+      provider: s.provider || 'twilio',
+      apiKey: s.apiKey || '',
+      apiSecret: s.apiSecret || '',
+      fromNumber: s.fromNumber || '',
+    },
+    whatsapp: {
+      enabled: !!w.enabled,
+      provider: w.provider || 'twilio',
+      apiKey: w.apiKey || '',
+      apiSecret: w.apiSecret || '',
+      phoneNumberId: w.phoneNumberId || '',
+      fromNumber: w.fromNumber || '',
+    },
+  };
+}
+
+export const getNotificationSettings = async (req, res) => {
+  try {
+    const settings = await Settings.getSettings();
+    const notifications = settings.notifications || {};
+    const data = buildDefaultNotificationSettings(notifications);
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateNotificationSettings = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+    const { email, sms, whatsapp } = req.body;
+
+    const updates = {};
+    if (email && typeof email === 'object') {
+      if (typeof email.enabled === 'boolean') updates['notifications.email.enabled'] = email.enabled;
+      if (email.smtpHost !== undefined) updates['notifications.email.smtpHost'] = String(email.smtpHost || '').trim();
+      if (email.smtpPort !== undefined) updates['notifications.email.smtpPort'] = parseInt(email.smtpPort, 10) || 587;
+      if (typeof email.smtpSecure === 'boolean') updates['notifications.email.smtpSecure'] = email.smtpSecure;
+      if (email.smtpUser !== undefined) updates['notifications.email.smtpUser'] = String(email.smtpUser || '').trim();
+      if (email.smtpPass !== undefined) updates['notifications.email.smtpPass'] = email.smtpPass || '';
+      if (email.fromEmail !== undefined) updates['notifications.email.fromEmail'] = String(email.fromEmail || '').trim();
+      if (email.fromName !== undefined) updates['notifications.email.fromName'] = String(email.fromName || '').trim();
+    }
+    if (sms && typeof sms === 'object') {
+      if (typeof sms.enabled === 'boolean') updates['notifications.sms.enabled'] = sms.enabled;
+      if (sms.provider !== undefined) updates['notifications.sms.provider'] = String(sms.provider || 'twilio').trim();
+      if (sms.apiKey !== undefined) updates['notifications.sms.apiKey'] = String(sms.apiKey || '').trim();
+      if (sms.apiSecret !== undefined) updates['notifications.sms.apiSecret'] = sms.apiSecret || '';
+      if (sms.fromNumber !== undefined) updates['notifications.sms.fromNumber'] = String(sms.fromNumber || '').trim();
+    }
+    if (whatsapp && typeof whatsapp === 'object') {
+      if (typeof whatsapp.enabled === 'boolean') updates['notifications.whatsapp.enabled'] = whatsapp.enabled;
+      if (whatsapp.provider !== undefined) updates['notifications.whatsapp.provider'] = String(whatsapp.provider || 'twilio').trim();
+      if (whatsapp.apiKey !== undefined) updates['notifications.whatsapp.apiKey'] = String(whatsapp.apiKey || '').trim();
+      if (whatsapp.apiSecret !== undefined) updates['notifications.whatsapp.apiSecret'] = whatsapp.apiSecret || '';
+      if (whatsapp.phoneNumberId !== undefined) updates['notifications.whatsapp.phoneNumberId'] = String(whatsapp.phoneNumberId || '').trim();
+      if (whatsapp.fromNumber !== undefined) updates['notifications.whatsapp.fromNumber'] = String(whatsapp.fromNumber || '').trim();
+    }
+
+    await Settings.findOneAndUpdate(
+      { key: 'site' },
+      { $set: updates },
+      { returnDocument: 'after', upsert: true, runValidators: true }
+    );
+    const settings = await Settings.getSettings();
+    const data = buildDefaultNotificationSettings(settings.notifications || {});
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // ============ Public Combined Settings (General + SEO + Header) ============
 
 export const getPublicSettings = async (req, res) => {
@@ -647,6 +790,9 @@ export const getPublicSettings = async (req, res) => {
       showImage: homeSection.showImage !== false,
     };
 
+    const loginRaw = settings.login || {};
+    const loginData = buildDefaultLoginSettings(loginRaw);
+
     const data = {
       general,
       seo: seoData,
@@ -654,6 +800,7 @@ export const getPublicSettings = async (req, res) => {
       footer,
       checkout,
       payment,
+      login: loginData,
       homepage: {
         hero,
         homeCategorySettings,

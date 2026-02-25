@@ -36,7 +36,9 @@ function SettingsNav({ pathname }: { pathname: string }) {
     pathname === "/admin/settings/seo" ||
     pathname === "/admin/settings/header" ||
     pathname === "/admin/settings/footer" ||
-    pathname === "/admin/settings/payment";
+    pathname === "/admin/settings/payment" ||
+    pathname === "/admin/settings/notifications" ||
+    pathname === "/admin/settings/login";
   const isOrderGroupActive = pathname.startsWith("/admin/settings/checkout");
   const [expanded, setExpanded] = useState(isSettingsActive);
   const [homeExpanded, setHomeExpanded] = useState(isHomePageActive);
@@ -51,7 +53,9 @@ function SettingsNav({ pathname }: { pathname: string }) {
       pathname === "/admin/settings/seo" ||
       pathname === "/admin/settings/header" ||
       pathname === "/admin/settings/footer" ||
-      pathname === "/admin/settings/payment"
+      pathname === "/admin/settings/payment" ||
+      pathname === "/admin/settings/notifications" ||
+      pathname === "/admin/settings/login"
     ) {
       setGeneralExpanded(true);
     }
@@ -144,6 +148,24 @@ function SettingsNav({ pathname }: { pathname: string }) {
                     }`}
                 >
                   Payment
+                </Link>
+                <Link
+                  href="/admin/settings/notifications"
+                  className={`block rounded px-2 py-1.5 text-sm ${pathname === "/admin/settings/notifications"
+                      ? "font-medium text-amber-700"
+                      : "text-slate-600 hover:text-slate-900"
+                    }`}
+                >
+                  Notifications
+                </Link>
+                <Link
+                  href="/admin/settings/login"
+                  className={`block rounded px-2 py-1.5 text-sm ${pathname === "/admin/settings/login"
+                      ? "font-medium text-amber-700"
+                      : "text-slate-600 hover:text-slate-900"
+                    }`}
+                >
+                  Login
                 </Link>
               </div>
             )}

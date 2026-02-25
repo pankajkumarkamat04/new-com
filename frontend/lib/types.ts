@@ -130,6 +130,45 @@ export type PaymentSettings = {
   cashfree: { enabled: boolean };
 };
 
+export type LoginSettings = {
+  loginIdentifier: "email" | "phone";
+  loginMethod: "password" | "otp";
+};
+
+export type NotificationEmailSettings = {
+  enabled: boolean;
+  smtpHost: string;
+  smtpPort: number;
+  smtpSecure: boolean;
+  smtpUser: string;
+  smtpPass: string;
+  fromEmail: string;
+  fromName: string;
+};
+
+export type NotificationSmsSettings = {
+  enabled: boolean;
+  provider: string;
+  apiKey: string;
+  apiSecret: string;
+  fromNumber: string;
+};
+
+export type NotificationWhatsappSettings = {
+  enabled: boolean;
+  provider: string;
+  apiKey: string;
+  apiSecret: string;
+  phoneNumberId: string;
+  fromNumber: string;
+};
+
+export type NotificationSettings = {
+  email: NotificationEmailSettings;
+  sms: NotificationSmsSettings;
+  whatsapp: NotificationWhatsappSettings;
+};
+
 export type PublicSettings = {
   general: Settings;
   seo: SeoSettings;
@@ -137,6 +176,7 @@ export type PublicSettings = {
   footer?: FooterSettings;
   checkout?: CheckoutSettings;
   payment?: PaymentSettings;
+  login?: LoginSettings;
   homepage?: HomePageSettings;
 };
 

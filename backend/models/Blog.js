@@ -40,7 +40,6 @@ const blogSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-blogSchema.index({ slug: 1 });
 blogSchema.index({ isPublished: 1, publishedAt: -1 });
 
 export default mongoose.model('Blog', blogSchema);

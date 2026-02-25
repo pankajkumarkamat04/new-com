@@ -180,6 +180,37 @@ const settingsSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  login: {
+    loginIdentifier: { type: String, enum: ['email', 'phone'], default: 'email' },
+    loginMethod: { type: String, enum: ['password', 'otp'], default: 'password' },
+  },
+  notifications: {
+    email: {
+      enabled: { type: Boolean, default: false },
+      smtpHost: { type: String, trim: true, default: '' },
+      smtpPort: { type: Number, default: 587 },
+      smtpSecure: { type: Boolean, default: false },
+      smtpUser: { type: String, trim: true, default: '' },
+      smtpPass: { type: String, default: '' },
+      fromEmail: { type: String, trim: true, default: '' },
+      fromName: { type: String, trim: true, default: '' },
+    },
+    sms: {
+      enabled: { type: Boolean, default: false },
+      provider: { type: String, trim: true, default: 'twilio' },
+      apiKey: { type: String, trim: true, default: '' },
+      apiSecret: { type: String, default: '' },
+      fromNumber: { type: String, trim: true, default: '' },
+    },
+    whatsapp: {
+      enabled: { type: Boolean, default: false },
+      provider: { type: String, trim: true, default: 'twilio' },
+      apiKey: { type: String, trim: true, default: '' },
+      apiSecret: { type: String, default: '' },
+      phoneNumberId: { type: String, trim: true, default: '' },
+      fromNumber: { type: String, trim: true, default: '' },
+    },
+  },
 }, {
   timestamps: true,
   collection: 'settings',

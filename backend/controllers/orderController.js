@@ -3,6 +3,7 @@ import Cart from '../models/Cart.js';
 import User from '../models/User.js';
 import Settings from '../models/Settings.js';
 import Coupon from '../models/Coupon.js';
+import { sendNotification } from '../utils/notificationService.js';
 
 const getEffectiveCheckoutConfig = async () => {
   const settings = await Settings.getSettings();
@@ -168,6 +169,20 @@ export const placeOrder = async (req, res) => {
       { $set: { items: [] } }
     );
 
+    const recipientEmail = req.user.email || undefined;
+    const recipientPhone = phone?.trim() || req.user.phone || undefined;
+
+    sendNotification({
+      email: recipientEmail,
+      phone: recipientPhone,
+      type: 'order_placed',
+      data: {
+        orderId: String(order._id),
+        total: finalTotal,
+        currency: (await getEffectivePaymentConfig()).currency,
+      },
+    });
+
     const populated = await Order.findById(order._id).lean();
     res.status(201).json({ success: true, data: populated });
   } catch (error) {
@@ -254,11 +269,30 @@ export const adminUpdateOrderStatus = async (req, res) => {
       req.params.id,
       { status },
       { new: true, runValidators: true }
-    ).lean();
+    )
+      .populate('userId', 'name email phone')
+      .lean();
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
+
+    const user = order.userId;
+    if (user) {
+      const recipientEmail = user.email || undefined;
+      const recipientPhone = order.shippingAddress?.phone || user.phone || undefined;
+
+      sendNotification({
+        email: recipientEmail,
+        phone: recipientPhone,
+        type: 'order_status',
+        data: {
+          orderId: String(order._id),
+          newStatus: status,
+        },
+      });
+    }
+
     res.json({ success: true, data: order });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

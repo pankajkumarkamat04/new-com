@@ -117,6 +117,31 @@ const updatePaymentValidation = [
   body('cashfree.enabled').optional().isBoolean().withMessage('cashfree.enabled must be boolean'),
 ];
 
+const updateNotificationValidation = [
+  body('email').optional().isObject(),
+  body('email.enabled').optional().isBoolean(),
+  body('email.smtpHost').optional().trim(),
+  body('email.smtpPort').optional().isInt({ min: 1, max: 65535 }),
+  body('email.smtpSecure').optional().isBoolean(),
+  body('email.smtpUser').optional().trim(),
+  body('email.smtpPass').optional(),
+  body('email.fromEmail').optional().trim(),
+  body('email.fromName').optional().trim(),
+  body('sms').optional().isObject(),
+  body('sms.enabled').optional().isBoolean(),
+  body('sms.provider').optional().trim(),
+  body('sms.apiKey').optional().trim(),
+  body('sms.apiSecret').optional(),
+  body('sms.fromNumber').optional().trim(),
+  body('whatsapp').optional().isObject(),
+  body('whatsapp.enabled').optional().isBoolean(),
+  body('whatsapp.provider').optional().trim(),
+  body('whatsapp.apiKey').optional().trim(),
+  body('whatsapp.apiSecret').optional(),
+  body('whatsapp.phoneNumberId').optional().trim(),
+  body('whatsapp.fromNumber').optional().trim(),
+];
+
 // Public - get full settings document (mostly for admin/tools)
 router.get('/', settingsController.getSettings);
 
@@ -153,6 +178,17 @@ router.put('/checkout', protectAdmin, updateCheckoutValidation, settingsControll
 // Payment - public get (via /public), admin get/update
 router.get('/payment', settingsController.getPaymentSettings);
 router.put('/payment', protectAdmin, updatePaymentValidation, settingsController.updatePaymentSettings);
+
+// Notification - admin get/update
+router.get('/notifications', protectAdmin, settingsController.getNotificationSettings);
+router.put('/notifications', protectAdmin, updateNotificationValidation, settingsController.updateNotificationSettings);
+
+// Login - public get, admin update
+router.get('/login', settingsController.getLoginSettings);
+router.put('/login', protectAdmin, [
+  body('loginIdentifier').optional().isIn(['email', 'phone']),
+  body('loginMethod').optional().isIn(['password', 'otp']),
+], settingsController.updateLoginSettings);
 
 // Admin - update settings
 router.put('/', protectAdmin, updateSettingsValidation, settingsController.updateSettings);
