@@ -1,8 +1,10 @@
 import Order from '../models/Order.js';
 import Cart from '../models/Cart.js';
-import User from '../models/User.js';
+import Product from '../models/Product.js';
+import Inventory from '../models/Inventory.js';
 import Settings from '../models/Settings.js';
 import Coupon from '../models/Coupon.js';
+import { redisDel, redisDeleteByPattern } from '../utils/redisClient.js';
 import { sendNotification } from '../utils/notificationService.js';
 
 const getEffectiveCheckoutConfig = async () => {
@@ -102,6 +104,21 @@ export const placeOrder = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No valid items in cart' });
     }
 
+    // Stock check - ensure all products have sufficient inventory
+    for (const item of orderItems) {
+      const product = await Product.findById(item.productId).select('name stock');
+      if (!product) {
+        return res.status(400).json({ success: false, message: `Product ${item.name} is no longer available.` });
+      }
+      const available = product.stock ?? 0;
+      if (available < item.quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient stock for ${item.name}. Available: ${available}, requested: ${item.quantity}.`,
+        });
+      }
+    }
+
     let discountAmount = 0;
     let appliedCouponCode = null;
 
@@ -168,6 +185,28 @@ export const placeOrder = async (req, res) => {
       { userId: req.user._id },
       { $set: { items: [] } }
     );
+
+    // Decrease stock and create inventory records
+    for (const item of orderItems) {
+      const product = await Product.findByIdAndUpdate(
+        item.productId,
+        { $inc: { stock: -item.quantity } },
+        { new: true }
+      );
+      if (product) {
+        await Inventory.create({
+          productId: item.productId,
+          quantity: -item.quantity,
+          type: 'out',
+          reason: 'Order',
+          referenceOrderId: order._id,
+          previousStock: (product.stock ?? 0) + item.quantity,
+          newStock: product.stock ?? 0,
+        });
+        await redisDel(`products:item:${item.productId}`);
+      }
+    }
+    await redisDeleteByPattern('products:list:');
 
     const recipientEmail = req.user.email || undefined;
     const recipientPhone = phone?.trim() || req.user.phone || undefined;

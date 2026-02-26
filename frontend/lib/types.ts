@@ -211,6 +211,19 @@ export type ProductVariation = {
   isActive?: boolean;
 };
 
+export type InventoryMovement = {
+  _id: string;
+  productId: string | { _id: string; name: string };
+  quantity: number;
+  type: 'in' | 'out' | 'adjustment';
+  reason?: string;
+  referenceOrderId?: string;
+  previousStock: number;
+  newStock: number;
+  notes?: string;
+  createdAt: string;
+};
+
 export type Product = {
   _id: string;
   name: string;

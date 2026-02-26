@@ -85,6 +85,7 @@ import type {
   Coupon,
   MediaItem,
   BlogPost,
+  InventoryMovement,
 } from "./types";
 
 // User Auth
@@ -227,6 +228,28 @@ export const productApi = {
   ) =>
     api<{ data: Product }>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   delete: (id: string) => api(`/products/${id}`, { method: 'DELETE' }),
+};
+
+export const inventoryApi = {
+  list: (params?: { productId?: string; type?: string; page?: number; limit?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.productId) searchParams.set('productId', params.productId);
+    if (params?.type) searchParams.set('type', params.type);
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const query = searchParams.toString();
+    return api<{ data: InventoryMovement[]; pagination: { page: number; limit: number; total: number; pages: number } }>(
+      `/inventory${query ? `?${query}` : ''}`
+    );
+  },
+  getByProduct: (productId: string) =>
+    api<{ data: { product: { _id: string; name: string; stock: number }; movements: InventoryMovement[] } }>(
+      `/inventory/product/${productId}`
+    ),
+  addStock: (body: { productId: string; quantity: number; reason?: string; notes?: string }) =>
+    api<{ data: Product; message: string }>('/inventory/add', { method: 'POST', body: JSON.stringify(body) }),
+  adjustStock: (body: { productId: string; quantity: number; reason?: string; notes?: string }) =>
+    api<{ data: Product; message: string }>('/inventory/adjust', { method: 'POST', body: JSON.stringify(body) }),
 };
 
 export const cartApi = {
