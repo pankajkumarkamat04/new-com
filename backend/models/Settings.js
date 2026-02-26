@@ -52,6 +52,16 @@ const settingsSchema = new mongoose.Schema({
     default: '',
     trim: true,
   },
+  logoImageUrl: {
+    type: String,
+    default: '',
+    trim: true,
+  },
+  faviconUrl: {
+    type: String,
+    default: '',
+    trim: true,
+  },
   key: {
     type: String,
     default: 'site',
@@ -90,6 +100,7 @@ const settingsSchema = new mongoose.Schema({
     showImage: { type: Boolean, default: true },
   },
   header: {
+    logoSource: { type: String, enum: ['general', 'custom'], default: 'general' },
     logoImageUrl: { type: String, trim: true, default: '' },
     navLinks: [{
       label: { type: String, trim: true, default: '' },
@@ -179,6 +190,28 @@ const settingsSchema = new mongoose.Schema({
   blogEnabled: {
     type: Boolean,
     default: false,
+  },
+  abandonedCartEnabled: {
+    type: Boolean,
+    default: false,
+  },
+  googleAnalyticsEnabled: {
+    type: Boolean,
+    default: false,
+  },
+  googleAnalyticsId: {
+    type: String,
+    trim: true,
+    default: '',
+  },
+  facebookPixelEnabled: {
+    type: Boolean,
+    default: false,
+  },
+  facebookPixelId: {
+    type: String,
+    trim: true,
+    default: '',
   },
   login: {
     loginIdentifier: { type: String, enum: ['email', 'phone'], default: 'email' },

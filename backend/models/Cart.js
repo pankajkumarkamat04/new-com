@@ -22,6 +22,10 @@ const cartSchema = new mongoose.Schema({
     unique: true,
   },
   items: [cartItemSchema],
+  recoveryEmailSentAt: {
+    type: Date,
+    default: null,
+  },
 }, {
   timestamps: true,
 });

@@ -16,6 +16,7 @@ import orderRoutes from './routes/orderRoutes.js';
 import couponRoutes from './routes/couponRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
 import inventoryRoutes from './routes/inventoryRoutes.js';
+import cronRoutes from './routes/cronRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -79,6 +80,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/blog', blogRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/cron', cronRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'API is running' });

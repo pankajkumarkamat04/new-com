@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { settingsApi } from "@/lib/api";
+import { settingsApi, getMediaUrl } from "@/lib/api";
 import type { Settings } from "@/lib/types";
+import MediaPickerModal from "@/components/admin/MediaPickerModal";
 
 const defaultForm: Partial<Settings> = {
   siteName: "",
@@ -15,8 +16,15 @@ const defaultForm: Partial<Settings> = {
   instagramUrl: "",
   twitterUrl: "",
   linkedinUrl: "",
+  logoImageUrl: "",
+  faviconUrl: "",
   couponEnabled: false,
   blogEnabled: false,
+  abandonedCartEnabled: false,
+  googleAnalyticsEnabled: false,
+  googleAnalyticsId: "",
+  facebookPixelEnabled: false,
+  facebookPixelId: "",
 };
 
 export default function AdminGeneralSettingsPage() {
@@ -25,6 +33,8 @@ export default function AdminGeneralSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [showLogoPicker, setShowLogoPicker] = useState(false);
+  const [showFaviconPicker, setShowFaviconPicker] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -46,8 +56,15 @@ export default function AdminGeneralSettingsPage() {
           instagramUrl: res.data.data.instagramUrl || "",
           twitterUrl: res.data.data.twitterUrl || "",
           linkedinUrl: res.data.data.linkedinUrl || "",
+          logoImageUrl: res.data.data.logoImageUrl || "",
+          faviconUrl: res.data.data.faviconUrl || "",
           couponEnabled: !!res.data.data.couponEnabled,
           blogEnabled: !!res.data.data.blogEnabled,
+          abandonedCartEnabled: !!res.data.data.abandonedCartEnabled,
+          googleAnalyticsEnabled: !!res.data.data.googleAnalyticsEnabled,
+          googleAnalyticsId: res.data.data.googleAnalyticsId || "",
+          facebookPixelEnabled: !!res.data.data.facebookPixelEnabled,
+          facebookPixelId: res.data.data.facebookPixelId || "",
         });
       }
     });
@@ -92,6 +109,74 @@ export default function AdminGeneralSettingsPage() {
         <div className="py-12 text-center text-slate-600">Loading settings...</div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-lg font-semibold text-slate-900">Branding</h2>
+            <div className="mb-6 space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-600">Logo</label>
+                <p className="mb-2 text-xs text-slate-500">
+                  Site logo used when Header is set to use logo from General settings.
+                </p>
+                <div className="flex items-center gap-4">
+                  {form.logoImageUrl ? (
+                    <div className="h-16 w-32 flex-shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                      <img src={getMediaUrl(form.logoImageUrl)} alt="Logo" className="h-full w-full object-contain" />
+                    </div>
+                  ) : null}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowLogoPicker(true)}
+                      className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      {form.logoImageUrl ? "Change" : "Select"} Logo
+                    </button>
+                    {form.logoImageUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setForm((prev) => ({ ...prev, logoImageUrl: "" }))}
+                        className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-600">Favicon</label>
+                <p className="mb-2 text-xs text-slate-500">
+                  Browser tab icon (recommended: 32x32 or 64x64 PNG/ICO).
+                </p>
+                <div className="flex items-center gap-4">
+                  {form.faviconUrl ? (
+                    <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded border border-slate-200 bg-slate-50">
+                      <img src={getMediaUrl(form.faviconUrl)} alt="Favicon" className="h-full w-full object-contain" />
+                    </div>
+                  ) : null}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowFaviconPicker(true)}
+                      className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      {form.faviconUrl ? "Change" : "Select"} Favicon
+                    </button>
+                    {form.faviconUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setForm((prev) => ({ ...prev, faviconUrl: "" }))}
+                        className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-lg font-semibold text-slate-900">General</h2>
             <div className="space-y-4">
@@ -264,8 +349,122 @@ export default function AdminGeneralSettingsPage() {
                   <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-emerald-600 peer-checked:after:translate-x-full" />
                 </label>
               </div>
+              <div className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">Google Analytics</p>
+                    <p className="text-xs text-slate-500">
+                      Track page views and user behavior. Enter your GA4 Measurement ID (e.g. G-XXXXXXXXXX).
+                    </p>
+                  </div>
+                  <label className="relative inline-flex cursor-pointer items-center">
+                    <input
+                      type="checkbox"
+                      checked={!!form.googleAnalyticsEnabled}
+                      onChange={(e) => {
+                        setForm((prev) => ({ ...prev, googleAnalyticsEnabled: e.target.checked }));
+                        setMessage(null);
+                      }}
+                      className="peer sr-only"
+                    />
+                    <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-600 peer-checked:after:translate-x-full" />
+                  </label>
+                </div>
+                {form.googleAnalyticsEnabled && (
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600">Measurement ID</label>
+                    <input
+                      type="text"
+                      name="googleAnalyticsId"
+                      value={form.googleAnalyticsId || ""}
+                      onChange={handleChange}
+                      placeholder="G-XXXXXXXXXX"
+                      className="w-full max-w-sm rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">Facebook Pixel</p>
+                    <p className="text-xs text-slate-500">
+                      Track conversions and build audiences for Meta ads. Enter your Pixel ID (e.g. 1234567890123456).
+                    </p>
+                  </div>
+                  <label className="relative inline-flex cursor-pointer items-center">
+                    <input
+                      type="checkbox"
+                      checked={!!form.facebookPixelEnabled}
+                      onChange={(e) => {
+                        setForm((prev) => ({ ...prev, facebookPixelEnabled: e.target.checked }));
+                        setMessage(null);
+                      }}
+                      className="peer sr-only"
+                    />
+                    <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-600 peer-checked:after:translate-x-full" />
+                  </label>
+                </div>
+                {form.facebookPixelEnabled && (
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600">Pixel ID</label>
+                    <input
+                      type="text"
+                      name="facebookPixelId"
+                      value={form.facebookPixelId || ""}
+                      onChange={handleChange}
+                      placeholder="1234567890123456"
+                      className="w-full max-w-sm rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Abandoned Cart Recovery</p>
+                  <p className="text-xs text-slate-500">
+                    Send recovery emails to users who left items in their cart. Requires email notifications
+                    to be configured. Run a cron job to trigger recovery (e.g. every hour).
+                  </p>
+                </div>
+                <label className="relative inline-flex cursor-pointer items-center">
+                  <input
+                    type="checkbox"
+                    checked={!!form.abandonedCartEnabled}
+                    onChange={(e) => {
+                      setForm((prev) => ({ ...prev, abandonedCartEnabled: e.target.checked }));
+                      setMessage(null);
+                    }}
+                    className="peer sr-only"
+                  />
+                  <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-600 peer-checked:after:translate-x-full" />
+                </label>
+              </div>
             </div>
           </div>
+
+          <MediaPickerModal
+            open={showLogoPicker}
+            onClose={() => setShowLogoPicker(false)}
+            onSelect={(url) => {
+              setForm((prev) => ({ ...prev, logoImageUrl: url }));
+              setShowLogoPicker(false);
+              setMessage(null);
+            }}
+            title="Select logo"
+            type="image"
+          />
+          <MediaPickerModal
+            open={showFaviconPicker}
+            onClose={() => setShowFaviconPicker(false)}
+            onSelect={(url) => {
+              setForm((prev) => ({ ...prev, faviconUrl: url }));
+              setShowFaviconPicker(false);
+              setMessage(null);
+            }}
+            title="Select favicon"
+            type="image"
+          />
 
           <button
             type="submit"

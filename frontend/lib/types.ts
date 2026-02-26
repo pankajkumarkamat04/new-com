@@ -13,8 +13,15 @@ export type Settings = {
   instagramUrl: string;
   twitterUrl: string;
   linkedinUrl: string;
+  logoImageUrl?: string;
+  faviconUrl?: string;
   couponEnabled?: boolean;
   blogEnabled?: boolean;
+  abandonedCartEnabled?: boolean;
+  googleAnalyticsEnabled?: boolean;
+  googleAnalyticsId?: string;
+  facebookPixelEnabled?: boolean;
+  facebookPixelId?: string;
 };
 
 export type HeroSlide = {
@@ -56,7 +63,9 @@ export type HeaderNavLink = {
 };
 
 export type HeaderSettings = {
+  logoSource?: "general" | "custom";
   logoImageUrl?: string;
+  customLogoImageUrl?: string;
   navLinks: HeaderNavLink[];
   showBrowseButton?: boolean;
   showCartIcon?: boolean;
@@ -223,6 +232,7 @@ export type InventoryMovement = {
   previousStock: number;
   newStock: number;
   notes?: string;
+  sku?: string;
   createdAt: string;
 };
 

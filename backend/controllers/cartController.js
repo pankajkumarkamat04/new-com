@@ -55,6 +55,7 @@ export const addToCart = async (req, res) => {
       } else {
         cart.items.push({ productId, quantity: qty });
       }
+      cart.recoveryEmailSentAt = null; // reset so user can receive recovery again if they abandon
       await cart.save();
     }
 
@@ -93,6 +94,7 @@ export const updateCartItem = async (req, res) => {
       } else {
         cart.items[index].quantity = qty;
       }
+      cart.recoveryEmailSentAt = null;
       await cart.save();
     }
 
@@ -119,6 +121,7 @@ export const removeFromCart = async (req, res) => {
     }
 
     cart.items = cart.items.filter((i) => i.productId.toString() !== productId);
+    cart.recoveryEmailSentAt = null;
     await cart.save();
 
     const populated = await Cart.findById(cart._id)
@@ -174,6 +177,7 @@ export const mergeCart = async (req, res) => {
     }
 
     if (cart && cart.items.length > 0) {
+      cart.recoveryEmailSentAt = null;
       await cart.save();
     }
 

@@ -71,6 +71,10 @@ type SettingsContextType = {
   paymentSettings: PaymentSettings;
   couponEnabled: boolean;
   blogEnabled: boolean;
+  googleAnalyticsEnabled: boolean;
+  googleAnalyticsId: string;
+  facebookPixelEnabled: boolean;
+  facebookPixelId: string;
   currency: string;
   paymentMethods: { id: string; label: string }[];
   formatCurrency: (amount: number) => string;
@@ -116,6 +120,10 @@ const SettingsContext = createContext<SettingsContextType>({
   paymentSettings: defaultPaymentSettings,
   couponEnabled: false,
   blogEnabled: false,
+  googleAnalyticsEnabled: false,
+  googleAnalyticsId: "",
+  facebookPixelEnabled: false,
+  facebookPixelId: "",
   currency: "INR",
   paymentMethods: [{ id: "cod", label: "Cash on Delivery (COD)" }],
   formatCurrency: (amount: number) =>
@@ -140,6 +148,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(defaultPaymentSettings);
   const [couponEnabled, setCouponEnabled] = useState(false);
   const [blogEnabled, setBlogEnabled] = useState(false);
+  const [googleAnalyticsEnabled, setGoogleAnalyticsEnabled] = useState(false);
+  const [googleAnalyticsId, setGoogleAnalyticsId] = useState("");
+  const [facebookPixelEnabled, setFacebookPixelEnabled] = useState(false);
+  const [facebookPixelId, setFacebookPixelId] = useState("");
   const [loading, setLoading] = useState(true);
 
   const refresh = async () => {
@@ -150,10 +162,18 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       setSettings({ ...defaultSettings, ...publicData.general });
       setCouponEnabled(!!publicData.general.couponEnabled);
       setBlogEnabled(!!publicData.general.blogEnabled);
+      setGoogleAnalyticsEnabled(!!publicData.general.googleAnalyticsEnabled);
+      setGoogleAnalyticsId(publicData.general.googleAnalyticsId?.trim() || "");
+      setFacebookPixelEnabled(!!publicData.general.facebookPixelEnabled);
+      setFacebookPixelId(publicData.general.facebookPixelId?.trim() || "");
     } else {
       setSettings(defaultSettings);
       setCouponEnabled(false);
       setBlogEnabled(false);
+      setGoogleAnalyticsEnabled(false);
+      setGoogleAnalyticsId("");
+      setFacebookPixelEnabled(false);
+      setFacebookPixelId("");
     }
 
     const homeData = publicData?.homepage;
@@ -288,6 +308,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         paymentSettings: paymentSettings ?? defaultPaymentSettings,
         couponEnabled,
         blogEnabled,
+        googleAnalyticsEnabled,
+        googleAnalyticsId,
+        facebookPixelEnabled,
+        facebookPixelId,
         currency,
         paymentMethods,
         formatCurrency,

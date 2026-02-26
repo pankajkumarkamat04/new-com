@@ -31,9 +31,25 @@ export async function generateMetadata(): Promise<Metadata> {
     const metaTitle = seo?.data?.metaTitle?.trim() || (siteName + (siteTagline ? ` - ${siteTagline}` : ""));
     const metaDescription = seo?.data?.metaDescription?.trim() || siteTagline || "Discover amazing products. Shop the latest trends with fast delivery and great prices.";
 
+    let faviconHref = settings?.data?.faviconUrl?.trim() || "";
+    if (faviconHref && !faviconHref.startsWith("http")) {
+      const isBackendPath = faviconHref.startsWith("/api/") || faviconHref.startsWith("/uploads/");
+      if (isBackendPath && API_BASE.startsWith("http")) {
+        try {
+          const origin = new URL(API_BASE).origin;
+          faviconHref = `${origin}${faviconHref.startsWith("/") ? faviconHref : `/${faviconHref}`}`;
+        } catch {
+          faviconHref = faviconHref.startsWith("/") ? faviconHref : `/${faviconHref}`;
+        }
+      } else if (!faviconHref.startsWith("/")) {
+        faviconHref = `/${faviconHref}`;
+      }
+    }
+
     return {
       title: metaTitle,
       description: metaDescription,
+      icons: faviconHref ? { icon: faviconHref } : undefined,
       openGraph: {
         title: seo?.data?.ogTitle?.trim() || metaTitle,
         description: seo?.data?.ogDescription?.trim() || metaDescription,

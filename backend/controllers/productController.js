@@ -8,15 +8,17 @@ function processProductBody(body, existingProduct = null) {
   const hasVariations = Array.isArray(data.variations) && data.variations.length > 0;
 
   if (hasVariations) {
-    // Product has variations: don't generate product-level SKU
-    // Use a base SKU only for generating variation SKUs (reuse from existing if possible)
     const extractBase = (sku) => (sku && typeof sku === 'string' ? sku.replace(/-V\d+$/i, '') : null);
     const existingBase = extractBase(existingProduct?.variations?.[0]?.sku) || extractBase(existingProduct?.sku);
     const baseSku = existingBase || Product.generateProductSku();
+    const defaultIdx = Math.max(0, Math.min(data.defaultVariationIndex ?? 0, data.variations.length - 1));
 
     data.variations = data.variations.map((v, idx) => {
       const vCopy = { ...v };
-      if (vCopy.stockManagement === 'inventory') {
+      const isDefault = idx === defaultIdx;
+      const mainUsesInventory = data.stockManagement === 'inventory';
+      if (vCopy.stockManagement === 'inventory' || (isDefault && mainUsesInventory)) {
+        vCopy.stockManagement = 'inventory';
         if (!vCopy.sku || !vCopy.sku.trim()) {
           vCopy.sku = Product.generateVariationSku(baseSku, idx);
         }
@@ -26,17 +28,11 @@ function processProductBody(body, existingProduct = null) {
       return vCopy;
     });
 
-    // Set product.sku to default variation's SKU (for display/inventory reference)
-    const defaultIdx = Math.max(
-      0,
-      Math.min(data.defaultVariationIndex ?? 0, data.variations.length - 1)
-    );
     const defaultVar = data.variations[defaultIdx];
-    const defaultSku =
-      defaultVar?.stockManagement === 'inventory' && defaultVar?.sku
-        ? defaultVar.sku
-        : data.variations.find((v) => v.stockManagement === 'inventory' && v.sku)?.sku || '';
-    data.sku = data.stockManagement === 'manual' ? '' : defaultSku;
+    const defaultSku = defaultVar?.stockManagement === 'inventory' && defaultVar?.sku
+      ? defaultVar.sku
+      : '';
+    data.sku = data.stockManagement === 'inventory' ? defaultSku : '';
   } else {
     // No variations: product-level SKU
     if (data.stockManagement === 'inventory') {

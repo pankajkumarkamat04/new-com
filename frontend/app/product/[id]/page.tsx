@@ -131,6 +131,12 @@ export default function ProductPage() {
           ? product.discountedPrice
           : product.price);
 
+  // For products with variations, use selected variation's stock; otherwise use product-level stock
+  const effectiveStock =
+    hasVariations && selectedVariation
+      ? (selectedVariation.stock ?? 0)
+      : (product.stock ?? 0);
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
@@ -290,10 +296,10 @@ export default function ProductPage() {
             <div className="mt-6 flex items-center gap-4">
               <span
                 className={`inline-flex rounded-full px-3 py-1 text-sm font-medium ${
-                  product.stock > 0 ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"
+                  effectiveStock > 0 ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"
                 }`}
               >
-                {product.stock > 0 ? `In stock (${product.stock})` : "Out of stock"}
+                {effectiveStock > 0 ? `In stock (${effectiveStock})` : "Out of stock"}
               </span>
             </div>
 

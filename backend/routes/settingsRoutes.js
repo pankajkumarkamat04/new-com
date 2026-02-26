@@ -26,6 +26,8 @@ const updateSettingsValidation = [
   body('siteName').optional().trim(),
   body('siteUrl').optional().trim(),
   body('siteTagline').optional().trim(),
+  body('logoImageUrl').optional().trim(),
+  body('faviconUrl').optional().trim(),
   body('contactEmail').optional({ values: 'falsy' }).trim().isEmail().withMessage('Valid email required'),
   body('contactPhone').optional().trim(),
   body('contactAddress').optional().trim(),
@@ -33,6 +35,13 @@ const updateSettingsValidation = [
   body('instagramUrl').optional().trim(),
   body('twitterUrl').optional().trim(),
   body('linkedinUrl').optional().trim(),
+  body('couponEnabled').optional().isBoolean().withMessage('couponEnabled must be boolean'),
+  body('blogEnabled').optional().isBoolean().withMessage('blogEnabled must be boolean'),
+  body('abandonedCartEnabled').optional().isBoolean().withMessage('abandonedCartEnabled must be boolean'),
+  body('googleAnalyticsEnabled').optional().isBoolean().withMessage('googleAnalyticsEnabled must be boolean'),
+  body('googleAnalyticsId').optional().trim(),
+  body('facebookPixelEnabled').optional().isBoolean().withMessage('facebookPixelEnabled must be boolean'),
+  body('facebookPixelId').optional().trim(),
 ];
 
 const updateSeoValidation = [
@@ -62,6 +71,7 @@ const updateHomeCategoriesValidation = [
 ];
 
 const updateHeaderValidation = [
+  body('logoSource').optional().isIn(['general', 'custom']).withMessage('logoSource must be general or custom'),
   body('logoImageUrl').optional().trim(),
   body('navLinks').optional().isArray().withMessage('navLinks must be array'),
   body('navLinks.*.label').optional().trim(),

@@ -15,25 +15,42 @@ function hasInventoryWithSku(p: Product): boolean {
 
 function getSkus(product: Product): { sku: string; label: string; stock: number }[] {
   const list: { sku: string; label: string; stock: number }[] = [];
-  if (product.stockManagement === "inventory" && product.sku) {
+  const variations = product.variations ?? [];
+  const hasVariations = variations.length > 0;
+  const defaultIdx = Math.max(0, Math.min(product.defaultVariationIndex ?? 0, variations.length - 1));
+  const defaultVar = variations[defaultIdx];
+
+  if (hasVariations) {
+    if (product.stockManagement === "inventory" && product.sku && defaultVar?.sku === product.sku) {
+      const defaultAttrLabel = (defaultVar?.attributes ?? [])
+        .map((a) => `${a.name}: ${a.value}`)
+        .join(", ") || "Product";
+      list.push({
+        sku: product.sku,
+        label: defaultAttrLabel,
+        stock: defaultVar?.stock ?? 0,
+      });
+    }
+    variations.forEach((v: ProductVariation, i: number) => {
+      if (v.stockManagement === "inventory" && v.sku) {
+        if (product.sku === v.sku && product.stockManagement === "inventory") return;
+        const attrLabel = (v.attributes ?? [])
+          .map((a) => `${a.name}: ${a.value}`)
+          .join(", ");
+        list.push({
+          sku: v.sku,
+          label: attrLabel || `Variation ${i + 1}`,
+          stock: v.stock ?? 0,
+        });
+      }
+    });
+  } else if (product.stockManagement === "inventory" && product.sku) {
     list.push({
       sku: product.sku,
       label: "Product",
       stock: product.stock ?? 0,
     });
   }
-  (product.variations ?? []).forEach((v: ProductVariation, i: number) => {
-    if (v.stockManagement === "inventory" && v.sku) {
-      const attrLabel = (v.attributes ?? [])
-        .map((a) => `${a.name}: ${a.value}`)
-        .join(", ");
-      list.push({
-        sku: v.sku,
-        label: attrLabel || `Variation ${i + 1}`,
-        stock: v.stock ?? 0,
-      });
-    }
-  });
   return list;
 }
 
@@ -74,7 +91,7 @@ export default function AdminInventoryPage() {
 
   const fetchProducts = () => {
     setLoading(true);
-    productApi.list({ limit: 500 }).then((res) => {
+    return productApi.list({ limit: 500 }).then((res) => {
       setLoading(false);
       if (res.data?.data) setProducts(res.data.data);
     });
@@ -113,14 +130,19 @@ export default function AdminInventoryPage() {
       return;
     }
     setMessage({ type: "success", text: res.data?.message || "Stock added" });
+    const addedProductId = addForm.productId;
     setAddForm({ productId: "", sku: "", quantity: "", reason: "", notes: "" });
     setShowAddForm(false);
-    fetchProducts();
-    if (selectedProduct && selectedProduct._id === addForm.productId) {
-      inventoryApi.getByProduct(addForm.productId).then((r) => {
-        if (r.data?.data?.movements) setProductMovements(r.data.data.movements);
-      });
-    }
+    fetchProducts().then(() => {
+      if (selectedProduct && selectedProduct._id === addedProductId) {
+        productApi.get(addedProductId).then((r) => {
+          if (r.data?.data) setSelectedProduct(r.data.data);
+        });
+        inventoryApi.getByProduct(addedProductId).then((r) => {
+          if (r.data?.data?.movements) setProductMovements(r.data.data.movements);
+        });
+      }
+    });
   };
 
   const getProductName = (p: InventoryMovement) => {
@@ -352,6 +374,7 @@ export default function AdminInventoryPage() {
                   <thead className="bg-slate-50">
                     <tr>
                       <th className="px-4 py-2 text-left text-xs font-medium uppercase text-slate-500">Date</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium uppercase text-slate-500">SKU</th>
                       <th className="px-4 py-2 text-left text-xs font-medium uppercase text-slate-500">Type</th>
                       <th className="px-4 py-2 text-right text-xs font-medium uppercase text-slate-500">Quantity</th>
                       <th className="px-4 py-2 text-right text-xs font-medium uppercase text-slate-500">Previous</th>
@@ -364,6 +387,9 @@ export default function AdminInventoryPage() {
                       <tr key={m._id}>
                         <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-600">
                           {new Date(m.createdAt).toLocaleString()}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-600">
+                          {m.sku || "—"}
                         </td>
                         <td className="px-4 py-3">
                           <span

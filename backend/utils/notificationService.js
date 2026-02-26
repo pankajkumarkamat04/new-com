@@ -114,7 +114,7 @@ async function sendWhatsApp(to, body) {
  * @param {Object} opts
  * @param {string} [opts.email] - recipient email
  * @param {string} [opts.phone] - recipient phone (E.164, e.g. +1234567890)
- * @param {string} opts.type - 'signup' | 'order_placed' | 'order_status'
+ * @param {string} opts.type - 'signup' | 'order_placed' | 'order_status' | 'abandoned_cart'
  * @param {Object} [opts.data] - extra data (user, order, newStatus, siteName, etc.)
  */
 export function sendNotification(opts) {
@@ -130,6 +130,7 @@ export function sendNotification(opts) {
       if (type === 'signup') return `Welcome to ${ns}`;
       if (type === 'order_placed') return `Order Confirmation - ${ns}`;
       if (type === 'order_status') return `Order Update - ${ns}`;
+      if (type === 'abandoned_cart') return `You left items in your cart - ${ns}`;
       return `${ns} - Notification`;
     };
 
@@ -148,6 +149,11 @@ export function sendNotification(opts) {
         const orderId = data.orderId || 'N/A';
         const newStatus = data.newStatus || '';
         return `Your order #${orderId} status has been updated to: ${newStatus}.`;
+      }
+      if (type === 'abandoned_cart') {
+        const name = data.userName || 'Customer';
+        const cartUrl = data.cartUrl || (data.siteUrl ? `${data.siteUrl.replace(/\/$/, '')}/cart` : '/cart');
+        return `Hi ${name}, you left some items in your cart at ${ns}. Complete your purchase: ${cartUrl}`;
       }
       return 'You have a new notification.';
     };

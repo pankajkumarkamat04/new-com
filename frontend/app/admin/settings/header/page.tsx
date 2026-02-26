@@ -10,6 +10,7 @@ const defaultNavLink: HeaderNavLink = { label: "", href: "" };
 export default function AdminHeaderSettingsPage() {
   const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState<HeaderSettings>({
+    logoSource: "general",
     logoImageUrl: "",
     navLinks: [
       { label: "Shop", href: "/shop" },
@@ -23,6 +24,7 @@ export default function AdminHeaderSettingsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showMediaPicker, setShowMediaPicker] = useState(false);
+  const logoSource = form.logoSource || "general";
 
   useEffect(() => {
     setMounted(true);
@@ -40,6 +42,7 @@ export default function AdminHeaderSettingsPage() {
           { label: "Fashion", href: "/shop?category=Fashion" },
         ];
         setForm({
+          logoSource: d.logoSource === "custom" ? "custom" : "general",
           logoImageUrl: d.logoImageUrl || "",
           navLinks: Array.isArray(d.navLinks) && d.navLinks.length > 0 ? d.navLinks : defaultLinks,
           showBrowseButton: d.showBrowseButton !== false,
@@ -112,33 +115,57 @@ export default function AdminHeaderSettingsPage() {
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-lg font-semibold text-slate-900">Logo</h2>
             <p className="mb-4 text-sm text-slate-500">
-              If no image is selected, the site name from General settings is shown as text. Use the media picker to choose a logo image.
+              Choose where the header logo comes from. If no image is selected, the site name from General settings is shown as text.
             </p>
-            <div className="flex items-center gap-4">
-              {form.logoImageUrl ? (
-                <div className="h-16 w-32 flex-shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
-                  <img src={getMediaUrl(form.logoImageUrl)} alt="Logo" className="h-full w-full object-contain" />
-                </div>
-              ) : null}
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowMediaPicker(true)}
-                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  {form.logoImageUrl ? "Change" : "Select"} Image
-                </button>
-                {form.logoImageUrl && (
+            <div className="mb-4 space-y-3">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="logoSource"
+                  checked={logoSource === "general"}
+                  onChange={() => setForm((prev) => ({ ...prev, logoSource: "general" }))}
+                  className="h-4 w-4 border-slate-300 text-amber-600 focus:ring-amber-500"
+                />
+                <span className="text-sm text-slate-700">Use logo from General Settings</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="logoSource"
+                  checked={logoSource === "custom"}
+                  onChange={() => setForm((prev) => ({ ...prev, logoSource: "custom" }))}
+                  className="h-4 w-4 border-slate-300 text-amber-600 focus:ring-amber-500"
+                />
+                <span className="text-sm text-slate-700">Use custom logo (select below)</span>
+              </label>
+            </div>
+            {logoSource === "custom" && (
+              <div className="flex items-center gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                {form.logoImageUrl ? (
+                  <div className="h-16 w-32 flex-shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                    <img src={getMediaUrl(form.logoImageUrl)} alt="Custom Logo" className="h-full w-full object-contain" />
+                  </div>
+                ) : null}
+                <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => setForm((prev) => ({ ...prev, logoImageUrl: "" }))}
-                    className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                    onClick={() => setShowMediaPicker(true)}
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                   >
-                    Remove
+                    {form.logoImageUrl ? "Change" : "Select"} Custom Logo
                   </button>
-                )}
+                  {form.logoImageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, logoImageUrl: "" }))}
+                      className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -212,7 +239,7 @@ export default function AdminHeaderSettingsPage() {
               setForm((prev) => ({ ...prev, logoImageUrl: url }));
               setShowMediaPicker(false);
             }}
-            title="Select logo image"
+            title="Select custom logo"
             type="image"
           />
 

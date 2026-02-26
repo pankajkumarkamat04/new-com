@@ -262,6 +262,7 @@ export const getHeaderSettings = async (req, res) => {
       { label: 'Fashion', href: '/shop?category=Fashion' },
     ];
     const data = {
+      logoSource: header.logoSource === 'custom' ? 'custom' : 'general',
       logoImageUrl: header.logoImageUrl || '',
       navLinks,
       showBrowseButton: header.showBrowseButton !== false,
@@ -280,9 +281,10 @@ export const updateHeaderSettings = async (req, res) => {
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
-    const { logoImageUrl, navLinks, showBrowseButton, showCartIcon } = req.body;
+    const { logoSource, logoImageUrl, navLinks, showBrowseButton, showCartIcon } = req.body;
 
     const headerUpdate = {};
+    if (logoSource === 'general' || logoSource === 'custom') headerUpdate['header.logoSource'] = logoSource;
     if (logoImageUrl !== undefined) headerUpdate['header.logoImageUrl'] = String(logoImageUrl).trim();
     if (Array.isArray(navLinks)) {
       headerUpdate['header.navLinks'] = navLinks
@@ -303,6 +305,7 @@ export const updateHeaderSettings = async (req, res) => {
 
     const header = settings.header || {};
     const data = {
+      logoSource: header.logoSource === 'custom' ? 'custom' : 'general',
       logoImageUrl: header.logoImageUrl || '',
       navLinks: Array.isArray(header.navLinks) ? header.navLinks : [],
       showBrowseButton: header.showBrowseButton !== false,
@@ -724,8 +727,15 @@ export const getPublicSettings = async (req, res) => {
       instagramUrl: settings.instagramUrl || '',
       twitterUrl: settings.twitterUrl || '',
       linkedinUrl: settings.linkedinUrl || '',
+      logoImageUrl: settings.logoImageUrl || '',
+      faviconUrl: settings.faviconUrl || '',
       couponEnabled: !!settings.couponEnabled,
       blogEnabled: !!settings.blogEnabled,
+      abandonedCartEnabled: !!settings.abandonedCartEnabled,
+      googleAnalyticsEnabled: !!settings.googleAnalyticsEnabled,
+      googleAnalyticsId: (settings.googleAnalyticsId || '').trim(),
+      facebookPixelEnabled: !!settings.facebookPixelEnabled,
+      facebookPixelId: (settings.facebookPixelId || '').trim(),
     };
 
     const seo = settings.seo || {};
@@ -746,13 +756,19 @@ export const getPublicSettings = async (req, res) => {
     };
 
     const header = settings.header || {};
+    const logoSource = header.logoSource === 'custom' ? 'custom' : 'general';
+    const effectiveLogoUrl = logoSource === 'general'
+      ? (settings.logoImageUrl || header.logoImageUrl || '')
+      : (header.logoImageUrl || settings.logoImageUrl || '');
     const navLinks = Array.isArray(header.navLinks) && header.navLinks.length > 0 ? header.navLinks : [
       { label: 'Shop', href: '/shop' },
       { label: 'Electronics', href: '/shop?category=Electronics' },
       { label: 'Fashion', href: '/shop?category=Fashion' },
     ];
     const headerData = {
-      logoImageUrl: header.logoImageUrl || '',
+      logoSource,
+      logoImageUrl: effectiveLogoUrl,
+      customLogoImageUrl: header.logoImageUrl || '',
       navLinks,
       showBrowseButton: header.showBrowseButton !== false,
       showCartIcon: header.showCartIcon !== false,
@@ -841,7 +857,10 @@ export const updateSettings = async (req, res) => {
       'siteName', 'siteUrl', 'siteTagline',
       'contactEmail', 'contactPhone', 'contactAddress',
       'facebookUrl', 'instagramUrl', 'twitterUrl', 'linkedinUrl',
-      'couponEnabled', 'blogEnabled',
+      'logoImageUrl', 'faviconUrl',
+      'couponEnabled', 'blogEnabled', 'abandonedCartEnabled',
+      'googleAnalyticsEnabled', 'googleAnalyticsId',
+      'facebookPixelEnabled', 'facebookPixelId',
     ];
 
     const updates = {};

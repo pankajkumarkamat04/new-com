@@ -83,21 +83,23 @@ export const addStock = async (req, res) => {
 
     if (skuVal) {
       // Add to specific SKU (product or variation)
-      if (product.sku === skuVal && product.stockManagement === 'inventory') {
-        previousStock = product.stock || 0;
-        newStock = previousStock + qty;
-        await Product.findByIdAndUpdate(productId, { $set: { stock: newStock } });
-      } else {
-        const varIdx = (product.variations || []).findIndex(
-          (v) => v.sku === skuVal && v.stockManagement === 'inventory'
-        );
-        if (varIdx < 0) {
-          return res.status(400).json({ success: false, message: 'Invalid SKU for this product' });
-        }
+      const hasVariations = Array.isArray(product.variations) && product.variations.length > 0;
+      const varIdx = (product.variations || []).findIndex(
+        (v) => v.sku === skuVal && v.stockManagement === 'inventory'
+      );
+      if (varIdx >= 0) {
+        // SKU belongs to a variation – update variation stock
         previousStock = product.variations[varIdx].stock || 0;
         newStock = previousStock + qty;
         const key = `variations.${varIdx}.stock`;
         await Product.findByIdAndUpdate(productId, { $set: { [key]: newStock } });
+      } else if (!hasVariations && product.sku === skuVal && product.stockManagement === 'inventory') {
+        // Product has no variations – update product stock
+        previousStock = product.stock || 0;
+        newStock = previousStock + qty;
+        await Product.findByIdAndUpdate(productId, { $set: { stock: newStock } });
+      } else {
+        return res.status(400).json({ success: false, message: 'Invalid SKU for this product' });
       }
     } else {
       // Legacy: add to product-level stock
