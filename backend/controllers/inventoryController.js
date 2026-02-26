@@ -69,7 +69,7 @@ export const addStock = async (req, res) => {
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
-    const { productId, quantity, reason, notes } = req.body;
+    const { productId, quantity, reason, notes, sku } = req.body;
     const qty = Math.max(1, parseInt(quantity, 10));
 
     const product = await Product.findById(productId);
@@ -77,10 +77,35 @@ export const addStock = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    const previousStock = product.stock || 0;
-    const newStock = previousStock + qty;
+    let previousStock;
+    let newStock;
+    const skuVal = (sku && String(sku).trim()) || null;
 
-    await Product.findByIdAndUpdate(productId, { $set: { stock: newStock } });
+    if (skuVal) {
+      // Add to specific SKU (product or variation)
+      if (product.sku === skuVal && product.stockManagement === 'inventory') {
+        previousStock = product.stock || 0;
+        newStock = previousStock + qty;
+        await Product.findByIdAndUpdate(productId, { $set: { stock: newStock } });
+      } else {
+        const varIdx = (product.variations || []).findIndex(
+          (v) => v.sku === skuVal && v.stockManagement === 'inventory'
+        );
+        if (varIdx < 0) {
+          return res.status(400).json({ success: false, message: 'Invalid SKU for this product' });
+        }
+        previousStock = product.variations[varIdx].stock || 0;
+        newStock = previousStock + qty;
+        const key = `variations.${varIdx}.stock`;
+        await Product.findByIdAndUpdate(productId, { $set: { [key]: newStock } });
+      }
+    } else {
+      // Legacy: add to product-level stock
+      previousStock = product.stock || 0;
+      newStock = previousStock + qty;
+      await Product.findByIdAndUpdate(productId, { $set: { stock: newStock } });
+    }
+
     await Inventory.create({
       productId,
       quantity: qty,
@@ -89,6 +114,7 @@ export const addStock = async (req, res) => {
       previousStock,
       newStock,
       notes: notes || '',
+      sku: skuVal || '',
     });
 
     await redisDel(`products:item:${productId}`);
@@ -98,7 +124,7 @@ export const addStock = async (req, res) => {
     res.status(201).json({
       success: true,
       data: updated,
-      message: `Added ${qty} units. New stock: ${newStock}`,
+      message: `Added ${qty} units${skuVal ? ` to ${skuVal}` : ''}. New stock: ${newStock}`,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

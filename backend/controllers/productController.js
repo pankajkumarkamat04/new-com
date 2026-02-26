@@ -2,6 +2,55 @@ import { validationResult } from 'express-validator';
 import Product from '../models/Product.js';
 import { redisGetJson, redisSetJson, redisDel, redisDeleteByPattern } from '../utils/redisClient.js';
 
+function processProductBody(body, existingProduct = null) {
+  const data = { ...body };
+
+  const hasVariations = Array.isArray(data.variations) && data.variations.length > 0;
+
+  if (hasVariations) {
+    // Product has variations: don't generate product-level SKU
+    // Use a base SKU only for generating variation SKUs (reuse from existing if possible)
+    const extractBase = (sku) => (sku && typeof sku === 'string' ? sku.replace(/-V\d+$/i, '') : null);
+    const existingBase = extractBase(existingProduct?.variations?.[0]?.sku) || extractBase(existingProduct?.sku);
+    const baseSku = existingBase || Product.generateProductSku();
+
+    data.variations = data.variations.map((v, idx) => {
+      const vCopy = { ...v };
+      if (vCopy.stockManagement === 'inventory') {
+        if (!vCopy.sku || !vCopy.sku.trim()) {
+          vCopy.sku = Product.generateVariationSku(baseSku, idx);
+        }
+      } else {
+        vCopy.sku = '';
+      }
+      return vCopy;
+    });
+
+    // Set product.sku to default variation's SKU (for display/inventory reference)
+    const defaultIdx = Math.max(
+      0,
+      Math.min(data.defaultVariationIndex ?? 0, data.variations.length - 1)
+    );
+    const defaultVar = data.variations[defaultIdx];
+    const defaultSku =
+      defaultVar?.stockManagement === 'inventory' && defaultVar?.sku
+        ? defaultVar.sku
+        : data.variations.find((v) => v.stockManagement === 'inventory' && v.sku)?.sku || '';
+    data.sku = data.stockManagement === 'manual' ? '' : defaultSku;
+  } else {
+    // No variations: product-level SKU
+    if (data.stockManagement === 'inventory') {
+      if (!data.sku || !data.sku.trim()) {
+        data.sku = Product.generateProductSku();
+      }
+    } else {
+      data.sku = '';
+    }
+  }
+
+  return data;
+}
+
 export const getProducts = async (req, res) => {
   try {
     const { category, isActive, search, page = 1, limit = 10 } = req.query;
@@ -80,7 +129,8 @@ export const createProduct = async (req, res) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({ success: false, errors: errors.array() });
     }
-    const product = await Product.create(req.body);
+    const body = processProductBody(req.body);
+    const product = await Product.create(body);
 
     // Invalidate cached product lists so new product appears
     await redisDeleteByPattern('products:list:');
@@ -97,9 +147,14 @@ export const updateProduct = async (req, res) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({ success: false, errors: errors.array() });
     }
+    const existing = await Product.findById(req.params.id);
+    if (!existing) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+    const body = processProductBody(req.body, existing);
     const product = await Product.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      body,
       { returnDocument: 'after', runValidators: true }
     );
     if (!product) {

@@ -202,6 +202,8 @@ export const productApi = {
     price: number;
     discountedPrice?: number;
     category?: string;
+    stockManagement?: 'manual' | 'inventory';
+    sku?: string;
     stock?: number;
     image?: string;
     images?: string[];
@@ -218,6 +220,8 @@ export const productApi = {
       price: number;
       discountedPrice: number;
       category: string;
+      stockManagement: 'manual' | 'inventory';
+      sku: string;
       stock: number;
       image: string;
       images: string[];
@@ -246,7 +250,7 @@ export const inventoryApi = {
     api<{ data: { product: { _id: string; name: string; stock: number }; movements: InventoryMovement[] } }>(
       `/inventory/product/${productId}`
     ),
-  addStock: (body: { productId: string; quantity: number; reason?: string; notes?: string }) =>
+  addStock: (body: { productId: string; quantity: number; reason?: string; notes?: string; sku?: string }) =>
     api<{ data: Product; message: string }>('/inventory/add', { method: 'POST', body: JSON.stringify(body) }),
   adjustStock: (body: { productId: string; quantity: number; reason?: string; notes?: string }) =>
     api<{ data: Product; message: string }>('/inventory/adjust', { method: 'POST', body: JSON.stringify(body) }),

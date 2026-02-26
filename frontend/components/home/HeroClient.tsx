@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { getMediaUrl } from "@/lib/api";
 import type { HeroSettings, HeroSlide } from "@/lib/types";
 
 function SlideContent({ slide, showText, dark = false }: { slide: HeroSlide; showText: boolean; dark?: boolean }) {
@@ -84,7 +85,7 @@ export function HeroClient({ hero }: Props) {
         {hasImage && currentSlide?.image ? (
           <div className="relative">
             <img
-              src={currentSlide.image}
+              src={getMediaUrl(currentSlide.image)}
               alt={currentSlide.title || "Hero"}
               className="h-[60vh] w-full object-cover"
             />
@@ -114,7 +115,7 @@ export function HeroClient({ hero }: Props) {
             {hasImage && slide.image ? (
               <>
                 <img
-                  src={slide.image}
+                  src={getMediaUrl(slide.image)}
                   alt={slide.title || `Slide ${i + 1}`}
                   className="h-[70vh] w-full object-cover"
                 />

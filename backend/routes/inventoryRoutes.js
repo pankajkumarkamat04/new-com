@@ -16,6 +16,7 @@ router.post(
     body('quantity').isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
     body('reason').optional().trim(),
     body('notes').optional().trim(),
+    body('sku').optional().trim(),
   ],
   inventoryController.addStock
 );

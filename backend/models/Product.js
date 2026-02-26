@@ -23,6 +23,16 @@ const productSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  stockManagement: {
+    type: String,
+    enum: ['manual', 'inventory'],
+    default: 'manual',
+  },
+  sku: {
+    type: String,
+    trim: true,
+    default: '',
+  },
   stock: {
     type: Number,
     default: 0,
@@ -51,6 +61,11 @@ const productSchema = new mongoose.Schema({
       }],
     },
   ],
+  defaultVariationIndex: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
   variations: [
     {
       name: {
@@ -66,6 +81,16 @@ const productSchema = new mongoose.Schema({
       discountedPrice: {
         type: Number,
         min: 0,
+      },
+      stockManagement: {
+        type: String,
+        enum: ['manual', 'inventory'],
+        default: 'manual',
+      },
+      sku: {
+        type: String,
+        trim: true,
+        default: '',
       },
       stock: {
         type: Number,
@@ -110,5 +135,20 @@ const productSchema = new mongoose.Schema({
 productSchema.index({ name: 1 });
 productSchema.index({ category: 1 });
 productSchema.index({ isActive: 1 });
+productSchema.index({ sku: 1 }, { sparse: true });
+
+function generateSku(prefix = 'PRD') {
+  const t = Date.now().toString(36).toUpperCase();
+  const r = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `${prefix}-${t}${r}`;
+}
+
+productSchema.statics.generateProductSku = function () {
+  return generateSku('PRD');
+};
+
+productSchema.statics.generateVariationSku = function (productSku, index) {
+  return `${productSku}-V${String(index + 1).padStart(2, '0')}`;
+};
 
 export default mongoose.model('Product', productSchema);

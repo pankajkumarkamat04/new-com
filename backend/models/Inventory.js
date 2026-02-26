@@ -38,6 +38,11 @@ const inventorySchema = new mongoose.Schema({
     trim: true,
     default: '',
   },
+  sku: {
+    type: String,
+    trim: true,
+    default: '',
+  },
 }, {
   timestamps: true,
 });

@@ -204,6 +204,8 @@ export type ProductVariation = {
   name: string;
   price: number;
   discountedPrice?: number;
+  stockManagement?: 'manual' | 'inventory';
+  sku?: string;
   stock?: number;
   image?: string;
   images?: string[];
@@ -231,10 +233,13 @@ export type Product = {
   price: number;
   discountedPrice?: number;
   category?: string;
+  stockManagement?: 'manual' | 'inventory';
+  sku?: string;
   stock: number;
   image?: string;
   images?: string[];
   attributes?: ProductAttribute[];
+  defaultVariationIndex?: number;
   variations?: ProductVariation[];
   isActive: boolean;
   createdAt: string;

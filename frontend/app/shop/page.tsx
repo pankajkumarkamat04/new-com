@@ -126,7 +126,7 @@ function ShopContent() {
               >
                 {product.image || (product.images && product.images.length > 0) ? (
                   <img
-                    src={product.image || (product.images && product.images[0]) || ""}
+                    src={getMediaUrl(product.image || (product.images && product.images[0]) || "")}
                     alt={product.name}
                     className="h-48 w-full object-cover transition group-hover:scale-105"
                   />

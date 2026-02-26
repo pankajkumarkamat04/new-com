@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getMediaUrl } from "@/lib/api";
 import type { Product } from "@/lib/types";
 
 type Props = {
@@ -34,7 +35,7 @@ export function FeaturedProductsSection({ products }: Props) {
               >
                 {product.image ? (
                   <img
-                    src={product.image}
+                    src={getMediaUrl(product.image)}
                     alt={product.name}
                     className="h-48 w-full object-cover transition group-hover:scale-105"
                   />

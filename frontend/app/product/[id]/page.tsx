@@ -34,14 +34,30 @@ export default function ProductPage() {
           setError("This product is no longer available.");
         } else {
           setProduct(p);
-          // Auto-select first term for each attribute
+          // Auto-select default variation or first term for each attribute
           if (Array.isArray(p.attributes) && p.attributes.length > 0) {
+            const defaultIdx =
+              typeof p.defaultVariationIndex === "number" &&
+              p.variations &&
+              p.defaultVariationIndex >= 0 &&
+              p.defaultVariationIndex < p.variations.length
+                ? p.defaultVariationIndex
+                : 0;
+            const defaultVar = p.variations?.[defaultIdx];
             const initial: Record<string, string> = {};
+            if (defaultVar?.attributes && defaultVar.attributes.length > 0) {
+              defaultVar.attributes.forEach((a) => {
+                if (a.name && a.value) initial[a.name] = a.value;
+              });
+            }
+            // Fill missing attributes with first term
             p.attributes.forEach((attr) => {
-              if (attr.terms.length > 0) initial[attr.name] = attr.terms[0];
+              if (!(attr.name in initial) && attr.terms.length > 0) {
+                initial[attr.name] = attr.terms[0];
+              }
             });
             setSelectedAttributes(initial);
-            // Find matching first variation for initial image
+            // Find matching variation for initial image
             const firstVar = p.variations?.find((v) =>
               v.attributes?.every((a) => initial[a.name] === a.value)
             );
