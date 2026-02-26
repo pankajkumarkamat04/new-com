@@ -263,7 +263,7 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
-  const [admin, setAdmin] = useState<{ name: string; email: string; phone?: string } | null>(null);
+  const [admin, setAdmin] = useState<{ name: string; email: string; phone?: string; role?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [couponEnabled, setCouponEnabled] = useState(false);
   const [blogEnabled, setBlogEnabled] = useState(false);
@@ -370,6 +370,22 @@ export default function AdminLayout({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10M4 18h6" />
                   </svg>
                   Blogs
+                </Link>
+              )}
+
+              {admin?.role === "superadmin" && (
+                <Link
+                  href="/admin/admins"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+                    pathname === "/admin/admins"
+                      ? "bg-amber-50 text-amber-700"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  }`}
+                >
+                  <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                  Admins
                 </Link>
               )}
 

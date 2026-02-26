@@ -1,13 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  settingsApi,
-  type FooterSettings,
-  type FooterColumn,
-  type FooterLink,
-  type FooterColumnType,
-} from "@/lib/api";
+import { settingsApi } from "@/lib/api";
+import type { FooterSettings, FooterColumn, FooterLink, FooterColumnType } from "@/lib/types";
 
 const COLUMN_TYPES: { value: FooterColumnType; label: string; description: string }[] = [
   { value: "links", label: "Links", description: "A list of text links (e.g. Shop, FAQ, Privacy)." },

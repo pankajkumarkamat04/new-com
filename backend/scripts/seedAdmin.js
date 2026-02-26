@@ -26,6 +26,7 @@ const seedAdmin = async () => {
       email: SEED_ADMIN.email.toLowerCase(),
       phone: SEED_ADMIN.phone || undefined,
       password: SEED_ADMIN.password,
+      role: 'superadmin',
     });
 
     console.log('Admin seeded successfully:', SEED_ADMIN.email);

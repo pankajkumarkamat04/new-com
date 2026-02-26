@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { productApi, getMediaUrl } from "@/lib/api";
-import type { Product, Category } from "@/lib/types";
+import type { Product, Category, ProductTax } from "@/lib/types";
+import { useSettings } from "@/contexts/SettingsContext";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
 
 type MediaPickerContext =
@@ -14,6 +15,9 @@ type MediaPickerContext =
 
 const INITIAL_FORM = {
   name: "",
+  taxUseDefault: true,
+  taxType: "percentage" as "percentage" | "flat",
+  taxValue: "",
   description: "",
   price: "",
   discountedPrice: "",
@@ -61,6 +65,7 @@ type ProductFormProps = {
 };
 
 export default function ProductForm({ product, categories, onSuccess, onCancel }: ProductFormProps) {
+  const { taxEnabled, defaultTaxPercentage, refresh } = useSettings();
   const [form, setForm] = useState(INITIAL_FORM);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -74,12 +79,22 @@ export default function ProductForm({ product, categories, onSuccess, onCancel }
   const [bulkDiscounted, setBulkDiscounted] = useState("");
   const [bulkStock, setBulkStock] = useState("");
   const [bulkStockManagement, setBulkStockManagement] = useState<"" | "manual" | "inventory">("");
+  const [step, setStep] = useState<1 | 2>(1);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   useEffect(() => {
     if (product) {
+      const pt = product.tax;
+      const hasCustomTax = pt && (pt.value ?? 0) > 0;
       setForm({
         name: product.name,
         description: product.description || "",
+        taxUseDefault: !hasCustomTax,
+        taxType: (pt?.taxType as "percentage" | "flat") || "percentage",
+        taxValue: hasCustomTax ? String(pt!.value) : "",
         price: String(product.price),
         discountedPrice: product.discountedPrice ? String(product.discountedPrice) : "",
         category: product.category || "",
@@ -110,7 +125,7 @@ export default function ProductForm({ product, categories, onSuccess, onCancel }
         isActive: product.isActive,
       });
     } else {
-      setForm(INITIAL_FORM);
+      setForm({ ...INITIAL_FORM, taxUseDefault: true, taxType: "percentage", taxValue: "" });
     }
     setShowMediaPicker(false);
     setMediaPickerCtx(null);
@@ -123,6 +138,7 @@ export default function ProductForm({ product, categories, onSuccess, onCancel }
     setBulkDiscounted("");
     setBulkStock("");
     setBulkStockManagement("");
+    setStep(1);
   }, [product]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -179,7 +195,27 @@ export default function ProductForm({ product, categories, onSuccess, onCancel }
         })
         .filter((v) => !isNaN(v.price) && v.price >= 0),
       isActive: form.isActive,
+      ...(taxEnabled && (() => {
+        if (form.taxUseDefault) return { tax: { taxType: "percentage" as const, value: 0 } };
+        const v = parseFloat(form.taxValue);
+        if (!isNaN(v) && v >= 0) return { tax: { taxType: form.taxType, value: v } };
+        return {};
+      })()),
     };
+
+    if (taxEnabled && !form.taxUseDefault) {
+      const taxVal = parseFloat(form.taxValue);
+      if (isNaN(taxVal) || taxVal < 0) {
+        setError("Enter a valid tax value");
+        setSubmitting(false);
+        return;
+      }
+      if (form.taxType === "percentage" && taxVal > 100) {
+        setError("Tax percentage cannot exceed 100");
+        setSubmitting(false);
+        return;
+      }
+    }
 
     if (!payload.name || isNaN(basePrice) || basePrice < 0) {
       setError("Name and valid price are required");
@@ -396,10 +432,31 @@ export default function ProductForm({ product, categories, onSuccess, onCancel }
 
   return (
     <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="mb-4 text-lg font-semibold text-slate-900">
-        {product ? "Edit Product" : "Add Product"}
-      </h2>
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <h2 className="text-lg font-semibold text-slate-900">
+          {product ? "Edit Product" : "Add Product"}
+        </h2>
+        <div className="flex items-center gap-2">
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-medium ${
+              step === 1 ? "bg-amber-600 text-white" : "bg-slate-200 text-slate-600"
+            }`}
+          >
+            Step 1: Basic Info
+          </span>
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-medium ${
+              step === 2 ? "bg-amber-600 text-white" : "bg-slate-200 text-slate-600"
+            }`}
+          >
+            Step 2: Attributes & Variations
+          </span>
+        </div>
+      </div>
       <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        {step === 1 && (
+        <>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-600">Name *</label>
@@ -436,6 +493,68 @@ export default function ProductForm({ product, categories, onSuccess, onCancel }
             />
           </div>
         </div>
+        {taxEnabled && (
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <h3 className="mb-3 text-sm font-semibold text-slate-700">Tax</h3>
+            <div className="flex flex-wrap gap-6">
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="radio"
+                  name="taxOption"
+                  checked={form.taxUseDefault}
+                  onChange={() => setForm((prev) => ({ ...prev, taxUseDefault: true, taxValue: "" }))}
+                  className="text-amber-600 focus:ring-amber-500"
+                />
+                <span className="text-sm">Use default ({defaultTaxPercentage}%)</span>
+              </label>
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="radio"
+                  name="taxOption"
+                  checked={!form.taxUseDefault}
+                  onChange={() => setForm((prev) => ({ ...prev, taxUseDefault: false }))}
+                  className="text-amber-600 focus:ring-amber-500"
+                />
+                <span className="text-sm">Custom tax</span>
+              </label>
+            </div>
+            {!form.taxUseDefault && (
+              <div className="mt-3 flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <label className="flex cursor-pointer items-center gap-1.5">
+                    <input
+                      type="radio"
+                      name="taxType"
+                      checked={form.taxType === "percentage"}
+                      onChange={() => setForm((prev) => ({ ...prev, taxType: "percentage" }))}
+                      className="text-amber-600"
+                    />
+                    <span className="text-xs">Percentage (%)</span>
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-1.5">
+                    <input
+                      type="radio"
+                      name="taxType"
+                      checked={form.taxType === "flat"}
+                      onChange={() => setForm((prev) => ({ ...prev, taxType: "flat" }))}
+                      className="text-amber-600"
+                    />
+                    <span className="text-xs">Flat (per unit)</span>
+                  </label>
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step={form.taxType === "percentage" ? "0.01" : "1"}
+                  value={form.taxValue}
+                  onChange={(e) => setForm((prev) => ({ ...prev, taxValue: e.target.value }))}
+                  placeholder={form.taxType === "percentage" ? "e.g. 18" : "e.g. 50"}
+                  className="w-28 rounded border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 focus:border-amber-500 focus:outline-none"
+                />
+              </div>
+            )}
+          </div>
+        )}
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-600">Description</label>
           <textarea
@@ -571,8 +690,39 @@ export default function ProductForm({ product, categories, onSuccess, onCancel }
           </div>
         </div>
 
+        <div className="flex items-center gap-2">
+          <input type="checkbox" id="isActive" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} className="h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500" />
+          <label htmlFor="isActive" className="text-sm text-slate-600">Active</label>
+        </div>
+
+        <div className="flex gap-2 pt-4">
+          <button
+            type="button"
+            onClick={() => {
+              const nameOk = form.name.trim().length > 0;
+              const priceOk = !isNaN(parseFloat(form.price)) && parseFloat(form.price) >= 0;
+              if (!nameOk || !priceOk) {
+                setError("Please enter name and a valid price before continuing.");
+                return;
+              }
+              setError("");
+              setStep(2);
+            }}
+            className="rounded-lg bg-amber-600 px-4 py-2 font-medium text-white transition hover:bg-amber-500"
+          >
+            Next: Attributes & Variations →
+          </button>
+          <button type="button" onClick={onCancel} className="rounded-lg border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-100">
+            Cancel
+          </button>
+        </div>
+        </>
+        )}
+
+        {step === 2 && (
+          <>
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <h3 className="mb-1 text-sm font-semibold text-slate-700">Step 1: Attributes</h3>
+          <h3 className="mb-1 text-sm font-semibold text-slate-700">Attributes</h3>
           <p className="mb-3 text-xs text-slate-500">
             Define attribute types for this product (e.g. Size, Color, Material).
           </p>
@@ -615,7 +765,7 @@ export default function ProductForm({ product, categories, onSuccess, onCancel }
 
         {hasAttributes && (
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <h3 className="mb-1 text-sm font-semibold text-slate-700">Step 2: Terms</h3>
+            <h3 className="mb-1 text-sm font-semibold text-slate-700">Terms</h3>
             <p className="mb-3 text-xs text-slate-500">Add values for each attribute (e.g. S, M, L, XL for Size).</p>
             <div className="space-y-3">
               {form.attributes.map((attr, attrIdx) => (
@@ -679,7 +829,7 @@ export default function ProductForm({ product, categories, onSuccess, onCancel }
 
         {hasTerms && (
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <h3 className="mb-1 text-sm font-semibold text-slate-700">Step 3: Variations</h3>
+            <h3 className="mb-1 text-sm font-semibold text-slate-700">Variations</h3>
             <p className="mb-3 text-xs text-slate-500">
               Create variations by picking terms. Each variation has its own pricing, stock, and images.
             </p>
@@ -994,14 +1144,16 @@ export default function ProductForm({ product, categories, onSuccess, onCancel }
           </div>
         )}
 
-        <div className="flex items-center gap-2">
-          <input type="checkbox" id="isActive" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} className="h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500" />
-          <label htmlFor="isActive" className="text-sm text-slate-600">Active</label>
-        </div>
-
         {error && <p className="text-sm text-red-600">{error}</p>}
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 pt-4">
+          <button
+            type="button"
+            onClick={() => setStep(1)}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-100"
+          >
+            ← Back
+          </button>
           <button type="submit" disabled={submitting} className="rounded-lg bg-amber-600 px-4 py-2 font-medium text-white transition hover:bg-amber-500 disabled:opacity-50">
             {submitting ? "Saving..." : product ? "Update" : "Create"}
           </button>
@@ -1009,6 +1161,8 @@ export default function ProductForm({ product, categories, onSuccess, onCancel }
             Cancel
           </button>
         </div>
+          </>
+        )}
       </form>
 
       <MediaPickerModal

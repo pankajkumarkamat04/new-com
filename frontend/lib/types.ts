@@ -22,6 +22,14 @@ export type Settings = {
   googleAnalyticsId?: string;
   facebookPixelEnabled?: boolean;
   facebookPixelId?: string;
+  companyGstin?: string;
+  taxEnabled?: boolean;
+  defaultTaxPercentage?: number;
+};
+
+export type ProductTax = {
+  taxType: "percentage" | "flat";
+  value: number;
 };
 
 export type HeroSlide = {
@@ -251,6 +259,7 @@ export type Product = {
   attributes?: ProductAttribute[];
   defaultVariationIndex?: number;
   variations?: ProductVariation[];
+  tax?: ProductTax;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -259,8 +268,11 @@ export type Product = {
 // Cart & Orders
 export type CartItem = {
   productId: string;
-  product?: { _id: string; name: string; price: number; image?: string; isActive: boolean; stock: number };
+  product?: { _id: string; name: string; price: number; image?: string; isActive: boolean; stock: number; tax?: ProductTax };
   quantity: number;
+  variationName?: string;
+  variationAttributes?: { name: string; value: string }[];
+  price?: number;
 };
 
 export type OrderItem = {
@@ -268,12 +280,16 @@ export type OrderItem = {
   name: string;
   price: number;
   quantity: number;
+  variationName?: string;
+  variationAttributes?: { name: string; value: string }[];
 };
 
 export type Order = {
   _id: string;
   userId: string | { _id: string; name: string; email?: string; phone?: string };
   items: OrderItem[];
+  subtotal?: number;
+  taxAmount?: number;
   total: number;
   couponCode?: string;
   discountAmount?: number;
@@ -288,6 +304,18 @@ export type Order = {
   };
   status: string;
   paymentMethod?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// Admins (for admin management - superadmin only)
+export type AdminItem = {
+  _id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: "admin" | "superadmin";
+  isActive?: boolean;
   createdAt: string;
   updatedAt: string;
 };

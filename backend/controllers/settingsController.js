@@ -736,6 +736,11 @@ export const getPublicSettings = async (req, res) => {
       googleAnalyticsId: (settings.googleAnalyticsId || '').trim(),
       facebookPixelEnabled: !!settings.facebookPixelEnabled,
       facebookPixelId: (settings.facebookPixelId || '').trim(),
+      companyGstin: (settings.companyGstin || '').trim(),
+      taxEnabled: !!settings.taxEnabled,
+      defaultTaxPercentage: typeof settings.defaultTaxPercentage === 'number'
+        ? Math.max(0, Math.min(100, settings.defaultTaxPercentage))
+        : 0,
     };
 
     const seo = settings.seo || {};
@@ -861,6 +866,8 @@ export const updateSettings = async (req, res) => {
       'couponEnabled', 'blogEnabled', 'abandonedCartEnabled',
       'googleAnalyticsEnabled', 'googleAnalyticsId',
       'facebookPixelEnabled', 'facebookPixelId',
+      'companyGstin',
+      'taxEnabled', 'defaultTaxPercentage',
     ];
 
     const updates = {};

@@ -6,6 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import { adminOrdersApi } from "@/lib/api";
 import type { Order } from "@/lib/types";
 import { useSettings } from "@/contexts/SettingsContext";
+import { GstInvoice } from "@/components/GstInvoice";
 
 function paymentMethodLabel(method: string | undefined): string {
   if (!method) return "—";
@@ -20,7 +21,7 @@ export default function AdminOrderDetailPage() {
   const router = useRouter();
   const params = useParams();
   const id = (params?.id as string | undefined) || "";
-  const { formatCurrency } = useSettings();
+  const { formatCurrency, settings } = useSettings();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -86,7 +87,7 @@ export default function AdminOrderDetailPage() {
       </div>
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div>
+          <div>
           <h1 className="text-2xl font-bold text-slate-900">
             Order #{order._id.slice(-8).toUpperCase()}
           </h1>
@@ -141,9 +142,26 @@ export default function AdminOrderDetailPage() {
             <h2 className="mb-4 text-lg font-semibold text-slate-900">Items</h2>
             <ul className="divide-y divide-slate-100 text-sm">
               {order.items.map((item) => (
-                <li key={item.productId} className="flex items-center justify-between py-3">
+                <li
+                  key={`${item.productId}::${item.variationName || ""}`}
+                  className="flex items-center justify-between py-3"
+                >
                   <div>
                     <p className="font-medium text-slate-900">{item.name}</p>
+                    {item.variationAttributes &&
+                      item.variationAttributes.length > 0 && (
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          {item.variationAttributes
+                            .map(
+                              (a) =>
+                                a.name && a.value
+                                  ? `${a.name}: ${a.value}`
+                                  : ""
+                            )
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                      )}
                     <p className="text-xs text-slate-500">
                       {item.quantity} × {formatCurrency(item.price)}
                     </p>
@@ -154,7 +172,18 @@ export default function AdminOrderDetailPage() {
                 </li>
               ))}
             </ul>
-            <div className="mt-4 border-t border-slate-200 pt-4 text-right">
+            <div className="mt-4 border-t border-slate-200 pt-4 space-y-1 text-right">
+              {order.subtotal != null && order.subtotal !== order.total && (
+                <div className="flex justify-end gap-4 text-sm text-slate-600">
+                  <span>Subtotal: {formatCurrency(order.subtotal)}</span>
+                  {order.taxAmount != null && order.taxAmount > 0 && (
+                    <span>Tax: {formatCurrency(order.taxAmount)}</span>
+                  )}
+                  {(order.discountAmount ?? 0) > 0 && (
+                    <span>Discount: -{formatCurrency(order.discountAmount!)}</span>
+                  )}
+                </div>
+              )}
               <p className="text-sm text-slate-600">Total</p>
               <p className="text-xl font-bold text-slate-900">{formatCurrency(order.total)}</p>
             </div>
@@ -208,6 +237,20 @@ export default function AdminOrderDetailPage() {
                 {order.shippingAddress.name}
               </p>
             )}
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-lg font-semibold text-slate-900">Download Invoice</h2>
+            <div className="flex gap-2">
+              <GstInvoice
+                order={order}
+                formatCurrency={formatCurrency}
+                companyName={settings?.siteName || "Company"}
+                companyAddress={settings?.contactAddress || ""}
+                companyGstin={settings?.companyGstin || ""}
+                compact
+                buttonsOnly
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -82,6 +82,7 @@ import type {
   OrderItem,
   Order,
   UserItem,
+  AdminItem,
   Coupon,
   MediaItem,
   BlogPost,
@@ -108,7 +109,7 @@ export const userApi = {
 
 // Admin Auth
 export const adminApi = {
-  getMe: () => api<{ admin: { id: string; name: string; email: string; phone?: string } }>('/auth/admin/me'),
+  getMe: () => api<{ admin: { id: string; name: string; email: string; phone?: string; role?: string } }>('/auth/admin/me'),
   signup: (body: { name: string; email: string; phone?: string; password?: string }) =>
     api<{ success: boolean; message: string; token: string; admin: { id: string; name: string; email: string; phone?: string } }>(
       '/auth/admin/signup',
@@ -256,21 +257,31 @@ export const inventoryApi = {
     api<{ data: Product; message: string }>('/inventory/adjust', { method: 'POST', body: JSON.stringify(body) }),
 };
 
+export type CartAddPayload = {
+  productId: string;
+  quantity: number;
+  variationName?: string;
+  variationAttributes?: { name: string; value: string }[];
+  price?: number;
+};
+
 export const cartApi = {
   get: () => api<{ data: { items: CartItem[] } }>('/cart'),
-  add: (productId: string, quantity?: number) =>
+  add: (payload: CartAddPayload) =>
     api<{ data: { items: CartItem[] } }>('/cart', {
       method: 'POST',
-      body: JSON.stringify({ productId, quantity: quantity || 1 }),
+      body: JSON.stringify(payload),
     }),
-  update: (productId: string, quantity: number) =>
+  update: (productId: string, quantity: number, variationName?: string) =>
     api<{ data: { items: CartItem[] } }>('/cart', {
       method: 'PUT',
-      body: JSON.stringify({ productId, quantity }),
+      body: JSON.stringify({ productId, quantity, ...(variationName && { variationName }) }),
     }),
-  remove: (productId: string) =>
-    api<{ data: { items: CartItem[] } }>(`/cart/items/${productId}`, { method: 'DELETE' }),
-  merge: (items: { productId: string; quantity: number }[]) =>
+  remove: (productId: string, variationName?: string) => {
+    const q = variationName ? `?variationName=${encodeURIComponent(variationName)}` : '';
+    return api<{ data: { items: CartItem[] } }>(`/cart/items/${productId}${q}`, { method: 'DELETE' });
+  },
+  merge: (items: { productId: string; quantity: number; variationName?: string; variationAttributes?: { name: string; value: string }[]; price?: number }[]) =>
     api<{ data: { items: CartItem[] } }>('/cart/merge', {
       method: 'POST',
       body: JSON.stringify({ items }),
@@ -319,6 +330,24 @@ export const adminOrdersApi = {
   get: (id: string) => api<{ data: Order }>(`/orders/admin/${id}`),
   updateStatus: (id: string, status: string) =>
     api<{ data: Order }>(`/orders/admin/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),
+};
+
+export const adminsApi = {
+  list: (params?: { search?: string; page?: number; limit?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.search) searchParams.set('search', params.search);
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const query = searchParams.toString();
+    return api<{ data: AdminItem[]; pagination: { page: number; limit: number; total: number; pages: number } }>(
+      `/admins${query ? `?${query}` : ''}`
+    );
+  },
+  create: (body: { name: string; email: string; phone?: string; password?: string; role?: "admin" | "superadmin" }) =>
+    api<{ data: AdminItem }>('/admins', { method: 'POST', body: JSON.stringify(body) }),
+  update: (id: string, body: { name?: string; email?: string; phone?: string; password?: string; role?: "admin" | "superadmin"; isActive?: boolean }) =>
+    api<{ data: AdminItem }>(`/admins/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  delete: (id: string) => api(`/admins/${id}`, { method: 'DELETE' }),
 };
 
 export const usersApi = {

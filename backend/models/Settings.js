@@ -213,6 +213,21 @@ const settingsSchema = new mongoose.Schema({
     trim: true,
     default: '',
   },
+  companyGstin: {
+    type: String,
+    trim: true,
+    default: '',
+  },
+  taxEnabled: {
+    type: Boolean,
+    default: false,
+  },
+  defaultTaxPercentage: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100,
+  },
   login: {
     loginIdentifier: { type: String, enum: ['email', 'phone'], default: 'email' },
     loginMethod: { type: String, enum: ['password', 'otp'], default: 'password' },

@@ -128,6 +128,11 @@ const productSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  // Tax override: when taxEnabled in settings, product can use default or custom tax
+  tax: {
+    taxType: { type: String, enum: ['percentage', 'flat'], default: 'percentage' },
+    value: { type: Number, min: 0, default: 0 },
+  },
 }, {
   timestamps: true,
 });

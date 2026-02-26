@@ -71,6 +71,8 @@ type SettingsContextType = {
   paymentSettings: PaymentSettings;
   couponEnabled: boolean;
   blogEnabled: boolean;
+  taxEnabled: boolean;
+  defaultTaxPercentage: number;
   googleAnalyticsEnabled: boolean;
   googleAnalyticsId: string;
   facebookPixelEnabled: boolean;
@@ -120,6 +122,8 @@ const SettingsContext = createContext<SettingsContextType>({
   paymentSettings: defaultPaymentSettings,
   couponEnabled: false,
   blogEnabled: false,
+  taxEnabled: false,
+  defaultTaxPercentage: 0,
   googleAnalyticsEnabled: false,
   googleAnalyticsId: "",
   facebookPixelEnabled: false,
@@ -148,6 +152,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(defaultPaymentSettings);
   const [couponEnabled, setCouponEnabled] = useState(false);
   const [blogEnabled, setBlogEnabled] = useState(false);
+  const [taxEnabled, setTaxEnabled] = useState(false);
+  const [defaultTaxPercentage, setDefaultTaxPercentage] = useState(0);
   const [googleAnalyticsEnabled, setGoogleAnalyticsEnabled] = useState(false);
   const [googleAnalyticsId, setGoogleAnalyticsId] = useState("");
   const [facebookPixelEnabled, setFacebookPixelEnabled] = useState(false);
@@ -162,6 +168,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       setSettings({ ...defaultSettings, ...publicData.general });
       setCouponEnabled(!!publicData.general.couponEnabled);
       setBlogEnabled(!!publicData.general.blogEnabled);
+      setTaxEnabled(!!publicData.general.taxEnabled);
+      setDefaultTaxPercentage(typeof publicData.general.defaultTaxPercentage === "number" ? publicData.general.defaultTaxPercentage : 0);
       setGoogleAnalyticsEnabled(!!publicData.general.googleAnalyticsEnabled);
       setGoogleAnalyticsId(publicData.general.googleAnalyticsId?.trim() || "");
       setFacebookPixelEnabled(!!publicData.general.facebookPixelEnabled);
@@ -170,6 +178,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       setSettings(defaultSettings);
       setCouponEnabled(false);
       setBlogEnabled(false);
+      setTaxEnabled(false);
+      setDefaultTaxPercentage(0);
       setGoogleAnalyticsEnabled(false);
       setGoogleAnalyticsId("");
       setFacebookPixelEnabled(false);
@@ -308,6 +318,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         paymentSettings: paymentSettings ?? defaultPaymentSettings,
         couponEnabled,
         blogEnabled,
+        taxEnabled,
+        defaultTaxPercentage,
         googleAnalyticsEnabled,
         googleAnalyticsId,
         facebookPixelEnabled,

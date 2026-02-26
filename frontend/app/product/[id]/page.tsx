@@ -18,7 +18,6 @@ export default function ProductPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
-  const isInCart = product ? items.some((i) => i.productId === product._id) : false;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -136,6 +135,14 @@ export default function ProductPage() {
     hasVariations && selectedVariation
       ? (selectedVariation.stock ?? 0)
       : (product.stock ?? 0);
+
+  const isInCart = product
+    ? items.some(
+        (i) =>
+          i.productId === product._id &&
+          (i.variationName || "") === (selectedVariation?.name || "")
+      )
+    : false;
 
   return (
     <div className="min-h-screen bg-white">
@@ -307,7 +314,10 @@ export default function ProductPage() {
               {isInCart ? (
                 <button
                   type="button"
-                  onClick={() => product && removeFromCart(product._id)}
+                  onClick={() =>
+                    product &&
+                    removeFromCart(product._id, selectedVariation?.name)
+                  }
                   className="rounded-xl bg-red-600 px-8 py-4 font-semibold text-white transition hover:bg-red-500"
                 >
                   Remove from Cart
@@ -320,7 +330,15 @@ export default function ProductPage() {
                     addToCart(product._id, 1, {
                       name: selectedVariation ? `${product.name} - ${selectedVariation.name}` : product.name,
                       price: effectivePrice,
-                    image: product.image || (product.images && product.images[0]),
+                      image: product.image || (product.images && product.images[0]),
+                      ...(selectedVariation && {
+                        variationName: selectedVariation.name,
+                        variationAttributes:
+                          selectedVariation.attributes?.map((a) => ({
+                            name: a.name || '',
+                            value: a.value || '',
+                          })) || [],
+                      }),
                     })
                   }
                   className="rounded-xl bg-emerald-600 px-8 py-4 font-semibold text-white transition hover:bg-emerald-500"

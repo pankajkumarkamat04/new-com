@@ -6,8 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import { ordersApi } from "@/lib/api";
 import type { Order } from "@/lib/types";
 import { useSettings } from "@/contexts/SettingsContext";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import { GstInvoice } from "@/components/GstInvoice";
 
 function paymentMethodLabel(method: string | undefined): string {
   if (!method) return "—";
@@ -21,7 +20,7 @@ function paymentMethodLabel(method: string | undefined): string {
 export default function UserOrderDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const { formatCurrency } = useSettings();
+  const { formatCurrency, settings } = useSettings();
   const id = (params?.id as string | undefined) || "";
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,38 +37,28 @@ export default function UserOrderDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
-        <Header />
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <p className="text-slate-600">Loading order...</p>
-        </div>
-        <Footer />
+      <div className="px-4 py-10 sm:px-6 lg:px-8">
+        <p className="text-slate-600">Loading order...</p>
       </div>
     );
   }
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-white">
-        <Header />
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <p className="text-slate-600">Order not found.</p>
-          <button
-            onClick={() => router.back()}
-            className="mt-4 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            Go back
-          </button>
-        </div>
-        <Footer />
+      <div className="px-4 py-10 sm:px-6 lg:px-8">
+        <p className="text-slate-600">Order not found.</p>
+        <button
+          onClick={() => router.back()}
+          className="mt-4 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          Go back
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <Header />
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-4 flex items-center gap-2 text-sm text-slate-500">
           <Link href="/user/orders" className="hover:underline">
             My Orders
@@ -111,9 +100,26 @@ export default function UserOrderDetailPage() {
               <h2 className="mb-4 text-lg font-semibold text-slate-900">Items</h2>
               <ul className="divide-y divide-slate-100 text-sm">
                 {order.items.map((item) => (
-                  <li key={item.productId} className="flex items-center justify-between py-3">
+                  <li
+                    key={`${item.productId}::${item.variationName || ""}`}
+                    className="flex items-center justify-between py-3"
+                  >
                     <div>
                       <p className="font-medium text-slate-900">{item.name}</p>
+                      {item.variationAttributes &&
+                        item.variationAttributes.length > 0 && (
+                          <p className="mt-0.5 text-xs text-slate-500">
+                            {item.variationAttributes
+                              .map(
+                                (a) =>
+                                  a.name && a.value
+                                    ? `${a.name}: ${a.value}`
+                                    : ""
+                              )
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </p>
+                        )}
                       <p className="text-xs text-slate-500">
                         {item.quantity} × {formatCurrency(item.price)}
                       </p>
@@ -124,7 +130,18 @@ export default function UserOrderDetailPage() {
                   </li>
                 ))}
               </ul>
-              <div className="mt-4 border-t border-slate-200 pt-4 text-right">
+              <div className="mt-4 border-t border-slate-200 pt-4 space-y-1 text-right">
+                {order.subtotal != null && order.subtotal !== order.total && (
+                  <div className="flex justify-end gap-4 text-sm text-slate-600">
+                    <span>Subtotal: {formatCurrency(order.subtotal)}</span>
+                    {order.taxAmount != null && order.taxAmount > 0 && (
+                      <span>Tax: {formatCurrency(order.taxAmount)}</span>
+                    )}
+                    {(order.discountAmount ?? 0) > 0 && (
+                      <span>Discount: -{formatCurrency(order.discountAmount!)}</span>
+                    )}
+                  </div>
+                )}
                 <p className="text-sm text-slate-600">Total</p>
                 <p className="text-xl font-bold text-slate-900">{formatCurrency(order.total)}</p>
               </div>
@@ -158,12 +175,23 @@ export default function UserOrderDetailPage() {
                 </div>
               )}
             </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-lg font-semibold text-slate-900">Download Invoice</h2>
+              <div className="flex gap-2">
+                <GstInvoice
+                  order={order}
+                  formatCurrency={formatCurrency}
+                  companyName={settings?.siteName || "Company"}
+                  companyAddress={settings?.contactAddress || ""}
+                  companyGstin={settings?.companyGstin || ""}
+                  compact
+                  buttonsOnly
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
-      <Footer />
-    </div>
   );
 }
 

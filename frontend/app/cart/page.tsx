@@ -8,9 +8,23 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getMediaUrl } from "@/lib/api";
 
+function computeItemTax(
+  price: number,
+  qty: number,
+  productTax: { taxType?: string; value?: number } | undefined,
+  defaultPct: number
+): number {
+  const useCustom = productTax && (productTax.value ?? 0) > 0;
+  const type = useCustom ? (productTax!.taxType || "percentage") : "percentage";
+  const val = useCustom ? (productTax!.value || 0) : defaultPct;
+  const lineTotal = price * qty;
+  if (type === "percentage") return (lineTotal * val) / 100;
+  return val * qty;
+}
+
 export default function CartPage() {
   const { items, loading, updateQuantity, removeFromCart } = useCart();
-  const { formatCurrency } = useSettings();
+  const { formatCurrency, taxEnabled, defaultTaxPercentage } = useSettings();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -44,14 +58,16 @@ export default function CartPage() {
               <div className="space-y-4">
                 {items.map((item) => {
                   const product = item.product;
-                  const name = product?.name || "Product";
-                  const price = product?.price ?? 0;
+                  const baseName = product?.name || "Product";
+                  const variationName = item.variationName || "";
+                  const name = variationName ? `${baseName} - ${variationName}` : baseName;
+                  const price = item.price ?? product?.price ?? 0;
                   const image = product?.image;
                   const subtotal = price * item.quantity;
 
                   return (
                     <div
-                      key={item.productId}
+                      key={`${item.productId}::${variationName}`}
                       className="flex gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
                     >
                       <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
@@ -67,12 +83,26 @@ export default function CartPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <h3 className="font-semibold text-slate-900">{name}</h3>
+                        {item.variationAttributes && item.variationAttributes.length > 0 && (
+                          <p className="mt-1 text-xs text-slate-500">
+                            {item.variationAttributes
+                              .map((a) => (a.name && a.value ? `${a.name}: ${a.value}` : ""))
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </p>
+                        )}
                         <p className="mt-1 text-lg font-bold text-emerald-600">{formatCurrency(price)}</p>
                         <div className="mt-2 flex items-center gap-2">
                           <div className="flex items-center rounded-lg border border-slate-300">
                             <button
                               type="button"
-                              onClick={() => updateQuantity(item.productId, Math.max(1, item.quantity - 1))}
+                              onClick={() =>
+                                updateQuantity(
+                                  item.productId,
+                                  Math.max(1, item.quantity - 1),
+                                  variationName || undefined
+                                )
+                              }
                               className="px-3 py-1 text-slate-600 hover:bg-slate-100"
                             >
                               −
@@ -80,7 +110,9 @@ export default function CartPage() {
                             <span className="min-w-[2rem] px-2 py-1 text-center text-sm">{item.quantity}</span>
                             <button
                               type="button"
-                              onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                              onClick={() =>
+                                updateQuantity(item.productId, item.quantity + 1, variationName || undefined)
+                              }
                               className="px-3 py-1 text-slate-600 hover:bg-slate-100"
                             >
                               +
@@ -88,7 +120,7 @@ export default function CartPage() {
                           </div>
                           <button
                             type="button"
-                            onClick={() => removeFromCart(item.productId)}
+                            onClick={() => removeFromCart(item.productId, variationName || undefined)}
                             className="text-sm text-red-600 hover:underline"
                           >
                             Remove
@@ -110,9 +142,36 @@ export default function CartPage() {
                 <p className="mb-4 text-slate-600">
                   {items.reduce((sum, i) => sum + i.quantity, 0)} item(s)
                 </p>
-                <p className="text-xl font-bold text-slate-900">
-                  Total: {formatCurrency(items.reduce((sum, i) => sum + (i.product?.price ?? 0) * i.quantity, 0))}
-                </p>
+                {(() => {
+                  const subtotal = items.reduce(
+                    (sum, i) => sum + (i.price ?? i.product?.price ?? 0) * i.quantity,
+                    0
+                  );
+                  const tax = taxEnabled
+                    ? items.reduce((sum, i) => {
+                        const p = i.price ?? i.product?.price ?? 0;
+                        return sum + computeItemTax(p, i.quantity, i.product?.tax, defaultTaxPercentage);
+                      }, 0)
+                    : 0;
+                  const total = subtotal + tax;
+                  return (
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-sm text-slate-600">
+                        <span>Subtotal</span>
+                        <span>{formatCurrency(subtotal)}</span>
+                      </div>
+                      {taxEnabled && tax > 0 && (
+                        <div className="flex justify-between text-sm text-slate-600">
+                          <span>Tax</span>
+                          <span>{formatCurrency(tax)}</span>
+                        </div>
+                      )}
+                      <p className="pt-2 text-xl font-bold text-slate-900">
+                        Total: {formatCurrency(total)}
+                      </p>
+                    </div>
+                  );
+                })()}
                 <Link
                   href="/checkout"
                   className="mt-6 block w-full rounded-lg bg-emerald-600 py-3 text-center font-semibold text-white transition hover:bg-emerald-500"

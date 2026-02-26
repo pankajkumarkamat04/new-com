@@ -5,11 +5,18 @@ const orderItemSchema = new mongoose.Schema({
   name: { type: String, required: true },
   price: { type: Number, required: true, min: 0 },
   quantity: { type: Number, required: true, min: 1 },
+  variationName: { type: String, trim: true, default: '' },
+  variationAttributes: [{
+    name: { type: String, trim: true },
+    value: { type: String, trim: true },
+  }],
 }, { _id: false });
 
 const orderSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   items: [orderItemSchema],
+  subtotal: { type: Number, min: 0 },
+  taxAmount: { type: Number, default: 0, min: 0 },
   total: { type: Number, required: true, min: 0 },
   shippingAddress: {
     name: { type: String, required: true, trim: true },

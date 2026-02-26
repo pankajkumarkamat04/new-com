@@ -21,6 +21,7 @@ export const getMe = async (req, res) => {
         name: req.admin.name,
         email: req.admin.email,
         phone: req.admin.phone,
+        role: req.admin.role || 'admin',
       },
     });
   } catch (error) {

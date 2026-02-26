@@ -42,6 +42,7 @@ const updateSettingsValidation = [
   body('googleAnalyticsId').optional().trim(),
   body('facebookPixelEnabled').optional().isBoolean().withMessage('facebookPixelEnabled must be boolean'),
   body('facebookPixelId').optional().trim(),
+  body('companyGstin').optional().trim(),
 ];
 
 const updateSeoValidation = [

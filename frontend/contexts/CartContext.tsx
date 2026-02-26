@@ -13,20 +13,28 @@ import type { CartItem } from "@/lib/types";
 
 const CART_STORAGE_KEY = "guest_cart";
 
+type CartAddProduct = {
+  name: string;
+  price: number;
+  image?: string;
+  variationName?: string;
+  variationAttributes?: { name: string; value: string }[];
+};
+
 type CartContextType = {
   items: CartItem[];
   count: number;
   loading: boolean;
-  addToCart: (productId: string, quantity?: number, product?: { name: string; price: number; image?: string }) => Promise<void>;
-  updateQuantity: (productId: string, quantity: number) => Promise<void>;
-  removeFromCart: (productId: string) => Promise<void>;
+  addToCart: (productId: string, quantity?: number, product?: CartAddProduct) => Promise<void>;
+  updateQuantity: (productId: string, quantity: number, variationName?: string) => Promise<void>;
+  removeFromCart: (productId: string, variationName?: string) => Promise<void>;
   refreshCart: () => Promise<void>;
   mergeGuestCartThenRefresh: () => Promise<void>;
 };
 
 const CartContext = createContext<CartContextType | null>(null);
 
-function loadGuestCart(): { productId: string; quantity: number; product?: { name: string; price: number; image?: string } }[] {
+function loadGuestCart(): { productId: string; quantity: number; product?: CartAddProduct }[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(CART_STORAGE_KEY);
@@ -38,7 +46,7 @@ function loadGuestCart(): { productId: string; quantity: number; product?: { nam
   }
 }
 
-function saveGuestCart(items: { productId: string; quantity: number; product?: { name: string; price: number; image?: string } }[]) {
+function saveGuestCart(items: { productId: string; quantity: number; product?: CartAddProduct }[]) {
   if (typeof window === "undefined") return;
   localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
 }
@@ -88,12 +96,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [mounted, isLoggedIn, refreshCart]);
 
   const addToCart = useCallback(
-    async (productId: string, quantity = 1, product?: { name: string; price: number; image?: string }) => {
+    async (productId: string, quantity = 1, product?: CartAddProduct) => {
       if (!mounted) return;
       const qty = Math.max(1, quantity);
       if (!isLoggedIn) {
         const guest = loadGuestCart();
-        const existing = guest.find((g) => g.productId === productId);
+        const vKey = product?.variationName || '';
+        const existing = guest.find((g) => g.productId === productId && (g.product?.variationName || '') === vKey);
         if (existing) {
           existing.quantity += qty;
         } else {
@@ -104,6 +113,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
           guest.map((g) => ({
             productId: g.productId,
             quantity: g.quantity,
+            variationName: g.product?.variationName,
+            variationAttributes: g.product?.variationAttributes,
+            price: g.product?.price,
             product: g.product
               ? { _id: g.productId, name: g.product.name, price: g.product.price, image: g.product.image, isActive: true, stock: 999 }
               : undefined,
@@ -111,18 +123,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
         );
         return;
       }
-      const res = await cartApi.add(productId, qty);
+      const res = await cartApi.add({
+        productId,
+        quantity: qty,
+        ...(product?.variationName && { variationName: product.variationName }),
+        ...(product?.variationAttributes && product.variationAttributes.length > 0 && { variationAttributes: product.variationAttributes }),
+        ...(product?.price != null && { price: product.price }),
+      });
       if (res.data?.data?.items) setItems(res.data.data.items);
     },
     [mounted, isLoggedIn]
   );
 
   const updateQuantity = useCallback(
-    async (productId: string, quantity: number) => {
+    async (productId: string, quantity: number, variationName?: string) => {
       if (!mounted) return;
       if (!isLoggedIn) {
         const guest = loadGuestCart();
-        const idx = guest.findIndex((g) => g.productId === productId);
+        const vKey = variationName || '';
+        const idx = guest.findIndex((g) => g.productId === productId && (g.product?.variationName || '') === vKey);
         if (idx >= 0) {
           if (quantity <= 0) guest.splice(idx, 1);
           else guest[idx].quantity = quantity;
@@ -139,17 +158,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
         return;
       }
-      const res = await cartApi.update(productId, quantity);
+      const res = await cartApi.update(productId, quantity, variationName);
       if (res.data?.data?.items) setItems(res.data.data.items);
     },
     [mounted, isLoggedIn]
   );
 
   const removeFromCart = useCallback(
-    async (productId: string) => {
+    async (productId: string, variationName?: string) => {
       if (!mounted) return;
       if (!isLoggedIn) {
-        const guest = loadGuestCart().filter((g) => g.productId !== productId);
+        const vKey = variationName || '';
+        const guest = loadGuestCart().filter((g) => !(g.productId === productId && (g.product?.variationName || '') === vKey));
         saveGuestCart(guest);
         setItems(
           guest.map((g) => ({
@@ -162,7 +182,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         );
         return;
       }
-      const res = await cartApi.remove(productId);
+      const res = await cartApi.remove(productId, variationName);
       if (res.data?.data?.items) setItems(res.data.data.items);
       else setItems([]);
     },
@@ -176,7 +196,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
       await refreshCart();
       return;
     }
-    const res = await cartApi.merge(guest.map((g) => ({ productId: g.productId, quantity: g.quantity })));
+    const res = await cartApi.merge(
+      guest.map((g) => ({
+        productId: g.productId,
+        quantity: g.quantity,
+        ...(g.product?.variationName && { variationName: g.product.variationName }),
+        ...(g.product?.variationAttributes && g.product.variationAttributes.length > 0 && { variationAttributes: g.product.variationAttributes }),
+        ...(g.product?.price != null && { price: g.product.price }),
+      }))
+    );
     clearGuestCart();
     if (res.data?.data?.items) setItems(res.data.data.items);
     else await refreshCart();

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { settingsApi, getMediaUrl } from "@/lib/api";
+import { useSettings } from "@/contexts/SettingsContext";
 import type { Settings } from "@/lib/types";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
 
@@ -25,9 +26,13 @@ const defaultForm: Partial<Settings> = {
   googleAnalyticsId: "",
   facebookPixelEnabled: false,
   facebookPixelId: "",
+  companyGstin: "",
+  taxEnabled: false,
+  defaultTaxPercentage: 0,
 };
 
 export default function AdminGeneralSettingsPage() {
+  const { refresh } = useSettings();
   const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState<Partial<Settings>>(defaultForm);
   const [loading, setLoading] = useState(true);
@@ -65,6 +70,9 @@ export default function AdminGeneralSettingsPage() {
           googleAnalyticsId: res.data.data.googleAnalyticsId || "",
           facebookPixelEnabled: !!res.data.data.facebookPixelEnabled,
           facebookPixelId: res.data.data.facebookPixelId || "",
+          companyGstin: res.data.data.companyGstin || "",
+          taxEnabled: !!res.data.data.taxEnabled,
+          defaultTaxPercentage: res.data.data.defaultTaxPercentage ?? 0,
         });
       }
     });
@@ -86,6 +94,7 @@ export default function AdminGeneralSettingsPage() {
       setMessage({ type: "error", text: res.error });
       return;
     }
+    await refresh();
     setMessage({ type: "success", text: "Settings saved successfully" });
   };
 
@@ -249,6 +258,20 @@ export default function AdminGeneralSettingsPage() {
                   rows={3}
                   placeholder="123 Main St, City, Country"
                   className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-600">Company GSTIN</label>
+                <p className="mb-1 text-xs text-slate-500">
+                  For GST invoice (e.g. 27AABCU9603R1ZM). Leave empty if not applicable.
+                </p>
+                <input
+                  type="text"
+                  name="companyGstin"
+                  value={form.companyGstin || ""}
+                  onChange={handleChange}
+                  placeholder="27AABCU9603R1ZM"
+                  className="w-full max-w-md rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                 />
               </div>
             </div>
@@ -415,6 +438,52 @@ export default function AdminGeneralSettingsPage() {
                       onChange={handleChange}
                       placeholder="1234567890123456"
                       className="w-full max-w-sm rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">Tax</p>
+                    <p className="text-xs text-slate-500">
+                      Enable tax on products and orders. Set a default tax percentage used when products
+                      have no custom tax.
+                    </p>
+                  </div>
+                  <label className="relative inline-flex cursor-pointer items-center">
+                    <input
+                      type="checkbox"
+                      checked={!!form.taxEnabled}
+                      onChange={(e) => {
+                        setForm((prev) => ({ ...prev, taxEnabled: e.target.checked }));
+                        setMessage(null);
+                      }}
+                      className="peer sr-only"
+                    />
+                    <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-600 peer-checked:after:translate-x-full" />
+                  </label>
+                </div>
+                {form.taxEnabled && (
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600">Default Tax Percentage (%)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      name="defaultTaxPercentage"
+                      value={form.defaultTaxPercentage ?? 0}
+                      onChange={(e) => {
+                        const v = parseFloat(e.target.value);
+                        setForm((prev) => ({
+                          ...prev,
+                          defaultTaxPercentage: isNaN(v) ? 0 : Math.max(0, Math.min(100, v)),
+                        }));
+                        setMessage(null);
+                      }}
+                      placeholder="0"
+                      className="w-full max-w-xs rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                     />
                   </div>
                 )}

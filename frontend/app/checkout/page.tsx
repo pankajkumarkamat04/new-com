@@ -12,7 +12,7 @@ import Footer from "@/components/Footer";
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, loading, refreshCart } = useCart();
-  const { checkoutSettings, paymentMethods, formatCurrency, couponEnabled } = useSettings();
+  const { checkoutSettings, paymentMethods, formatCurrency, couponEnabled, taxEnabled, defaultTaxPercentage } = useSettings();
   const [mounted, setMounted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -38,9 +38,24 @@ export default function CheckoutPage() {
   const [applyingCoupon, setApplyingCoupon] = useState(false);
 
   const isLoggedIn = mounted && typeof window !== "undefined" && !!localStorage.getItem("token") && localStorage.getItem("userType") === "user";
-  const subtotal = items.reduce((sum, i) => sum + (i.product?.price ?? 0) * i.quantity, 0);
+  const subtotal = items.reduce(
+    (sum, i) => sum + (i.price ?? i.product?.price ?? 0) * i.quantity,
+    0
+  );
+  const taxAmount = taxEnabled
+    ? items.reduce((sum, i) => {
+        const p = i.price ?? i.product?.price ?? 0;
+        const prod = i.product as { tax?: { taxType?: string; value?: number } } | undefined;
+        const useCustom = prod?.tax && (prod.tax.value ?? 0) > 0;
+        const type = useCustom ? (prod!.tax!.taxType || "percentage") : "percentage";
+        const val = useCustom ? (prod!.tax!.value || 0) : defaultTaxPercentage;
+        const lineTotal = p * i.quantity;
+        if (type === "percentage") return sum + (lineTotal * val) / 100;
+        return sum + (val * i.quantity);
+      }, 0)
+    : 0;
   const discount = appliedCoupon?.discount ?? 0;
-  const total = Math.max(0, subtotal - discount);
+  const total = Math.max(0, subtotal - discount + taxAmount);
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
   const handleApplyCoupon = async () => {
@@ -365,16 +380,43 @@ export default function CheckoutPage() {
               <div>
                 <h2 className="mb-4 text-lg font-semibold text-slate-900">Order Summary</h2>
                 <ul className="space-y-2 border-b border-slate-200 pb-4">
-                  {items.map((item) => (
-                    <li key={item.productId} className="flex justify-between text-sm">
-                      <span className="text-slate-700">
-                        {item.product?.name || "Product"} × {item.quantity}
-                      </span>
-                      <span className="font-medium text-slate-900">
-                        {formatCurrency((item.product?.price ?? 0) * item.quantity)}
-                      </span>
-                    </li>
-                  ))}
+                  {items.map((item) => {
+                    const baseName = item.product?.name || "Product";
+                    const variationName = item.variationName || "";
+                    const displayName = variationName
+                      ? `${baseName} - ${variationName}`
+                      : baseName;
+                    const price = item.price ?? item.product?.price ?? 0;
+                    return (
+                      <li
+                        key={`${item.productId}::${variationName}`}
+                        className="flex flex-col gap-0.5"
+                      >
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-700">
+                            {displayName} × {item.quantity}
+                          </span>
+                          <span className="font-medium text-slate-900">
+                            {formatCurrency(price * item.quantity)}
+                          </span>
+                        </div>
+                        {item.variationAttributes &&
+                          item.variationAttributes.length > 0 && (
+                            <p className="text-xs text-slate-500">
+                              {item.variationAttributes
+                                .map(
+                                  (a) =>
+                                    a.name && a.value
+                                      ? `${a.name}: ${a.value}`
+                                      : ""
+                                )
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </p>
+                          )}
+                      </li>
+                    );
+                  })}
                 </ul>
 
                 {couponEnabled && (
@@ -443,6 +485,12 @@ export default function CheckoutPage() {
                     <span>Subtotal</span>
                     <span>{formatCurrency(subtotal)}</span>
                   </div>
+                  {taxEnabled && taxAmount > 0 && (
+                    <div className="flex justify-between text-sm text-slate-600">
+                      <span>Tax</span>
+                      <span>{formatCurrency(taxAmount)}</span>
+                    </div>
+                  )}
                   {discount > 0 && (
                     <div className="flex justify-between text-sm text-emerald-600">
                       <span>Discount</span>

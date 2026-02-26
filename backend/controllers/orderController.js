@@ -78,43 +78,80 @@ export const placeOrder = async (req, res) => {
     }
 
     const cart = await Cart.findOne({ userId: req.user._id })
-      .populate('items.productId', 'name price isActive stock');
+      .populate('items.productId', 'name price isActive stock variations tax');
 
     if (!cart || !cart.items?.length) {
       return res.status(400).json({ success: false, message: 'Your cart is empty' });
     }
 
+    const settings = await Settings.getSettings();
+    const taxEnabled = !!settings.taxEnabled;
+    const defaultTaxPct = typeof settings.defaultTaxPercentage === 'number'
+      ? Math.max(0, Math.min(100, settings.defaultTaxPercentage))
+      : 0;
+
     const orderItems = [];
-    let total = 0;
+    let subtotal = 0;
+    let totalTax = 0;
 
     for (const item of cart.items) {
       if (!item.productId || !item.productId.isActive) continue;
-      const price = item.productId.price;
+      const price = item.price != null ? item.price : item.productId.price;
       const qty = Math.max(1, item.quantity);
+      const displayName = item.variationName
+        ? `${item.productId.name} - ${item.variationName}`
+        : item.productId.name;
+      const lineTotal = price * qty;
+      subtotal += lineTotal;
+
+      let itemTax = 0;
+      if (taxEnabled) {
+        const taxConf = item.productId.tax;
+        const useCustom = taxConf && (taxConf.value ?? 0) > 0;
+        const taxType = useCustom ? (taxConf.taxType || 'percentage') : 'percentage';
+        const taxVal = useCustom ? (taxConf.value || 0) : defaultTaxPct;
+        if (taxType === 'percentage') {
+          itemTax = (lineTotal * taxVal) / 100;
+        } else {
+          itemTax = taxVal * qty;
+        }
+        totalTax += Math.round(itemTax * 100) / 100;
+      }
+
       orderItems.push({
         productId: item.productId._id,
-        name: item.productId.name,
+        name: displayName,
         price,
         quantity: qty,
+        variationName: item.variationName || '',
+        variationAttributes: item.variationAttributes || [],
       });
-      total += price * qty;
     }
 
     if (orderItems.length === 0) {
       return res.status(400).json({ success: false, message: 'No valid items in cart' });
     }
 
+    totalTax = Math.round(totalTax * 100) / 100;
+
     // Stock check - ensure all products have sufficient inventory
-    for (const item of orderItems) {
-      const product = await Product.findById(item.productId).select('name stock');
+    const cartItemsForOrder = cart.items.filter((i) => i.productId && i.productId.isActive);
+    for (let i = 0; i < orderItems.length; i++) {
+      const orderItem = orderItems[i];
+      const cartItem = cartItemsForOrder[i];
+      const product = await Product.findById(orderItem.productId).select('name stock variations');
       if (!product) {
-        return res.status(400).json({ success: false, message: `Product ${item.name} is no longer available.` });
+        return res.status(400).json({ success: false, message: `Product ${orderItem.name} is no longer available.` });
       }
-      const available = product.stock ?? 0;
-      if (available < item.quantity) {
+      let available = product.stock ?? 0;
+      if (cartItem.variationName && Array.isArray(product.variations) && product.variations.length > 0) {
+        const match = product.variations.find((v) => (v.name || '') === (cartItem.variationName || ''));
+        if (match) available = match.stock ?? 0;
+      }
+      if (available < orderItem.quantity) {
         return res.status(400).json({
           success: false,
-          message: `Insufficient stock for ${item.name}. Available: ${available}, requested: ${item.quantity}.`,
+          message: `Insufficient stock for ${orderItem.name}. Available: ${available}, requested: ${orderItem.quantity}.`,
         });
       }
     }
@@ -123,7 +160,6 @@ export const placeOrder = async (req, res) => {
     let appliedCouponCode = null;
 
     if (rawCouponCode && typeof rawCouponCode === 'string' && rawCouponCode.trim()) {
-      const settings = await Settings.getSettings();
       if (settings.couponEnabled) {
         const coupon = await Coupon.findOne({ code: rawCouponCode.trim().toUpperCase(), isActive: true });
         if (coupon) {
@@ -131,18 +167,18 @@ export const placeOrder = async (req, res) => {
           const notStarted = coupon.startDate && now < coupon.startDate;
           const expired = coupon.endDate && now > coupon.endDate;
           const limitReached = coupon.usageLimit > 0 && coupon.usedCount >= coupon.usageLimit;
-          const belowMin = coupon.minOrderAmount > 0 && total < coupon.minOrderAmount;
+          const belowMin = coupon.minOrderAmount > 0 && subtotal < coupon.minOrderAmount;
 
           if (!notStarted && !expired && !limitReached && !belowMin) {
             if (coupon.discountType === 'percentage') {
-              discountAmount = (total * coupon.discountValue) / 100;
+              discountAmount = (subtotal * coupon.discountValue) / 100;
               if (coupon.maxDiscount > 0 && discountAmount > coupon.maxDiscount) {
                 discountAmount = coupon.maxDiscount;
               }
             } else {
               discountAmount = coupon.discountValue;
             }
-            discountAmount = Math.min(Math.round(discountAmount * 100) / 100, total);
+            discountAmount = Math.min(Math.round(discountAmount * 100) / 100, subtotal);
             appliedCouponCode = coupon.code;
             await Coupon.findByIdAndUpdate(coupon._id, { $inc: { usedCount: 1 } });
           }
@@ -150,7 +186,7 @@ export const placeOrder = async (req, res) => {
       }
     }
 
-    const finalTotal = Math.round((total - discountAmount) * 100) / 100;
+    const finalTotal = Math.round((subtotal - discountAmount + totalTax) * 100) / 100;
 
     const normalizedCustomFields = Array.isArray(customFields)
       ? customFields
@@ -165,6 +201,8 @@ export const placeOrder = async (req, res) => {
     const order = await Order.create({
       userId: req.user._id,
       items: orderItems,
+      subtotal,
+      ...(totalTax > 0 && { taxAmount: totalTax }),
       total: finalTotal,
       ...(appliedCouponCode && { couponCode: appliedCouponCode }),
       ...(discountAmount > 0 && { discountAmount }),
@@ -187,24 +225,72 @@ export const placeOrder = async (req, res) => {
     );
 
     // Decrease stock and create inventory records
-    for (const item of orderItems) {
-      const product = await Product.findByIdAndUpdate(
-        item.productId,
-        { $inc: { stock: -item.quantity } },
-        { new: true }
-      );
-      if (product) {
-        await Inventory.create({
-          productId: item.productId,
-          quantity: -item.quantity,
-          type: 'out',
-          reason: 'Order',
-          referenceOrderId: order._id,
-          previousStock: (product.stock ?? 0) + item.quantity,
-          newStock: product.stock ?? 0,
-        });
-        await redisDel(`products:item:${item.productId}`);
+    for (let i = 0; i < orderItems.length; i++) {
+      const item = orderItems[i];
+      const cartItem = cartItemsForOrder[i];
+      let previousStock, newStock;
+
+      if (cartItem.variationName && Array.isArray(cartItem.productId.variations) && cartItem.productId.variations.length > 0) {
+        const varIdx = cartItem.productId.variations.findIndex((v) => (v.name || '') === (cartItem.variationName || ''));
+        if (varIdx >= 0) {
+          const product = await Product.findById(item.productId);
+          if (product && product.variations && product.variations[varIdx]) {
+            previousStock = product.variations[varIdx].stock ?? 0;
+            newStock = Math.max(0, previousStock - item.quantity);
+            product.variations[varIdx].stock = newStock;
+            await product.save();
+            await Inventory.create({
+              productId: item.productId,
+              quantity: -item.quantity,
+              type: 'out',
+              reason: 'Order',
+              referenceOrderId: order._id,
+              previousStock,
+              newStock,
+              sku: product.variations[varIdx].sku || '',
+            });
+          }
+        } else {
+          const product = await Product.findByIdAndUpdate(
+            item.productId,
+            { $inc: { stock: -item.quantity } },
+            { new: true }
+          );
+          if (product) {
+            previousStock = (product.stock ?? 0) + item.quantity;
+            newStock = product.stock ?? 0;
+            await Inventory.create({
+              productId: item.productId,
+              quantity: -item.quantity,
+              type: 'out',
+              reason: 'Order',
+              referenceOrderId: order._id,
+              previousStock,
+              newStock,
+            });
+          }
+        }
+      } else {
+        const product = await Product.findByIdAndUpdate(
+          item.productId,
+          { $inc: { stock: -item.quantity } },
+          { new: true }
+        );
+        if (product) {
+          previousStock = (product.stock ?? 0) + item.quantity;
+          newStock = product.stock ?? 0;
+          await Inventory.create({
+            productId: item.productId,
+            quantity: -item.quantity,
+            type: 'out',
+            reason: 'Order',
+            referenceOrderId: order._id,
+            previousStock,
+            newStock,
+          });
+        }
       }
+      await redisDel(`products:item:${item.productId}`);
     }
     await redisDeleteByPattern('products:list:');
 

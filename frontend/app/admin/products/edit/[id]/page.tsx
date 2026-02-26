@@ -39,7 +39,7 @@ export default function AdminProductEditPage() {
     );
   }
 
-  if (!id || product === null) {
+  if (!id || product == null) {
     return (
       <div className="px-4 py-8 sm:px-6 lg:px-8">
         <p className="mb-4 text-red-600">Product not found.</p>
@@ -62,7 +62,7 @@ export default function AdminProductEditPage() {
         <h1 className="text-2xl font-bold text-slate-900">Edit Product</h1>
       </div>
       <ProductForm
-        product={product}
+        product={product ?? null}
         categories={categories}
         onSuccess={() => router.push("/admin/products")}
         onCancel={() => router.push("/admin/products")}
