@@ -35,6 +35,10 @@ const updateSettingsValidation = [
   body('instagramUrl').optional().trim(),
   body('twitterUrl').optional().trim(),
   body('linkedinUrl').optional().trim(),
+  body('companyGstin').optional().trim(),
+];
+
+const updateModuleValidation = [
   body('couponEnabled').optional().isBoolean().withMessage('couponEnabled must be boolean'),
   body('blogEnabled').optional().isBoolean().withMessage('blogEnabled must be boolean'),
   body('abandonedCartEnabled').optional().isBoolean().withMessage('abandonedCartEnabled must be boolean'),
@@ -42,7 +46,12 @@ const updateSettingsValidation = [
   body('googleAnalyticsId').optional().trim(),
   body('facebookPixelEnabled').optional().isBoolean().withMessage('facebookPixelEnabled must be boolean'),
   body('facebookPixelId').optional().trim(),
-  body('companyGstin').optional().trim(),
+  body('taxEnabled').optional().isBoolean().withMessage('taxEnabled must be boolean'),
+  body('defaultTaxPercentage').optional().isFloat({ min: 0, max: 100 }).withMessage('defaultTaxPercentage must be between 0 and 100'),
+  body('whatsappChat').optional().isObject(),
+  body('whatsappChat.enabled').optional().isBoolean(),
+  body('whatsappChat.position').optional().isIn(['left', 'right']),
+  body('whatsappChat.phoneNumber').optional().trim(),
 ];
 
 const updateSeoValidation = [
@@ -201,7 +210,11 @@ router.put('/login', protectAdmin, [
   body('loginMethod').optional().isIn(['password', 'otp']),
 ], settingsController.updateLoginSettings);
 
-// Admin - update settings
+// Module settings - admin get/update
+router.get('/modules', protectAdmin, settingsController.getModuleSettings);
+router.put('/modules', protectAdmin, updateModuleValidation, settingsController.updateModuleSettings);
+
+// Admin - update general settings
 router.put('/', protectAdmin, updateSettingsValidation, settingsController.updateSettings);
 
 export default router;

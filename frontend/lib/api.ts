@@ -56,6 +56,7 @@ export async function api<T>(
 
 import type {
   Settings,
+  ModuleSettings,
   HeroSlide,
   HeroSettings,
   HomeCategorySettings,
@@ -164,6 +165,9 @@ export const settingsApi = {
   getLogin: () => api<{ data: LoginSettings }>('/settings/login'),
   updateLogin: (body: Partial<LoginSettings>) =>
     api<{ data: LoginSettings }>('/settings/login', { method: 'PUT', body: JSON.stringify(body) }),
+  getModules: () => api<{ data: ModuleSettings }>('/settings/modules'),
+  updateModules: (body: Partial<ModuleSettings>) =>
+    api<{ data: ModuleSettings }>('/settings/modules', { method: 'PUT', body: JSON.stringify(body) }),
   getPublic: () => api<{ data: PublicSettings }>('/settings/public'),
 };
 

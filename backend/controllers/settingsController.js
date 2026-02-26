@@ -741,6 +741,11 @@ export const getPublicSettings = async (req, res) => {
       defaultTaxPercentage: typeof settings.defaultTaxPercentage === 'number'
         ? Math.max(0, Math.min(100, settings.defaultTaxPercentage))
         : 0,
+      whatsappChat: {
+        enabled: !!settings.whatsappChat?.enabled,
+        position: settings.whatsappChat?.position === 'left' ? 'left' : 'right',
+        phoneNumber: (settings.whatsappChat?.phoneNumber || '').trim(),
+      },
     };
 
     const seo = settings.seo || {};
@@ -863,11 +868,7 @@ export const updateSettings = async (req, res) => {
       'contactEmail', 'contactPhone', 'contactAddress',
       'facebookUrl', 'instagramUrl', 'twitterUrl', 'linkedinUrl',
       'logoImageUrl', 'faviconUrl',
-      'couponEnabled', 'blogEnabled', 'abandonedCartEnabled',
-      'googleAnalyticsEnabled', 'googleAnalyticsId',
-      'facebookPixelEnabled', 'facebookPixelId',
       'companyGstin',
-      'taxEnabled', 'defaultTaxPercentage',
     ];
 
     const updates = {};
@@ -891,3 +892,84 @@ export const updateSettings = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// ============ Module Settings Controller ============
+
+function buildDefaultModuleSettings(raw) {
+  return {
+    couponEnabled: !!raw.couponEnabled,
+    blogEnabled: !!raw.blogEnabled,
+    abandonedCartEnabled: !!raw.abandonedCartEnabled,
+    googleAnalyticsEnabled: !!raw.googleAnalyticsEnabled,
+    googleAnalyticsId: (raw.googleAnalyticsId || '').trim(),
+    facebookPixelEnabled: !!raw.facebookPixelEnabled,
+    facebookPixelId: (raw.facebookPixelId || '').trim(),
+    taxEnabled: !!raw.taxEnabled,
+    defaultTaxPercentage: typeof raw.defaultTaxPercentage === 'number'
+      ? Math.max(0, Math.min(100, raw.defaultTaxPercentage))
+      : 0,
+    whatsappChat: {
+      enabled: !!raw.whatsappChat?.enabled,
+      position: raw.whatsappChat?.position === 'left' ? 'left' : 'right',
+      phoneNumber: (raw.whatsappChat?.phoneNumber || '').trim(),
+    },
+  };
+}
+
+export const getModuleSettings = async (req, res) => {
+  try {
+    const settings = await Settings.getSettings();
+    const data = buildDefaultModuleSettings(settings);
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateModuleSettings = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const updates = {};
+
+    if (req.body.couponEnabled !== undefined) updates.couponEnabled = !!req.body.couponEnabled;
+    if (req.body.blogEnabled !== undefined) updates.blogEnabled = !!req.body.blogEnabled;
+    if (req.body.abandonedCartEnabled !== undefined) updates.abandonedCartEnabled = !!req.body.abandonedCartEnabled;
+    if (req.body.googleAnalyticsEnabled !== undefined) updates.googleAnalyticsEnabled = !!req.body.googleAnalyticsEnabled;
+    if (req.body.googleAnalyticsId !== undefined) updates.googleAnalyticsId = String(req.body.googleAnalyticsId || '').trim();
+    if (req.body.facebookPixelEnabled !== undefined) updates.facebookPixelEnabled = !!req.body.facebookPixelEnabled;
+    if (req.body.facebookPixelId !== undefined) updates.facebookPixelId = String(req.body.facebookPixelId || '').trim();
+    if (req.body.taxEnabled !== undefined) updates.taxEnabled = !!req.body.taxEnabled;
+    if (req.body.defaultTaxPercentage !== undefined) {
+      const v = parseFloat(req.body.defaultTaxPercentage);
+      updates.defaultTaxPercentage = isNaN(v) ? 0 : Math.max(0, Math.min(100, v));
+    }
+
+    const wc = req.body.whatsappChat;
+    if (wc && typeof wc === 'object') {
+      if (typeof wc.enabled === 'boolean') updates['whatsappChat.enabled'] = wc.enabled;
+      if (wc.position === 'left' || wc.position === 'right') updates['whatsappChat.position'] = wc.position;
+      if (wc.phoneNumber !== undefined) updates['whatsappChat.phoneNumber'] = String(wc.phoneNumber || '').trim();
+    }
+
+    await Settings.findOneAndUpdate(
+      { key: 'site' },
+      { $set: updates },
+      { returnDocument: 'after', upsert: true, runValidators: true }
+    );
+
+    const settings = await Settings.getSettings();
+    const data = buildDefaultModuleSettings(settings);
+
+    // Invalidate cached public settings so next request rebuilds from DB
+    await redisDel(PUBLIC_SETTINGS_CACHE_KEY);
+
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

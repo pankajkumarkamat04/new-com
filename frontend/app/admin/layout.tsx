@@ -39,7 +39,8 @@ function SettingsNav({ pathname }: { pathname: string }) {
     pathname === "/admin/settings/footer" ||
     pathname === "/admin/settings/payment" ||
     pathname === "/admin/settings/notifications" ||
-    pathname === "/admin/settings/login";
+    pathname === "/admin/settings/login" ||
+    pathname === "/admin/settings/modules";
   const isOrderGroupActive = pathname.startsWith("/admin/settings/checkout");
   const [expanded, setExpanded] = useState(isSettingsActive);
   const [homeExpanded, setHomeExpanded] = useState(isHomePageActive);
@@ -56,7 +57,8 @@ function SettingsNav({ pathname }: { pathname: string }) {
       pathname === "/admin/settings/footer" ||
       pathname === "/admin/settings/payment" ||
       pathname === "/admin/settings/notifications" ||
-      pathname === "/admin/settings/login"
+      pathname === "/admin/settings/login" ||
+      pathname === "/admin/settings/modules"
     ) {
       setGeneralExpanded(true);
     }
@@ -108,8 +110,8 @@ function SettingsNav({ pathname }: { pathname: string }) {
                 <Link
                   href="/admin/settings/general"
                   className={`block rounded px-2 py-1.5 text-sm ${pathname === "/admin/settings/general"
-                      ? "font-medium text-amber-700"
-                      : "text-slate-600 hover:text-slate-900"
+                    ? "font-medium text-amber-700"
+                    : "text-slate-600 hover:text-slate-900"
                     }`}
                 >
                   General
@@ -117,8 +119,8 @@ function SettingsNav({ pathname }: { pathname: string }) {
                 <Link
                   href="/admin/settings/seo"
                   className={`block rounded px-2 py-1.5 text-sm ${pathname === "/admin/settings/seo"
-                      ? "font-medium text-amber-700"
-                      : "text-slate-600 hover:text-slate-900"
+                    ? "font-medium text-amber-700"
+                    : "text-slate-600 hover:text-slate-900"
                     }`}
                 >
                   SEO
@@ -126,8 +128,8 @@ function SettingsNav({ pathname }: { pathname: string }) {
                 <Link
                   href="/admin/settings/header"
                   className={`block rounded px-2 py-1.5 text-sm ${pathname === "/admin/settings/header"
-                      ? "font-medium text-amber-700"
-                      : "text-slate-600 hover:text-slate-900"
+                    ? "font-medium text-amber-700"
+                    : "text-slate-600 hover:text-slate-900"
                     }`}
                 >
                   Header
@@ -135,8 +137,8 @@ function SettingsNav({ pathname }: { pathname: string }) {
                 <Link
                   href="/admin/settings/footer"
                   className={`block rounded px-2 py-1.5 text-sm ${pathname === "/admin/settings/footer"
-                      ? "font-medium text-amber-700"
-                      : "text-slate-600 hover:text-slate-900"
+                    ? "font-medium text-amber-700"
+                    : "text-slate-600 hover:text-slate-900"
                     }`}
                 >
                   Footer
@@ -144,8 +146,8 @@ function SettingsNav({ pathname }: { pathname: string }) {
                 <Link
                   href="/admin/settings/payment"
                   className={`block rounded px-2 py-1.5 text-sm ${pathname === "/admin/settings/payment"
-                      ? "font-medium text-amber-700"
-                      : "text-slate-600 hover:text-slate-900"
+                    ? "font-medium text-amber-700"
+                    : "text-slate-600 hover:text-slate-900"
                     }`}
                 >
                   Payment
@@ -153,8 +155,8 @@ function SettingsNav({ pathname }: { pathname: string }) {
                 <Link
                   href="/admin/settings/notifications"
                   className={`block rounded px-2 py-1.5 text-sm ${pathname === "/admin/settings/notifications"
-                      ? "font-medium text-amber-700"
-                      : "text-slate-600 hover:text-slate-900"
+                    ? "font-medium text-amber-700"
+                    : "text-slate-600 hover:text-slate-900"
                     }`}
                 >
                   Notifications
@@ -162,11 +164,20 @@ function SettingsNav({ pathname }: { pathname: string }) {
                 <Link
                   href="/admin/settings/login"
                   className={`block rounded px-2 py-1.5 text-sm ${pathname === "/admin/settings/login"
-                      ? "font-medium text-amber-700"
-                      : "text-slate-600 hover:text-slate-900"
+                    ? "font-medium text-amber-700"
+                    : "text-slate-600 hover:text-slate-900"
                     }`}
                 >
                   Login
+                </Link>
+                <Link
+                  href="/admin/settings/modules"
+                  className={`block rounded px-2 py-1.5 text-sm ${pathname === "/admin/settings/modules"
+                    ? "font-medium text-amber-700"
+                    : "text-slate-600 hover:text-slate-900"
+                    }`}
+                >
+                  Modules
                 </Link>
               </div>
             )}
@@ -192,8 +203,8 @@ function SettingsNav({ pathname }: { pathname: string }) {
                 <Link
                   href="/admin/settings/home"
                   className={`block rounded px-2 py-1.5 text-sm ${pathname === "/admin/settings/home"
-                      ? "font-medium text-amber-700"
-                      : "text-slate-600 hover:text-slate-900"
+                    ? "font-medium text-amber-700"
+                    : "text-slate-600 hover:text-slate-900"
                     }`}
                 >
                   Homepage
@@ -201,8 +212,8 @@ function SettingsNav({ pathname }: { pathname: string }) {
                 <Link
                   href="/admin/settings/home/hero"
                   className={`block rounded px-2 py-1.5 text-sm ${pathname === "/admin/settings/home/hero"
-                      ? "font-medium text-amber-700"
-                      : "text-slate-600 hover:text-slate-900"
+                    ? "font-medium text-amber-700"
+                    : "text-slate-600 hover:text-slate-900"
                     }`}
                 >
                   Hero
@@ -210,8 +221,8 @@ function SettingsNav({ pathname }: { pathname: string }) {
                 <Link
                   href="/admin/settings/home/categories"
                   className={`block rounded px-2 py-1.5 text-sm ${pathname === "/admin/settings/home/categories"
-                      ? "font-medium text-amber-700"
-                      : "text-slate-600 hover:text-slate-900"
+                    ? "font-medium text-amber-700"
+                    : "text-slate-600 hover:text-slate-900"
                     }`}
                 >
                   Categories
@@ -240,8 +251,8 @@ function SettingsNav({ pathname }: { pathname: string }) {
                 <Link
                   href="/admin/settings/checkout"
                   className={`block rounded px-2 py-1.5 text-sm ${pathname === "/admin/settings/checkout"
-                      ? "font-medium text-amber-700"
-                      : "text-slate-600 hover:text-slate-900"
+                    ? "font-medium text-amber-700"
+                    : "text-slate-600 hover:text-slate-900"
                     }`}
                 >
                   Checkout
@@ -329,8 +340,8 @@ export default function AdminLayout({
                     key={item.href}
                     href={item.href}
                     className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${pathname === item.href
-                        ? "bg-amber-50 text-amber-700"
-                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      ? "bg-amber-50 text-amber-700"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                       }`}
                   >
                     <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -344,11 +355,10 @@ export default function AdminLayout({
               {couponEnabled && (
                 <Link
                   href="/admin/coupons"
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
-                    pathname === "/admin/coupons"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${pathname === "/admin/coupons"
                       ? "bg-amber-50 text-amber-700"
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
+                    }`}
                 >
                   <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4zM21 12l-3-3m0 0l-3 3m3-3v12" />
@@ -360,11 +370,10 @@ export default function AdminLayout({
               {blogEnabled && (
                 <Link
                   href="/admin/blogs"
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
-                    pathname === "/admin/blogs"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${pathname === "/admin/blogs"
                       ? "bg-amber-50 text-amber-700"
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
+                    }`}
                 >
                   <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10M4 18h6" />
@@ -376,11 +385,10 @@ export default function AdminLayout({
               {admin?.role === "superadmin" && (
                 <Link
                   href="/admin/admins"
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
-                    pathname === "/admin/admins"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${pathname === "/admin/admins"
                       ? "bg-amber-50 text-amber-700"
                       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
+                    }`}
                 >
                   <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -397,8 +405,8 @@ export default function AdminLayout({
               <Link
                 href="/admin/profile"
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${pathname === "/admin/profile"
-                    ? "bg-amber-50 text-amber-700"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  ? "bg-amber-50 text-amber-700"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
               >
                 <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

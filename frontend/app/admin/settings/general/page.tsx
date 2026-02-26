@@ -19,16 +19,7 @@ const defaultForm: Partial<Settings> = {
   linkedinUrl: "",
   logoImageUrl: "",
   faviconUrl: "",
-  couponEnabled: false,
-  blogEnabled: false,
-  abandonedCartEnabled: false,
-  googleAnalyticsEnabled: false,
-  googleAnalyticsId: "",
-  facebookPixelEnabled: false,
-  facebookPixelId: "",
   companyGstin: "",
-  taxEnabled: false,
-  defaultTaxPercentage: 0,
 };
 
 export default function AdminGeneralSettingsPage() {
@@ -63,16 +54,7 @@ export default function AdminGeneralSettingsPage() {
           linkedinUrl: res.data.data.linkedinUrl || "",
           logoImageUrl: res.data.data.logoImageUrl || "",
           faviconUrl: res.data.data.faviconUrl || "",
-          couponEnabled: !!res.data.data.couponEnabled,
-          blogEnabled: !!res.data.data.blogEnabled,
-          abandonedCartEnabled: !!res.data.data.abandonedCartEnabled,
-          googleAnalyticsEnabled: !!res.data.data.googleAnalyticsEnabled,
-          googleAnalyticsId: res.data.data.googleAnalyticsId || "",
-          facebookPixelEnabled: !!res.data.data.facebookPixelEnabled,
-          facebookPixelId: res.data.data.facebookPixelId || "",
           companyGstin: res.data.data.companyGstin || "",
-          taxEnabled: !!res.data.data.taxEnabled,
-          defaultTaxPercentage: res.data.data.defaultTaxPercentage ?? 0,
         });
       }
     });
@@ -106,9 +88,8 @@ export default function AdminGeneralSettingsPage() {
 
       {message && (
         <div
-          className={`mb-6 rounded-lg px-4 py-3 text-sm ${
-            message.type === "success" ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"
-          }`}
+          className={`mb-6 rounded-lg px-4 py-3 text-sm ${message.type === "success" ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"
+            }`}
         >
           {message.text}
         </div>
@@ -323,191 +304,6 @@ export default function AdminGeneralSettingsPage() {
                   placeholder="https://linkedin.com/company/yourpage"
                   className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                 />
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-semibold text-slate-900">Features</h2>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                <div>
-                  <p className="text-sm font-medium text-slate-900">Coupon Management</p>
-                  <p className="text-xs text-slate-500">
-                    Enable coupon codes for discounts at checkout. When enabled, the Coupons page
-                    appears in admin and customers can apply coupon codes.
-                  </p>
-                </div>
-                <label className="relative inline-flex cursor-pointer items-center">
-                  <input
-                    type="checkbox"
-                    checked={!!form.couponEnabled}
-                    onChange={(e) => {
-                      setForm((prev) => ({ ...prev, couponEnabled: e.target.checked }));
-                      setMessage(null);
-                    }}
-                    className="peer sr-only"
-                  />
-                  <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-600 peer-checked:after:translate-x-full" />
-                </label>
-              </div>
-              <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                <div>
-                  <p className="text-sm font-medium text-slate-900">Blog Module</p>
-                  <p className="text-xs text-slate-500">
-                    Enable a blog section for publishing articles. When enabled, the Blogs page appears
-                    in admin and the public blog pages are accessible.
-                  </p>
-                </div>
-                <label className="relative inline-flex cursor-pointer items-center">
-                  <input
-                    type="checkbox"
-                    checked={!!form.blogEnabled}
-                    onChange={(e) => {
-                      setForm((prev) => ({ ...prev, blogEnabled: e.target.checked }));
-                      setMessage(null);
-                    }}
-                    className="peer sr-only"
-                  />
-                  <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-emerald-600 peer-checked:after:translate-x-full" />
-                </label>
-              </div>
-              <div className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">Google Analytics</p>
-                    <p className="text-xs text-slate-500">
-                      Track page views and user behavior. Enter your GA4 Measurement ID (e.g. G-XXXXXXXXXX).
-                    </p>
-                  </div>
-                  <label className="relative inline-flex cursor-pointer items-center">
-                    <input
-                      type="checkbox"
-                      checked={!!form.googleAnalyticsEnabled}
-                      onChange={(e) => {
-                        setForm((prev) => ({ ...prev, googleAnalyticsEnabled: e.target.checked }));
-                        setMessage(null);
-                      }}
-                      className="peer sr-only"
-                    />
-                    <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-600 peer-checked:after:translate-x-full" />
-                  </label>
-                </div>
-                {form.googleAnalyticsEnabled && (
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-600">Measurement ID</label>
-                    <input
-                      type="text"
-                      name="googleAnalyticsId"
-                      value={form.googleAnalyticsId || ""}
-                      onChange={handleChange}
-                      placeholder="G-XXXXXXXXXX"
-                      className="w-full max-w-sm rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    />
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">Facebook Pixel</p>
-                    <p className="text-xs text-slate-500">
-                      Track conversions and build audiences for Meta ads. Enter your Pixel ID (e.g. 1234567890123456).
-                    </p>
-                  </div>
-                  <label className="relative inline-flex cursor-pointer items-center">
-                    <input
-                      type="checkbox"
-                      checked={!!form.facebookPixelEnabled}
-                      onChange={(e) => {
-                        setForm((prev) => ({ ...prev, facebookPixelEnabled: e.target.checked }));
-                        setMessage(null);
-                      }}
-                      className="peer sr-only"
-                    />
-                    <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-600 peer-checked:after:translate-x-full" />
-                  </label>
-                </div>
-                {form.facebookPixelEnabled && (
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-600">Pixel ID</label>
-                    <input
-                      type="text"
-                      name="facebookPixelId"
-                      value={form.facebookPixelId || ""}
-                      onChange={handleChange}
-                      placeholder="1234567890123456"
-                      className="w-full max-w-sm rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    />
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">Tax</p>
-                    <p className="text-xs text-slate-500">
-                      Enable tax on products and orders. Set a default tax percentage used when products
-                      have no custom tax.
-                    </p>
-                  </div>
-                  <label className="relative inline-flex cursor-pointer items-center">
-                    <input
-                      type="checkbox"
-                      checked={!!form.taxEnabled}
-                      onChange={(e) => {
-                        setForm((prev) => ({ ...prev, taxEnabled: e.target.checked }));
-                        setMessage(null);
-                      }}
-                      className="peer sr-only"
-                    />
-                    <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-600 peer-checked:after:translate-x-full" />
-                  </label>
-                </div>
-                {form.taxEnabled && (
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-600">Default Tax Percentage (%)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      name="defaultTaxPercentage"
-                      value={form.defaultTaxPercentage ?? 0}
-                      onChange={(e) => {
-                        const v = parseFloat(e.target.value);
-                        setForm((prev) => ({
-                          ...prev,
-                          defaultTaxPercentage: isNaN(v) ? 0 : Math.max(0, Math.min(100, v)),
-                        }));
-                        setMessage(null);
-                      }}
-                      placeholder="0"
-                      className="w-full max-w-xs rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    />
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                <div>
-                  <p className="text-sm font-medium text-slate-900">Abandoned Cart Recovery</p>
-                  <p className="text-xs text-slate-500">
-                    Send recovery emails to users who left items in their cart. Requires email notifications
-                    to be configured. Run a cron job to trigger recovery (e.g. every hour).
-                  </p>
-                </div>
-                <label className="relative inline-flex cursor-pointer items-center">
-                  <input
-                    type="checkbox"
-                    checked={!!form.abandonedCartEnabled}
-                    onChange={(e) => {
-                      setForm((prev) => ({ ...prev, abandonedCartEnabled: e.target.checked }));
-                      setMessage(null);
-                    }}
-                    className="peer sr-only"
-                  />
-                  <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-600 peer-checked:after:translate-x-full" />
-                </label>
               </div>
             </div>
           </div>

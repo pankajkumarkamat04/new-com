@@ -13,6 +13,7 @@ import type {
   PaymentSettings,
   PublicSettings,
   FooterColumnType,
+  WhatsappChatSettings,
 } from "@/lib/types";
 
 const defaultHero: HeroSettings = {
@@ -77,6 +78,7 @@ type SettingsContextType = {
   googleAnalyticsId: string;
   facebookPixelEnabled: boolean;
   facebookPixelId: string;
+  whatsappChat: WhatsappChatSettings;
   currency: string;
   paymentMethods: { id: string; label: string }[];
   formatCurrency: (amount: number) => string;
@@ -128,6 +130,7 @@ const SettingsContext = createContext<SettingsContextType>({
   googleAnalyticsId: "",
   facebookPixelEnabled: false,
   facebookPixelId: "",
+  whatsappChat: { enabled: false, position: "right", phoneNumber: "" },
   currency: "INR",
   paymentMethods: [{ id: "cod", label: "Cash on Delivery (COD)" }],
   formatCurrency: (amount: number) =>
@@ -158,6 +161,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [googleAnalyticsId, setGoogleAnalyticsId] = useState("");
   const [facebookPixelEnabled, setFacebookPixelEnabled] = useState(false);
   const [facebookPixelId, setFacebookPixelId] = useState("");
+  const [whatsappChat, setWhatsappChat] = useState<WhatsappChatSettings>({
+    enabled: false,
+    position: "right",
+    phoneNumber: "",
+  });
   const [loading, setLoading] = useState(true);
 
   const refresh = async () => {
@@ -174,6 +182,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       setGoogleAnalyticsId(publicData.general.googleAnalyticsId?.trim() || "");
       setFacebookPixelEnabled(!!publicData.general.facebookPixelEnabled);
       setFacebookPixelId(publicData.general.facebookPixelId?.trim() || "");
+      const wc = publicData.general.whatsappChat;
+      setWhatsappChat({
+        enabled: !!wc?.enabled,
+        position: wc?.position === "left" ? "left" : "right",
+        phoneNumber: (wc?.phoneNumber || "").trim(),
+      });
     } else {
       setSettings(defaultSettings);
       setCouponEnabled(false);
@@ -184,6 +198,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       setGoogleAnalyticsId("");
       setFacebookPixelEnabled(false);
       setFacebookPixelId("");
+      setWhatsappChat({ enabled: false, position: "right", phoneNumber: "" });
     }
 
     const homeData = publicData?.homepage;
@@ -324,6 +339,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         googleAnalyticsId,
         facebookPixelEnabled,
         facebookPixelId,
+        whatsappChat,
         currency,
         paymentMethods,
         formatCurrency,

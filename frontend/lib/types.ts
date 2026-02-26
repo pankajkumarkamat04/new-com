@@ -25,6 +25,17 @@ export type Settings = {
   companyGstin?: string;
   taxEnabled?: boolean;
   defaultTaxPercentage?: number;
+  whatsappChat?: {
+    enabled?: boolean;
+    position?: "left" | "right";
+    phoneNumber?: string;
+  };
+};
+
+export type WhatsappChatSettings = {
+  enabled: boolean;
+  position: "left" | "right";
+  phoneNumber: string;
 };
 
 export type ProductTax = {
@@ -151,6 +162,24 @@ export type LoginSettings = {
   loginIdentifier: "email" | "phone";
   loginMethod: "password" | "otp";
 };
+
+export type ModuleSettings = {
+  couponEnabled: boolean;
+  blogEnabled: boolean;
+  abandonedCartEnabled: boolean;
+  googleAnalyticsEnabled: boolean;
+  googleAnalyticsId: string;
+  facebookPixelEnabled: boolean;
+  facebookPixelId: string;
+  taxEnabled: boolean;
+  defaultTaxPercentage: number;
+  whatsappChat: {
+    enabled: boolean;
+    position: "left" | "right";
+    phoneNumber: string;
+  };
+};
+
 
 export type NotificationEmailSettings = {
   enabled: boolean;

@@ -218,6 +218,11 @@ const settingsSchema = new mongoose.Schema({
     trim: true,
     default: '',
   },
+  whatsappChat: {
+    enabled: { type: Boolean, default: false },
+    position: { type: String, enum: ['left', 'right'], default: 'right' },
+    phoneNumber: { type: String, trim: true, default: '' },
+  },
   taxEnabled: {
     type: Boolean,
     default: false,
