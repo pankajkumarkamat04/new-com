@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { userApi } from "@/lib/api";
 import { useCart } from "@/contexts/CartContext";
+import { Card, Input, Label, Button } from "@/components/ui";
 
 const PHONE_COUNTRY_OPTIONS: { dial: string; name: string; code: string }[] = [
   { dial: "+91", name: "India", code: "IN" },
@@ -94,35 +95,21 @@ export default function UserSignupPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-50 px-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">
+      <Card className="w-full max-w-md p-8 shadow-lg" padding="none">
         <h1 className="mb-2 text-2xl font-bold text-slate-900">User Sign Up</h1>
         <p className="mb-6 text-slate-600">Create an account</p>
 
         <form onSubmit={handleSignup} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-600">Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-              placeholder="Your name"
-              required
-            />
+            <Label required>Name</Label>
+            <Input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-600">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-              placeholder="you@example.com"
-              required
-            />
+            <Label required>Email</Label>
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-600">Mobile No</label>
+            <Label required>Mobile No</Label>
             <div className="flex gap-2">
               <select
                 value={phoneCountryDial}
@@ -135,50 +122,32 @@ export default function UserSignupPage() {
                   </option>
                 ))}
               </select>
-              <input
+              <Input
                 type="tel"
                 inputMode="numeric"
                 maxLength={10}
                 value={phone}
                 onChange={(e) => setPhone(normalizePhoneDigits(e.target.value))}
-                className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 placeholder="10-digit number"
+                className="flex-1"
                 required
               />
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-600">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-              placeholder="••••••••"
-              required
-            />
+            <Label required>Password</Label>
+            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-600">Confirm Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-              placeholder="••••••••"
-              required
-            />
+            <Label required>Confirm Password</Label>
+            <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" required />
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-emerald-600 py-3 font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
-          >
+          <Button type="submit" variant="fullPrimary" disabled={loading}>
             {loading ? "Creating account..." : "Sign Up"}
-          </button>
+          </Button>
         </form>
 
         <p className="mt-6 text-center text-slate-600">
@@ -188,7 +157,7 @@ export default function UserSignupPage() {
         <p className="mt-2 text-center">
           <Link href="/" className="text-sm text-slate-500 hover:underline">Back to home</Link>
         </p>
-      </div>
+      </Card>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { inventoryApi, productApi } from "@/lib/api";
 import type { InventoryMovement, Product, ProductVariation } from "@/lib/types";
+import { Button, Card, Input, Label, LoadingState, EmptyState } from "@/components/ui";
 
 /** Products that have inventory management with SKU (product or variations) */
 function hasInventoryWithSku(p: Product): boolean {
@@ -161,12 +162,9 @@ export default function AdminInventoryPage() {
             Track stock movements and add or adjust inventory for products.
           </p>
         </div>
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="rounded-lg bg-amber-600 px-4 py-2 font-medium text-white transition hover:bg-amber-500"
-        >
+        <Button type="button" variant="primaryAmber" onClick={() => setShowAddForm(!showAddForm)}>
           {showAddForm ? "Cancel" : "Add Stock"}
-        </button>
+        </Button>
       </div>
 
       {message && (
@@ -180,14 +178,12 @@ export default function AdminInventoryPage() {
       )}
 
       {showAddForm && (
-        <form
-          onSubmit={handleAddStock}
-          className="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
-        >
+        <Card className="mb-6">
+          <form onSubmit={handleAddStock}>
           <h2 className="mb-4 text-lg font-semibold text-slate-900">Add Stock</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Product</label>
+              <Label>Product</Label>
               <select
                 value={addForm.productId}
                 onChange={(e) =>
@@ -221,7 +217,7 @@ export default function AdminInventoryPage() {
               const skus = prod ? getSkus(prod) : [];
               return skus.length > 0 ? (
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-600">SKU</label>
+                  <Label>SKU</Label>
                   <select
                     value={addForm.sku}
                     onChange={(e) => setAddForm((prev) => ({ ...prev, sku: e.target.value }))}
@@ -238,54 +234,45 @@ export default function AdminInventoryPage() {
               ) : null;
             })()}
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Quantity</label>
-              <input
+              <Label>Quantity</Label>
+              <Input
+                variant="amber"
                 type="number"
                 min={1}
                 value={addForm.quantity}
                 onChange={(e) => setAddForm((prev) => ({ ...prev, quantity: e.target.value }))}
                 placeholder="e.g. 10"
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Reason</label>
-              <input
-                type="text"
+              <Label>Reason</Label>
+              <Input
+                variant="amber"
                 value={addForm.reason}
                 onChange={(e) => setAddForm((prev) => ({ ...prev, reason: e.target.value }))}
                 placeholder="e.g. Purchase, Restock"
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Notes</label>
-              <input
-                type="text"
+              <Label>Notes</Label>
+              <Input
+                variant="amber"
                 value={addForm.notes}
                 onChange={(e) => setAddForm((prev) => ({ ...prev, notes: e.target.value }))}
                 placeholder="Optional"
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
               />
             </div>
           </div>
           <div className="mt-4 flex gap-2">
-            <button
-              type="submit"
-              disabled={addSubmitting}
-              className="rounded-lg bg-amber-600 px-4 py-2 font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
-            >
+            <Button type="submit" variant="primaryAmber" disabled={addSubmitting}>
               {addSubmitting ? "Adding..." : "Add Stock"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowAddForm(false)}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-50"
-            >
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => setShowAddForm(false)}>
               Cancel
-            </button>
+            </Button>
           </div>
-        </form>
+          </form>
+        </Card>
       )}
 
       <div className="mb-6">
@@ -294,15 +281,19 @@ export default function AdminInventoryPage() {
           Click a product to view all its SKUs and stock movements.
         </p>
         {loading ? (
-          <div className="py-12 text-center text-slate-600">Loading products...</div>
+          <LoadingState message="Loading products..." />
         ) : inventoryProducts.length === 0 ? (
-          <div className="rounded-xl border border-slate-200 bg-white p-12 text-center text-slate-600">
-            No products with inventory management (SKU) yet. Add products with &quot;Manage with Inventory&quot; and generate SKUs in the{" "}
-            <Link href="/admin/products" className="font-medium text-amber-600 hover:text-amber-500">
-              Products
-            </Link>{" "}
-            page.
-          </div>
+          <EmptyState
+            message={
+              <>
+                No products with inventory management (SKU) yet. Add products with &quot;Manage with Inventory&quot; and generate SKUs in the{" "}
+                <Link href="/admin/products" className="font-medium text-amber-600 hover:text-amber-500">
+                  Products
+                </Link>{" "}
+                page.
+              </>
+            }
+          />
         ) : (
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {inventoryProducts.map((p) => {

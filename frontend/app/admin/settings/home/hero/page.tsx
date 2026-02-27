@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { settingsApi, getMediaUrl } from "@/lib/api";
 import type { HeroSettings, HeroSlide } from "@/lib/types";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
+import { BackLink, Card, Button, Input, Label, LoadingState } from "@/components/ui";
 
 const defaultSlide = { image: "", title: "Discover Amazing Products", subtitle: "Shop the latest trends.", textColor: "", buttonText: "Shop Now", buttonLink: "/shop", buttonTextColor: "#ffffff", buttonBgColor: "#059669", showText: true };
 
@@ -93,14 +93,8 @@ export default function AdminHeroSettingsPage() {
 
   return (
     <div className="px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 flex items-center gap-4">
-        <Link href="/admin/settings/home" className="text-slate-500 hover:text-slate-700">
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </Link>
-        <h1 className="text-2xl font-bold text-slate-900">Hero Section</h1>
-      </div>
+      <BackLink href="/admin/settings/home" label="Back to Home Settings" />
+      <h1 className="mb-6 text-2xl font-bold text-slate-900">Hero Section</h1>
 
       {message && (
         <div
@@ -113,7 +107,7 @@ export default function AdminHeroSettingsPage() {
       )}
 
       {loading ? (
-        <div className="py-12 text-center text-slate-600">Loading...</div>
+        <LoadingState message="Loading..." />
       ) : (
         <form onSubmit={handleSubmit} className="space-y-8">
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -526,13 +520,9 @@ export default function AdminHeroSettingsPage() {
             type="image"
           />
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-lg bg-amber-600 px-6 py-2.5 font-medium text-white hover:bg-amber-500 disabled:opacity-50"
-          >
+          <Button type="submit" variant="primaryAmber" disabled={submitting}>
             {submitting ? "Saving..." : "Save Hero Section"}
-          </button>
+          </Button>
         </form>
       )}
     </div>

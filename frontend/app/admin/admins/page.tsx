@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { adminsApi } from "@/lib/api";
 import type { AdminItem } from "@/lib/types";
+import { Card, Input, Label, Button, LoadingState, EmptyState, Badge } from "@/components/ui";
 
 export default function AdminAdminsPage() {
   const [mounted, setMounted] = useState(false);
@@ -146,12 +147,12 @@ export default function AdminAdminsPage() {
   if (accessDenied) {
     return (
       <div className="px-4 py-8 sm:px-6 lg:px-8">
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-8 text-center">
+        <Card className="border-amber-200 bg-amber-50 p-8 text-center">
           <h2 className="text-lg font-semibold text-amber-800">Access Denied</h2>
           <p className="mt-2 text-sm text-amber-700">
             Only superadmins can manage other admins.
           </p>
-        </div>
+        </Card>
       </div>
     );
   }
@@ -162,76 +163,51 @@ export default function AdminAdminsPage() {
         <h1 className="text-2xl font-bold text-slate-900">Admin Management</h1>
         <div className="flex flex-wrap gap-3">
           <form onSubmit={handleSearch} className="flex gap-2">
-            <input
+            <Input
+              variant="amber"
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search by name, email, phone..."
-              className="w-48 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 sm:w-64"
+              className="w-48 text-sm sm:w-64"
             />
-            <button
-              type="submit"
-              className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-200"
-            >
+            <Button type="submit" variant="secondary" className="text-sm">
               Search
-            </button>
+            </Button>
           </form>
-          <button
-            onClick={handleAdd}
-            className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-500"
-          >
+          <Button type="button" variant="primaryAmber" onClick={handleAdd} className="text-sm">
             Add Admin
-          </button>
+          </Button>
         </div>
       </div>
 
       {showForm && (
-        <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <Card className="mb-8">
           <h2 className="mb-4 text-lg font-semibold text-slate-900">
             {editing ? "Edit Admin" : "Add Admin"}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Name *</label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                  required
-                />
+                <Label required>Name</Label>
+                <Input variant="amber" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Email *</label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                  required
-                  disabled={!!editing}
-                />
+                <Label required>Email</Label>
+                <Input variant="amber" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required disabled={!!editing} />
                 {editing && <p className="mt-1 text-xs text-slate-500">Email cannot be changed</p>}
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Phone</label>
-                <input
-                  type="tel"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
+                <Label>Phone</Label>
+                <Input variant="amber" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">
-                  Password {editing ? "(leave blank to keep)" : "*"}
-                </label>
-                <input
+                <Label required={!editing}>Password {editing ? "(leave blank to keep)" : ""}</Label>
+                <Input
+                  variant="amber"
                   type="password"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                   placeholder={editing ? "••••••••" : "Min 6 characters"}
                 />
               </div>
@@ -263,31 +239,21 @@ export default function AdminAdminsPage() {
             </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="rounded-lg bg-amber-600 px-4 py-2 font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
-              >
+              <Button type="submit" variant="primaryAmber" disabled={submitting}>
                 {submitting ? "Saving..." : editing ? "Update" : "Create"}
-              </button>
-              <button
-                type="button"
-                onClick={resetForm}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-100"
-              >
+              </Button>
+              <Button type="button" variant="secondary" onClick={resetForm}>
                 Cancel
-              </button>
+              </Button>
             </div>
           </form>
-        </div>
+        </Card>
       )}
 
       {loading ? (
-        <div className="py-12 text-center text-slate-600">Loading admins...</div>
+        <LoadingState message="Loading admins..." />
       ) : admins.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-12 text-center text-slate-500">
-          {search ? "No admins match your search." : "No admins yet. Add one above."}
-        </div>
+        <EmptyState message={search ? "No admins match your search." : "No admins yet. Add one above."} />
       ) : (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <table className="min-w-full divide-y divide-slate-200">
@@ -309,40 +275,24 @@ export default function AdminAdminsPage() {
                   <td className="whitespace-nowrap px-6 py-4 text-slate-600">{admin.email}</td>
                   <td className="whitespace-nowrap px-6 py-4 text-slate-600">{admin.phone || "—"}</td>
                   <td className="whitespace-nowrap px-6 py-4">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                        admin.role === "superadmin" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700"
-                      }`}
-                    >
-                      {admin.role}
-                    </span>
+                    <Badge variant={admin.role === "superadmin" ? "warning" : "neutral"}>{admin.role}</Badge>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                        admin.isActive !== false ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-700"
-                      }`}
-                    >
+                    <Badge variant={admin.isActive !== false ? "success" : "danger"}>
                       {admin.isActive !== false ? "Active" : "Inactive"}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-slate-600">
                     {admin.createdAt ? new Date(admin.createdAt).toLocaleDateString() : "—"}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-right">
-                    <button
-                      onClick={() => handleEdit(admin)}
-                      className="mr-2 text-amber-600 hover:underline"
-                    >
+                    <Button type="button" variant="link" onClick={() => handleEdit(admin)} className="mr-2 text-amber-600">
                       Edit
-                    </button>
+                    </Button>
                     {admin.role !== "superadmin" && (
-                      <button
-                        onClick={() => handleDelete(admin._id)}
-                        className="text-red-600 hover:underline"
-                      >
+                      <Button type="button" variant="linkRed" onClick={() => handleDelete(admin._id)}>
                         Delete
-                      </button>
+                      </Button>
                     )}
                   </td>
                 </tr>
@@ -358,20 +308,24 @@ export default function AdminAdminsPage() {
             Showing page {pagination.page} of {pagination.pages} ({pagination.total} total)
           </p>
           <div className="flex gap-2">
-            <button
+            <Button
+              type="button"
+              variant="secondary"
               onClick={() => setPagination((p) => ({ ...p, page: Math.max(1, p.page - 1) }))}
               disabled={pagination.page <= 1}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm disabled:opacity-50"
+              className="text-sm"
             >
               Previous
-            </button>
-            <button
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
               onClick={() => setPagination((p) => ({ ...p, page: Math.min(p.pages, p.page + 1) }))}
               disabled={pagination.page >= pagination.pages}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm disabled:opacity-50"
+              className="text-sm"
             >
               Next
-            </button>
+            </Button>
           </div>
         </div>
       )}

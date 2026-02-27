@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { categoryApi, getMediaUrl } from "@/lib/api";
 import type { Category } from "@/lib/types";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
+import { Button, Card, Input, Label, Textarea, LoadingState, EmptyState, Badge } from "@/components/ui";
 
 function getParentId(c: Category): string | null {
   if (!c.parent) return null;
@@ -151,35 +152,23 @@ export default function AdminCategoriesPage() {
     <div className="px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-900">Categories</h1>
-        <button
-          onClick={() => {
-            resetForm();
-            setShowForm(true);
-          }}
-          className="rounded-lg bg-amber-600 px-4 py-2 font-medium text-white transition hover:bg-amber-500"
-        >
+        <Button variant="primaryAmber" onClick={() => { resetForm(); setShowForm(true); }}>
           Add Category
-        </button>
+        </Button>
       </div>
 
       {showForm && (
-        <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <Card className="mb-8">
           <h2 className="mb-4 text-lg font-semibold text-slate-900">
             {editing ? "Edit Category" : "Add Category"}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Name *</label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                required
-              />
+              <Label required>Name</Label>
+              <Input variant="amber" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Parent category</label>
+              <Label>Parent category</Label>
               <select
                 value={form.parent}
                 onChange={(e) => setForm({ ...form, parent: e.target.value })}
@@ -195,7 +184,7 @@ export default function AdminCategoriesPage() {
               <p className="mt-0.5 text-xs text-slate-500">Leave as &quot;None&quot; for a main category; choose a category to create a subcategory.</p>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Image</label>
+              <Label>Image</Label>
               <div className="flex items-center gap-3">
                 {form.image ? (
                   <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
@@ -203,33 +192,20 @@ export default function AdminCategoriesPage() {
                   </div>
                 ) : null}
                 <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowMediaPicker(true)}
-                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                  >
+                  <Button type="button" variant="secondary" onClick={() => setShowMediaPicker(true)}>
                     {form.image ? "Change" : "Select"} Image
-                  </button>
+                  </Button>
                   {form.image && (
-                    <button
-                      type="button"
-                      onClick={() => setForm({ ...form, image: "" })}
-                      className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
-                    >
+                    <Button type="button" variant="secondary" className="border-red-200 text-red-600 hover:bg-red-50" onClick={() => setForm({ ...form, image: "" })}>
                       Remove
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Description</label>
-              <textarea
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                rows={2}
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              />
+              <Label>Description</Label>
+              <Textarea variant="amber" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} />
             </div>
             <div className="flex items-center gap-2">
               <input
@@ -257,23 +233,15 @@ export default function AdminCategoriesPage() {
             </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="rounded-lg bg-amber-600 px-4 py-2 font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
-              >
+              <Button type="submit" variant="primaryAmber" disabled={submitting}>
                 {submitting ? "Saving..." : editing ? "Update" : "Create"}
-              </button>
-              <button
-                type="button"
-                onClick={resetForm}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-100"
-              >
+              </Button>
+              <Button type="button" variant="secondary" onClick={resetForm}>
                 Cancel
-              </button>
+              </Button>
             </div>
           </form>
-        </div>
+        </Card>
       )}
 
       <MediaPickerModal
@@ -288,11 +256,9 @@ export default function AdminCategoriesPage() {
       />
 
       {loading ? (
-        <div className="py-12 text-center text-slate-600">Loading categories...</div>
+        <LoadingState message="Loading categories..." />
       ) : categories.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-12 text-center text-slate-500">
-          No categories yet. Click &quot;Add Category&quot; to create one.
-        </div>
+        <EmptyState message='No categories yet. Click "Add Category" to create one.' />
       ) : (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <table className="min-w-full divide-y divide-slate-200">
@@ -346,40 +312,24 @@ export default function AdminCategoriesPage() {
                   </td>
                   {/* On Homepage */}
                   <td className="whitespace-nowrap px-6 py-4">
-                    {category.showOnHomepage ? (
-                      <span className="inline-flex rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
-                        Yes
-                      </span>
-                    ) : (
-                      <span className="inline-flex rounded-full bg-slate-50 px-2 py-1 text-xs font-medium text-slate-500">
-                        No
-                      </span>
-                    )}
+                    <Badge variant={category.showOnHomepage ? "success" : "neutral"}>
+                      {category.showOnHomepage ? "Yes" : "No"}
+                    </Badge>
                   </td>
                   {/* Status */}
                   <td className="whitespace-nowrap px-6 py-4">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                        category.isActive ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-800"
-                      }`}
-                    >
+                    <Badge variant={category.isActive ? "success" : "neutral"}>
                       {category.isActive ? "Active" : "Inactive"}
-                    </span>
+                    </Badge>
                   </td>
                   {/* Actions */}
                   <td className="whitespace-nowrap px-6 py-4 text-right">
-                    <button
-                      onClick={() => handleEdit(category)}
-                      className="mr-2 text-amber-600 hover:underline"
-                    >
+                    <Button type="button" variant="link" onClick={() => handleEdit(category)} className="mr-2 text-amber-600">
                       Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(category._id)}
-                      className="text-red-600 hover:underline"
-                    >
+                    </Button>
+                    <Button type="button" variant="linkRed" onClick={() => handleDelete(category._id)}>
                       Delete
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               );

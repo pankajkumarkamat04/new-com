@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { adminOrdersApi } from "@/lib/api";
 import type { Order } from "@/lib/types";
 import { useSettings } from "@/contexts/SettingsContext";
 import { GstInvoice } from "@/components/GstInvoice";
+import { LoadingState, ErrorState, BackLink, Card, Badge, Button } from "@/components/ui";
 
 function paymentMethodLabel(method: string | undefined): string {
   if (!method) return "—";
@@ -52,7 +52,7 @@ export default function AdminOrderDetailPage() {
   if (loading) {
     return (
       <div className="px-4 py-8 sm:px-6 lg:px-8">
-        <p className="text-slate-600">Loading order...</p>
+        <LoadingState message="Loading order..." />
       </div>
     );
   }
@@ -60,13 +60,10 @@ export default function AdminOrderDetailPage() {
   if (!order) {
     return (
       <div className="px-4 py-8 sm:px-6 lg:px-8">
-        <p className="text-slate-600">Order not found.</p>
-        <button
-          onClick={() => router.back()}
-          className="mt-4 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          Go back
-        </button>
+        <ErrorState
+          message="Order not found."
+          action={<Button type="button" variant="secondary" onClick={() => router.back()}>Go back</Button>}
+        />
       </div>
     );
   }
@@ -78,16 +75,10 @@ export default function AdminOrderDetailPage() {
 
   return (
     <div className="px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-4 flex items-center gap-2 text-sm text-slate-500">
-        <Link href="/admin/orders" className="hover:underline">
-          Orders
-        </Link>
-        <span>/</span>
-        <span className="text-slate-700">Order #{order._id.slice(-8).toUpperCase()}</span>
-      </div>
+      <BackLink href="/admin/orders" label="Orders" />
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div>
+        <div>
           <h1 className="text-2xl font-bold text-slate-900">
             Order #{order._id.slice(-8).toUpperCase()}
           </h1>
@@ -99,19 +90,19 @@ export default function AdminOrderDetailPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <span
-            className={`inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize ${
+          <Badge
+            variant={
               order.status === "pending"
-                ? "bg-amber-100 text-amber-800"
+                ? "warning"
                 : order.status === "delivered"
-                ? "bg-emerald-100 text-emerald-800"
-                : order.status === "cancelled"
-                ? "bg-red-100 text-red-700"
-                : "bg-slate-100 text-slate-700"
-            }`}
+                  ? "success"
+                  : order.status === "cancelled"
+                    ? "danger"
+                    : "neutral"
+            }
           >
             {order.status}
-          </span>
+          </Badge>
           <div className="flex items-center gap-2">
             <select
               value={status}
@@ -124,21 +115,22 @@ export default function AdminOrderDetailPage() {
               <option value="delivered">Delivered</option>
               <option value="cancelled">Cancelled</option>
             </select>
-            <button
+            <Button
               type="button"
+              variant="primaryAmber"
               onClick={handleStatusUpdate}
               disabled={updating || status === order.status}
-              className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-500 disabled:opacity-50"
+              className="text-xs py-1.5 px-3"
             >
               {updating ? "Updating..." : "Update Status"}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <Card>
             <h2 className="mb-4 text-lg font-semibold text-slate-900">Items</h2>
             <ul className="divide-y divide-slate-100 text-sm">
               {order.items.map((item) => (
@@ -190,9 +182,9 @@ export default function AdminOrderDetailPage() {
               <p className="text-sm text-slate-600">Total</p>
               <p className="text-xl font-bold text-slate-900">{formatCurrency(order.total)}</p>
             </div>
-          </div>
+          </Card>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <Card>
             <h2 className="mb-4 text-lg font-semibold text-slate-900">Shipping Address</h2>
             <div className="space-y-1 text-sm text-slate-700">
               <p>{order.shippingAddress.name}</p>
@@ -217,25 +209,25 @@ export default function AdminOrderDetailPage() {
                 </dl>
               </div>
             )}
-          </div>
+          </Card>
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <Card>
             <h2 className="mb-3 text-lg font-semibold text-slate-900">Payment</h2>
             <p className="text-sm text-slate-700">
               {paymentMethodLabel(order.paymentMethod)}
             </p>
-          </div>
+          </Card>
           {(order.shippingMethodName != null || (order.shippingAmount ?? 0) > 0) && (
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <Card>
               <h2 className="mb-3 text-lg font-semibold text-slate-900">Shipping</h2>
               <p className="text-sm text-slate-700">
                 {order.shippingMethodName || "Standard"} · {(order.shippingAmount ?? 0) > 0 ? formatCurrency(order.shippingAmount!) : "Free"}
               </p>
-            </div>
+            </Card>
           )}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <Card>
             <h2 className="mb-3 text-lg font-semibold text-slate-900">Customer</h2>
             {user ? (
               <div className="space-y-1 text-sm text-slate-700">
@@ -248,8 +240,8 @@ export default function AdminOrderDetailPage() {
                 {order.shippingAddress.name}
               </p>
             )}
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          </Card>
+          <Card>
             <h2 className="mb-4 text-lg font-semibold text-slate-900">Download Invoice</h2>
             <div className="flex gap-2">
               <GstInvoice
@@ -262,7 +254,7 @@ export default function AdminOrderDetailPage() {
                 buttonsOnly
               />
             </div>
-          </div>
+          </Card>
         </div>
       </div>
     </div>

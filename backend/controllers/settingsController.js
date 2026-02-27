@@ -902,6 +902,7 @@ function buildDefaultModuleSettings(raw) {
     shippingEnabled: !!raw.shippingEnabled,
     blogEnabled: !!raw.blogEnabled,
     abandonedCartEnabled: !!raw.abandonedCartEnabled,
+    salesReportEnabled: !!raw.salesReportEnabled,
     googleAnalyticsEnabled: !!raw.googleAnalyticsEnabled,
     googleAnalyticsId: (raw.googleAnalyticsId || '').trim(),
     facebookPixelEnabled: !!raw.facebookPixelEnabled,
@@ -941,6 +942,7 @@ export const updateModuleSettings = async (req, res) => {
     if (req.body.shippingEnabled !== undefined) updates.shippingEnabled = !!req.body.shippingEnabled;
     if (req.body.blogEnabled !== undefined) updates.blogEnabled = !!req.body.blogEnabled;
     if (req.body.abandonedCartEnabled !== undefined) updates.abandonedCartEnabled = !!req.body.abandonedCartEnabled;
+    if (req.body.salesReportEnabled !== undefined) updates.salesReportEnabled = !!req.body.salesReportEnabled;
     if (req.body.googleAnalyticsEnabled !== undefined) updates.googleAnalyticsEnabled = !!req.body.googleAnalyticsEnabled;
     if (req.body.googleAnalyticsId !== undefined) updates.googleAnalyticsId = String(req.body.googleAnalyticsId || '').trim();
     if (req.body.facebookPixelEnabled !== undefined) updates.facebookPixelEnabled = !!req.body.facebookPixelEnabled;

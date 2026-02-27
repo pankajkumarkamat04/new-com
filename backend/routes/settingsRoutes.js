@@ -43,6 +43,7 @@ const updateModuleValidation = [
   body('shippingEnabled').optional().isBoolean().withMessage('shippingEnabled must be boolean'),
   body('blogEnabled').optional().isBoolean().withMessage('blogEnabled must be boolean'),
   body('abandonedCartEnabled').optional().isBoolean().withMessage('abandonedCartEnabled must be boolean'),
+  body('salesReportEnabled').optional().isBoolean().withMessage('salesReportEnabled must be boolean'),
   body('googleAnalyticsEnabled').optional().isBoolean().withMessage('googleAnalyticsEnabled must be boolean'),
   body('googleAnalyticsId').optional().trim(),
   body('facebookPixelEnabled').optional().isBoolean().withMessage('facebookPixelEnabled must be boolean'),

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { adminApi, adminOrdersApi, usersApi } from "@/lib/api";
 import type { Order } from "@/lib/types";
 import { useSettings } from "@/contexts/SettingsContext";
+import { Card, Badge, Button } from "@/components/ui";
 
 type ChartRange = "daily" | "monthly" | "yearly";
 
@@ -162,34 +163,34 @@ export default function AdminDashboardPage() {
 
       {/* Stats Cards */}
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <Card>
           <p className="text-sm font-medium text-slate-500">Total Users</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">
             {statsLoading ? "…" : stats.totalUsers.toLocaleString()}
           </p>
           <p className="mt-1 text-xs text-slate-500">Registered users in the system</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        </Card>
+        <Card>
           <p className="text-sm font-medium text-slate-500">Total Orders</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">
             {statsLoading ? "…" : stats.totalOrders.toLocaleString()}
           </p>
           <p className="mt-1 text-xs text-slate-500">All orders placed so far</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        </Card>
+        <Card>
           <p className="text-sm font-medium text-slate-500">Pending Orders</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">
             {statsLoading ? "…" : stats.pendingOrders.toLocaleString()}
           </p>
           <p className="mt-1 text-xs text-slate-500">Orders awaiting processing</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        </Card>
+        <Card>
           <p className="text-sm font-medium text-slate-500">Today Sales</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">
             {statsLoading ? "…" : formatCurrency(stats.todaySales)}
           </p>
           <p className="mt-1 text-xs text-slate-500">Total sales amount for today</p>
-        </div>
+        </Card>
       </div>
 
       {/* Management Sections */}
@@ -255,15 +256,12 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Recent Orders */}
-      <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <Card className="mb-8">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-900">Recent Orders</h2>
-          <Link
-            href="/admin/orders"
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-          >
+          <Button as="link" href="/admin/orders" variant="primary" className="bg-slate-900 hover:bg-slate-800">
             View all
-          </Link>
+          </Button>
         </div>
         {recentOrders.length === 0 ? (
           <p className="text-sm text-slate-500">No recent orders yet.</p>
@@ -294,9 +292,7 @@ export default function AdminDashboardPage() {
                       <td className="py-2 pr-4 text-sm text-slate-800">{customerName}</td>
                       <td className="py-2 pr-4 text-sm text-slate-900">{formatCurrency(order.total)}</td>
                       <td className="py-2 pr-4">
-                        <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium capitalize text-slate-700">
-                          {order.status}
-                        </span>
+                        <Badge variant="neutral">{order.status}</Badge>
                       </td>
                       <td className="py-2 pr-4 text-xs text-slate-500">
                         {new Date(order.createdAt).toLocaleDateString()}
@@ -316,12 +312,12 @@ export default function AdminDashboardPage() {
             </table>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Daily Orders Chart */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <Card>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-900">Orders Overview</h2>
             <div className="flex gap-1 rounded-full bg-slate-100 p-1 text-xs font-medium text-slate-600">
@@ -361,10 +357,10 @@ export default function AdminDashboardPage() {
               })}
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Daily Sales Chart */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <Card>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-900">Sales Overview</h2>
             <div className="flex gap-1 rounded-full bg-slate-100 p-1 text-xs font-medium text-slate-600">
@@ -404,11 +400,11 @@ export default function AdminDashboardPage() {
               })}
             </div>
           )}
-        </div>
+        </Card>
       </div>
 
       {/* Quick Links */}
-      <div className="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <Card className="mt-8">
         <h2 className="mb-4 text-lg font-semibold text-slate-900">Quick Links</h2>
         <div className="flex flex-wrap gap-4">
           <Link href="/" className="text-amber-600 hover:underline">
@@ -427,7 +423,7 @@ export default function AdminDashboardPage() {
             Settings
           </Link>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

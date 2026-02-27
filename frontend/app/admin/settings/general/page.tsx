@@ -5,6 +5,7 @@ import { settingsApi, getMediaUrl } from "@/lib/api";
 import { useSettings } from "@/contexts/SettingsContext";
 import type { Settings } from "@/lib/types";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
+import { Card, Input, Label, Button, LoadingState, Textarea } from "@/components/ui";
 
 const defaultForm: Partial<Settings> = {
   siteName: "",
@@ -96,14 +97,14 @@ export default function AdminGeneralSettingsPage() {
       )}
 
       {loading ? (
-        <div className="py-12 text-center text-slate-600">Loading settings...</div>
+        <LoadingState message="Loading settings..." />
       ) : (
         <form onSubmit={handleSubmit} className="space-y-8">
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <Card>
             <h2 className="mb-4 text-lg font-semibold text-slate-900">Branding</h2>
             <div className="mb-6 space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Logo</label>
+                <Label>Logo</Label>
                 <p className="mb-2 text-xs text-slate-500">
                   Site logo used when Header is set to use logo from General settings.
                 </p>
@@ -114,27 +115,19 @@ export default function AdminGeneralSettingsPage() {
                     </div>
                   ) : null}
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowLogoPicker(true)}
-                      className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                    >
+                    <Button type="button" variant="secondary" onClick={() => setShowLogoPicker(true)} className="text-sm">
                       {form.logoImageUrl ? "Change" : "Select"} Logo
-                    </button>
+                    </Button>
                     {form.logoImageUrl && (
-                      <button
-                        type="button"
-                        onClick={() => setForm((prev) => ({ ...prev, logoImageUrl: "" }))}
-                        className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
-                      >
+                      <Button type="button" variant="secondary" onClick={() => setForm((prev) => ({ ...prev, logoImageUrl: "" }))} className="text-sm border-red-200 text-red-600 hover:bg-red-50">
                         Remove
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Favicon</label>
+                <Label>Favicon</Label>
                 <p className="mb-2 text-xs text-slate-500">
                   Browser tab icon (recommended: 32x32 or 64x64 PNG/ICO).
                 </p>
@@ -145,168 +138,87 @@ export default function AdminGeneralSettingsPage() {
                     </div>
                   ) : null}
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowFaviconPicker(true)}
-                      className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                    >
+                    <Button type="button" variant="secondary" onClick={() => setShowFaviconPicker(true)} className="text-sm">
                       {form.faviconUrl ? "Change" : "Select"} Favicon
-                    </button>
+                    </Button>
                     {form.faviconUrl && (
-                      <button
-                        type="button"
-                        onClick={() => setForm((prev) => ({ ...prev, faviconUrl: "" }))}
-                        className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
-                      >
+                      <Button type="button" variant="secondary" onClick={() => setForm((prev) => ({ ...prev, faviconUrl: "" }))} className="text-sm border-red-200 text-red-600 hover:bg-red-50">
                         Remove
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <Card>
             <h2 className="mb-4 text-lg font-semibold text-slate-900">General</h2>
             <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Site Name</label>
-                <input
-                  type="text"
-                  name="siteName"
-                  value={form.siteName || ""}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
+                <Label>Site Name</Label>
+                <Input variant="amber" name="siteName" value={form.siteName || ""} onChange={handleChange} />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Site URL</label>
-                <input
-                  type="url"
-                  name="siteUrl"
-                  value={form.siteUrl || ""}
-                  onChange={handleChange}
-                  placeholder="https://example.com"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
+                <Label>Site URL</Label>
+                <Input variant="amber" type="url" name="siteUrl" value={form.siteUrl || ""} onChange={handleChange} placeholder="https://example.com" />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Site Tagline</label>
-                <input
-                  type="text"
-                  name="siteTagline"
-                  value={form.siteTagline || ""}
-                  onChange={handleChange}
-                  placeholder="Your trusted online shopping destination."
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
+                <Label>Site Tagline</Label>
+                <Input variant="amber" name="siteTagline" value={form.siteTagline || ""} onChange={handleChange} placeholder="Your trusted online shopping destination." />
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <Card>
             <h2 className="mb-4 text-lg font-semibold text-slate-900">Contact Details</h2>
             <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Contact Email</label>
-                <input
-                  type="email"
-                  name="contactEmail"
-                  value={form.contactEmail || ""}
-                  onChange={handleChange}
+                <Label>Contact Email</Label>
+                <Input variant="amber" type="email" name="contactEmail" value={form.contactEmail || ""} onChange={handleChange}
                   placeholder="contact@example.com"
                   className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Contact Phone</label>
-                <input
-                  type="tel"
-                  name="contactPhone"
-                  value={form.contactPhone || ""}
-                  onChange={handleChange}
-                  placeholder="+1 234 567 8900"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
+                <Label>Contact Phone</Label>
+                <Input variant="amber" type="tel" name="contactPhone" value={form.contactPhone || ""} onChange={handleChange} placeholder="+1 234 567 8900" />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Contact Address</label>
-                <textarea
-                  name="contactAddress"
-                  value={form.contactAddress || ""}
-                  onChange={handleChange}
-                  rows={3}
-                  placeholder="123 Main St, City, Country"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
+                <Label>Contact Address</Label>
+                <Textarea variant="amber" name="contactAddress" value={form.contactAddress || ""} onChange={handleChange} rows={3} placeholder="123 Main St, City, Country" />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Company GSTIN</label>
+                <Label>Company GSTIN</Label>
                 <p className="mb-1 text-xs text-slate-500">
                   For GST invoice (e.g. 27AABCU9603R1ZM). Leave empty if not applicable.
                 </p>
-                <input
-                  type="text"
-                  name="companyGstin"
-                  value={form.companyGstin || ""}
-                  onChange={handleChange}
-                  placeholder="27AABCU9603R1ZM"
-                  className="w-full max-w-md rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
+                <Input variant="amber" name="companyGstin" value={form.companyGstin || ""} onChange={handleChange} placeholder="27AABCU9603R1ZM" className="max-w-md" />
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <Card>
             <h2 className="mb-4 text-lg font-semibold text-slate-900">Social Media</h2>
             <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Facebook URL</label>
-                <input
-                  type="url"
-                  name="facebookUrl"
-                  value={form.facebookUrl || ""}
-                  onChange={handleChange}
-                  placeholder="https://facebook.com/yourpage"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
+                <Label>Facebook URL</Label>
+                <Input variant="amber" type="url" name="facebookUrl" value={form.facebookUrl || ""} onChange={handleChange} placeholder="https://facebook.com/yourpage" />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Instagram URL</label>
-                <input
-                  type="url"
-                  name="instagramUrl"
-                  value={form.instagramUrl || ""}
-                  onChange={handleChange}
-                  placeholder="https://instagram.com/yourpage"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
+                <Label>Instagram URL</Label>
+                <Input variant="amber" type="url" name="instagramUrl" value={form.instagramUrl || ""} onChange={handleChange} placeholder="https://instagram.com/yourpage" />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Twitter / X URL</label>
-                <input
-                  type="url"
-                  name="twitterUrl"
-                  value={form.twitterUrl || ""}
-                  onChange={handleChange}
-                  placeholder="https://twitter.com/yourpage"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
+                <Label>Twitter / X URL</Label>
+                <Input variant="amber" type="url" name="twitterUrl" value={form.twitterUrl || ""} onChange={handleChange} placeholder="https://twitter.com/yourpage" />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">LinkedIn URL</label>
-                <input
-                  type="url"
-                  name="linkedinUrl"
-                  value={form.linkedinUrl || ""}
-                  onChange={handleChange}
-                  placeholder="https://linkedin.com/company/yourpage"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
+                <Label>LinkedIn URL</Label>
+                <Input variant="amber" type="url" name="linkedinUrl" value={form.linkedinUrl || ""} onChange={handleChange} placeholder="https://linkedin.com/company/yourpage" />
               </div>
             </div>
-          </div>
+          </Card>
 
           <MediaPickerModal
             open={showLogoPicker}
@@ -331,13 +243,9 @@ export default function AdminGeneralSettingsPage() {
             type="image"
           />
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-lg bg-amber-600 px-6 py-2.5 font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
-          >
+          <Button type="submit" variant="primaryAmber" disabled={submitting}>
             {submitting ? "Saving..." : "Save Settings"}
-          </button>
+          </Button>
         </form>
       )}
     </div>

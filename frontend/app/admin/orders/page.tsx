@@ -5,6 +5,7 @@ import Link from "next/link";
 import { adminOrdersApi } from "@/lib/api";
 import type { Order } from "@/lib/types";
 import { useSettings } from "@/contexts/SettingsContext";
+import { LoadingState, EmptyState, Badge, Button } from "@/components/ui";
 
 const STATUS_OPTIONS = ["all", "pending", "confirmed", "shipped", "delivered", "cancelled"] as const;
 
@@ -58,11 +59,9 @@ export default function AdminOrdersPage() {
       </div>
 
       {loading ? (
-        <div className="py-12 text-center text-slate-600">Loading orders...</div>
+        <LoadingState message="Loading orders..." />
       ) : orders.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-8 text-center text-slate-500">
-          No orders found for this filter.
-        </div>
+        <EmptyState message="No orders found for this filter." />
       ) : (
         <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
@@ -108,19 +107,19 @@ export default function AdminOrdersPage() {
                       {order.paymentMethod || "—"}
                     </td>
                     <td className="px-4 py-3 align-top">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${
+                      <Badge
+                        variant={
                           order.status === "pending"
-                            ? "bg-amber-100 text-amber-800"
+                            ? "warning"
                             : order.status === "delivered"
-                            ? "bg-emerald-100 text-emerald-800"
-                            : order.status === "cancelled"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-slate-100 text-slate-700"
-                        }`}
+                              ? "success"
+                              : order.status === "cancelled"
+                                ? "danger"
+                                : "neutral"
+                        }
                       >
                         {order.status}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="px-4 py-3 align-top text-sm text-slate-600">
                       {new Date(order.createdAt).toLocaleString()}

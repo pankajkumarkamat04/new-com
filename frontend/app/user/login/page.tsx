@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { userApi, settingsApi } from "@/lib/api";
 import { useCart } from "@/contexts/CartContext";
 import type { LoginSettings } from "@/lib/types";
+import { Card, Input, Label, Button, LoadingState } from "@/components/ui";
 
 const defaultLoginSettings: LoginSettings = {
   loginIdentifier: "email",
@@ -164,14 +165,14 @@ export default function UserLoginPage() {
   if (loadingSettings) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-50 px-4">
-        <div className="text-slate-600">Loading...</div>
+        <LoadingState message="Loading..." />
       </div>
     );
   }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-50 px-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">
+      <Card className="w-full max-w-md p-8 shadow-lg" padding="none">
         <h1 className="mb-2 text-2xl font-bold text-slate-900">Login</h1>
         <p className="mb-6 text-slate-600">Sign in to your account</p>
 
@@ -187,18 +188,12 @@ export default function UserLoginPage() {
         >
           {isEmail ? (
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                placeholder="you@example.com"
-              />
+              <Label>Email</Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
             </div>
           ) : (
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Mobile No</label>
+              <Label>Mobile No</Label>
               <div className="flex gap-2">
                 <select
                   value={phoneCountryDial}
@@ -211,14 +206,14 @@ export default function UserLoginPage() {
                     </option>
                   ))}
                 </select>
-                <input
+                <Input
                   type="tel"
                   inputMode="numeric"
                   maxLength={10}
                   value={phone}
                   onChange={(e) => setPhone(normalizePhoneDigits(e.target.value))}
-                  className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   placeholder="10-digit number"
+                  className="flex-1"
                 />
               </div>
             </div>
@@ -226,28 +221,21 @@ export default function UserLoginPage() {
 
           {!isOtp && (
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                placeholder="••••••••"
-              />
+              <Label>Password</Label>
+              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
             </div>
           )}
 
           {isOtp && otpRequested && (
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">OTP</label>
-              <input
+              <Label>OTP</Label>
+              <Input
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
                 maxLength={6}
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 placeholder="000000"
               />
               <p className="mt-1 text-xs text-slate-500">
@@ -258,11 +246,7 @@ export default function UserLoginPage() {
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-emerald-600 py-3 font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
-          >
+          <Button type="submit" variant="fullPrimary" disabled={loading}>
             {loading
               ? "Please wait..."
               : isOtp
@@ -270,7 +254,7 @@ export default function UserLoginPage() {
                   ? "Verify & Login"
                   : "Send OTP"
                 : "Login"}
-          </button>
+          </Button>
         </form>
 
         <p className="mt-6 text-center text-slate-600">
@@ -284,7 +268,7 @@ export default function UserLoginPage() {
             Back to home
           </Link>
         </p>
-      </div>
+      </Card>
     </div>
   );
 }

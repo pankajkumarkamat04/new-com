@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { blogApi } from "@/lib/api";
 import type { BlogPost } from "@/lib/types";
 import { useSettings } from "@/contexts/SettingsContext";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import { getMediaUrl } from "@/lib/api";
+import { PageLayout, LoadingState, EmptyState } from "@/components/ui";
+import { BlogCard } from "@/components/shared";
 
 export default function BlogListPage() {
   const { blogEnabled } = useSettings();
@@ -32,93 +30,31 @@ export default function BlogListPage() {
 
   if (!blogEnabled) {
     return (
-      <div className="min-h-screen bg-white">
-        <Header />
+      <PageLayout>
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-12 text-center text-slate-600">
-            <p>Blog is not available at the moment.</p>
-          </div>
+          <EmptyState message="Blog is not available at the moment." />
         </div>
-        <Footer />
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <Header />
+    <PageLayout>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <h1 className="mb-6 text-3xl font-bold text-slate-900">Blog</h1>
 
         {loading ? (
-          <div className="py-16 text-center text-slate-600">Loading posts...</div>
+          <LoadingState message="Loading posts..." />
         ) : posts.length === 0 ? (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-12 text-center text-slate-500">
-            No blog posts yet.
-          </div>
+          <EmptyState message="No blog posts yet." />
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
             {posts.map((post) => (
-              <Link
-                key={post._id}
-                href={`/blog/${encodeURIComponent(post.slug)}`}
-                className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-emerald-300 hover:shadow-md"
-              >
-                {post.image && (
-                  <div className="h-48 w-full overflow-hidden border-b border-slate-200 bg-slate-100">
-                    <img
-                      src={getMediaUrl(post.image)}
-                      alt={post.title}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                )}
-                <div className="flex flex-1 flex-col p-5">
-                  <h2 className="text-lg font-semibold text-slate-900">{post.title}</h2>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {post.publishedAt
-                      ? new Date(post.publishedAt).toLocaleDateString()
-                      : new Date(post.createdAt).toLocaleDateString()}
-                  </p>
-                  {post.excerpt && (
-                    <p className="mt-3 line-clamp-3 text-sm text-slate-600">{post.excerpt}</p>
-                  )}
-                  {post.tags && post.tags.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1">
-                      {post.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  <span className="mt-4 inline-flex items-center text-sm font-medium text-emerald-600">
-                    Read more
-                    <svg
-                      className="ml-1 h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </span>
-                </div>
-              </Link>
+              <BlogCard key={post._id} post={post} />
             ))}
           </div>
         )}
       </div>
-      <Footer />
-    </div>
+    </PageLayout>
   );
 }
-

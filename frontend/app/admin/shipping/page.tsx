@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { adminShippingApi } from "@/lib/api";
 import type { ShippingZone, ShippingMethod } from "@/lib/types";
+import { Button, Card, Input, Label, LoadingState, EmptyState } from "@/components/ui";
 
 export default function AdminShippingPage() {
   const [mounted, setMounted] = useState(false);
@@ -188,74 +189,60 @@ export default function AdminShippingPage() {
       )}
 
       {loading ? (
-        <div className="py-12 text-center text-slate-600">Loading...</div>
+        <LoadingState message="Loading..." />
       ) : (
         <>
           {/* Zones */}
           <div className="mb-8">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">Shipping Zones</h2>
-              <button
-                type="button"
-                onClick={openAddZone}
-                className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-500"
-              >
+              <Button type="button" variant="primaryAmber" onClick={openAddZone} className="text-sm">
                 Add Zone
-              </button>
+              </Button>
             </div>
 
             {/* Inline form for zone add/edit */}
             {(editingZone !== null || formZone.name === "New Zone") && (
-              <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50/50 p-4">
+              <Card className="mb-6 border-amber-200 bg-amber-50/50">
                 <h3 className="mb-3 font-medium text-slate-900">{editingZone ? "Edit Zone" : "New Zone"}</h3>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-600">Name</label>
-                    <input
-                      type="text"
-                      value={formZone.name}
-                      onChange={(e) => setFormZone((f) => ({ ...f, name: e.target.value }))}
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-                    />
+                    <Label className="text-xs">Name</Label>
+                    <Input variant="amber" value={formZone.name} onChange={(e) => setFormZone((f) => ({ ...f, name: e.target.value }))} className="text-sm" />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-600">Country codes (e.g. IN, US, or * for all)</label>
-                    <input
-                      type="text"
+                    <Label className="text-xs">Country codes (e.g. IN, US, or * for all)</Label>
+                    <Input
+                      variant="amber"
                       value={formZone.countryCodes.join(", ")}
                       onChange={(e) => setFormZone((f) => ({ ...f, countryCodes: e.target.value.split(",").map((c) => c.trim().toUpperCase()).filter(Boolean) }))}
                       placeholder="* or IN, US"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                      className="text-sm"
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-600">State codes (optional, comma-separated)</label>
-                    <input
-                      type="text"
+                    <Label className="text-xs">State codes (optional, comma-separated)</Label>
+                    <Input
+                      variant="amber"
                       value={(formZone.stateCodes || []).join(", ")}
                       onChange={(e) => setFormZone((f) => ({ ...f, stateCodes: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) }))}
                       placeholder="e.g. Maharashtra, Karnataka"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                      className="text-sm"
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-600">ZIP prefixes (optional, comma-separated)</label>
-                    <input
-                      type="text"
+                    <Label className="text-xs">ZIP prefixes (optional, comma-separated)</Label>
+                    <Input
+                      variant="amber"
                       value={(formZone.zipPrefixes || []).join(", ")}
                       onChange={(e) => setFormZone((f) => ({ ...f, zipPrefixes: e.target.value.split(",").map((z) => z.trim()).filter(Boolean) }))}
                       placeholder="e.g. 40, 56"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                      className="text-sm"
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="mb-1 block text-xs font-medium text-slate-600">Description (optional)</label>
-                    <input
-                      type="text"
-                      value={formZone.description}
-                      onChange={(e) => setFormZone((f) => ({ ...f, description: e.target.value }))}
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-                    />
+                    <Label className="text-xs">Description (optional)</Label>
+                    <Input variant="amber" value={formZone.description} onChange={(e) => setFormZone((f) => ({ ...f, description: e.target.value }))} className="text-sm" />
                   </div>
                   <div className="flex items-center gap-2">
                     <input
@@ -269,30 +256,27 @@ export default function AdminShippingPage() {
                   </div>
                 </div>
                 <div className="mt-3 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={saveZone}
-                    disabled={savingZone}
-                    className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-500 disabled:opacity-50"
-                  >
+                  <Button type="button" variant="primaryAmber" onClick={saveZone} disabled={savingZone} className="text-sm">
                     {savingZone ? "Saving..." : "Save Zone"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="secondary"
                     onClick={() => { setEditingZone(null); setFormZone({ name: "", description: "", countryCodes: ["*"], stateCodes: [], zipPrefixes: [], sortOrder: 0, isActive: true }); }}
-                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    className="text-sm"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
-              </div>
+              </Card>
             )}
 
             <div className="space-y-3">
               {zones.length === 0 ? (
-                <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 py-8 text-center text-sm text-slate-500">
-                  No shipping zones yet. Add a zone to define where you ship and which methods apply.
-                </p>
+                <EmptyState
+                  message="No shipping zones yet. Add a zone to define where you ship and which methods apply."
+                  className="rounded-xl border border-dashed border-slate-200 bg-slate-50 py-8"
+                />
               ) : (
                 zones.map((zone) => (
                   <div key={zone._id} className="rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -316,45 +300,28 @@ export default function AdminShippingPage() {
                     {expandedZone === zone._id && (
                       <div className="border-t border-slate-200 px-4 py-4">
                         <div className="mb-4 flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openEditZone(zone)}
-                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                          >
+                          <Button type="button" variant="secondary" onClick={() => openEditZone(zone)} className="text-sm px-3 py-1.5">
                             Edit Zone
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => deleteZone(zone._id)}
-                            className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
-                          >
+                          </Button>
+                          <Button type="button" variant="danger" onClick={() => deleteZone(zone._id)} className="text-sm px-3 py-1.5 border border-red-200 bg-white text-red-600 hover:bg-red-50">
                             Delete Zone
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openAddMethod(zone._id)}
-                            className="rounded-lg bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-500"
-                          >
+                          </Button>
+                          <Button type="button" variant="primaryAmber" onClick={() => openAddMethod(zone._id)} className="text-sm px-3 py-1.5">
                             Add Method
-                          </button>
+                          </Button>
                         </div>
 
                         {/* Method form (add/edit) */}
                         {expandedZone === zone._id && (editingMethod !== null || addingMethodZoneId === zone._id) && (
-                          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50/30 p-4">
+                          <Card className="mb-4 border-amber-200 bg-amber-50/30">
                             <h4 className="mb-3 text-sm font-medium text-slate-900">{editingMethod ? "Edit Method" : "New Method"}</h4>
                             <div className="grid gap-3 sm:grid-cols-3">
                               <div>
-                                <label className="mb-1 block text-xs text-slate-600">Name</label>
-                                <input
-                                  type="text"
-                                  value={formMethod.name}
-                                  onChange={(e) => setFormMethod((f) => ({ ...f, name: e.target.value }))}
-                                  className="w-full rounded border border-slate-300 bg-white px-2 py-1.5 text-sm"
-                                />
+                                <Label className="text-xs">Name</Label>
+                                <Input variant="amber" value={formMethod.name} onChange={(e) => setFormMethod((f) => ({ ...f, name: e.target.value }))} className="text-sm" />
                               </div>
                               <div>
-                                <label className="mb-1 block text-xs text-slate-600">Rate type</label>
+                                <Label className="text-xs">Rate type</Label>
                                 <select
                                   value={formMethod.rateType}
                                   onChange={(e) => setFormMethod((f) => ({ ...f, rateType: e.target.value as "flat" | "per_item" | "per_order" }))}
@@ -366,26 +333,28 @@ export default function AdminShippingPage() {
                                 </select>
                               </div>
                               <div>
-                                <label className="mb-1 block text-xs text-slate-600">Rate value</label>
-                                <input
+                                <Label className="text-xs">Rate value</Label>
+                                <Input
+                                  variant="amber"
                                   type="number"
                                   min={0}
                                   step={0.01}
                                   value={formMethod.rateValue}
                                   onChange={(e) => setFormMethod((f) => ({ ...f, rateValue: parseFloat(e.target.value) || 0 }))}
-                                  className="w-full rounded border border-slate-300 bg-white px-2 py-1.5 text-sm"
+                                  className="text-sm"
                                 />
                               </div>
                               <div>
-                                <label className="mb-1 block text-xs text-slate-600">Free over (order amount)</label>
-                                <input
+                                <Label className="text-xs">Free over (order amount)</Label>
+                                <Input
+                                  variant="amber"
                                   type="number"
                                   min={0}
                                   step={1}
                                   value={formMethod.minOrderForFree || ""}
                                   onChange={(e) => setFormMethod((f) => ({ ...f, minOrderForFree: parseFloat(e.target.value) || 0 }))}
                                   placeholder="0"
-                                  className="w-full rounded border border-slate-300 bg-white px-2 py-1.5 text-sm"
+                                  className="text-sm"
                                 />
                               </div>
                               <div className="flex items-center gap-2">
@@ -400,23 +369,19 @@ export default function AdminShippingPage() {
                               </div>
                             </div>
                             <div className="mt-3 flex gap-2">
-                              <button
-                                type="button"
-                                onClick={() => saveMethod(zone._id)}
-                                disabled={savingMethod}
-                                className="rounded bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-500 disabled:opacity-50"
-                              >
+                              <Button type="button" variant="primaryAmber" onClick={() => saveMethod(zone._id)} disabled={savingMethod} className="text-sm">
                                 {savingMethod ? "Saving..." : "Save Method"}
-                              </button>
-                              <button
+                              </Button>
+                              <Button
                                 type="button"
+                                variant="secondary"
                                 onClick={() => { setEditingMethod(null); setAddingMethodZoneId(null); setFormMethod({ name: "", description: "", rateType: "flat", rateValue: 0, minOrderForFree: 0, estimatedDaysMin: undefined, estimatedDaysMax: undefined, sortOrder: 0, isActive: true }); }}
-                                className="rounded border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                                className="text-sm"
                               >
                                 Cancel
-                              </button>
+                              </Button>
                             </div>
-                          </div>
+                          </Card>
                         )}
 
                         <table className="w-full text-sm">
@@ -435,8 +400,8 @@ export default function AdminShippingPage() {
                                 <td className="py-2 pr-2">{m.rateType} – {m.rateValue}</td>
                                 <td className="py-2 pr-2">{m.minOrderForFree ? m.minOrderForFree : "—"}</td>
                                 <td className="py-2">
-                                  <button type="button" onClick={() => openEditMethod(m)} className="text-amber-600 hover:underline mr-2">Edit</button>
-                                  <button type="button" onClick={() => deleteMethod(m._id)} className="text-red-600 hover:underline">Delete</button>
+                                  <Button type="button" variant="link" onClick={() => openEditMethod(m)} className="text-amber-600 mr-2">Edit</Button>
+                                  <Button type="button" variant="linkRed" onClick={() => deleteMethod(m._id)}>Delete</Button>
                                 </td>
                               </tr>
                             ))}

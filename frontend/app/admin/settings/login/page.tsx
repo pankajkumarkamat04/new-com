@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { settingsApi } from "@/lib/api";
 import type { LoginSettings } from "@/lib/types";
+import { Card, Button, LoadingState } from "@/components/ui";
 
 const defaultForm: LoginSettings = {
   loginIdentifier: "email",
@@ -70,10 +71,10 @@ export default function AdminLoginSettingsPage() {
       )}
 
       {loading ? (
-        <div className="py-12 text-center text-slate-600">Loading login settings...</div>
+        <LoadingState message="Loading login settings..." />
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <Card>
             <h2 className="mb-4 text-lg font-semibold text-slate-900">Login identifier</h2>
             <p className="mb-4 text-sm text-slate-600">
               Choose one: customers sign in with either Email OR Phone.
@@ -108,9 +109,9 @@ export default function AdminLoginSettingsPage() {
                 </div>
               </label>
             </div>
-          </div>
+          </Card>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <Card>
             <h2 className="mb-4 text-lg font-semibold text-slate-900">Authentication method</h2>
             <p className="mb-4 text-sm text-slate-600">
               Choose one: customers sign in with either Password OR OTP.
@@ -160,15 +161,11 @@ export default function AdminLoginSettingsPage() {
                 </Link>
               </div>
             )}
-          </div>
+          </Card>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-lg bg-amber-600 px-6 py-2.5 font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
-          >
+          <Button type="submit" variant="primaryAmber" disabled={submitting}>
             {submitting ? "Saving..." : "Save Login Settings"}
-          </button>
+          </Button>
         </form>
       )}
     </div>

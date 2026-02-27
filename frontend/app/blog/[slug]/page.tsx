@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { blogApi, getMediaUrl } from "@/lib/api";
 import type { BlogPost } from "@/lib/types";
 import { useSettings } from "@/contexts/SettingsContext";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import { PageLayout, BackLink, LoadingState, ErrorState } from "@/components/ui";
 
 export default function BlogDetailPage() {
   const { blogEnabled } = useSettings();
@@ -45,25 +43,14 @@ export default function BlogDetailPage() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-white">
-      <Header />
+    <PageLayout>
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-        <Link
-          href="/blog"
-          className="mb-4 inline-flex items-center text-sm text-slate-500 hover:text-slate-700"
-        >
-          <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to Blog
-        </Link>
+        <BackLink href="/blog" label="Back to Blog" />
 
         {loading ? (
-          <div className="py-16 text-center text-slate-600">Loading post...</div>
+          <LoadingState message="Loading post..." />
         ) : error || !post ? (
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-12 text-center text-slate-600">
-            <p>{error || "Post not found."}</p>
-          </div>
+          <ErrorState message={error || "Post not found."} />
         ) : (
           <article>
             <h1 className="text-3xl font-bold text-slate-900">{post.title}</h1>
@@ -93,14 +80,13 @@ export default function BlogDetailPage() {
                 />
               </div>
             )}
-            <div className="prose prose-slate mt-8 max-w-none whitespace-pre-wrap">
-              {post.content}
-            </div>
+            <div
+              className="prose prose-slate mt-8 max-w-none [&_ul]:list-disc [&_ol]:list-decimal [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:text-lg [&_h3]:font-medium [&_a]:text-amber-600 [&_a]:underline [&_a:hover]:text-amber-700"
+              dangerouslySetInnerHTML={{ __html: post.content }}
+            />
           </article>
         )}
       </div>
-      <Footer />
-    </div>
+    </PageLayout>
   );
 }
-

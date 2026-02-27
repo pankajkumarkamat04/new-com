@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { mediaApi, getMediaUrl } from "@/lib/api";
 import type { MediaItem } from "@/lib/types";
+import { Button, LoadingState, EmptyState } from "@/components/ui";
 
 function formatSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -92,13 +93,15 @@ export default function AdminMediaPage() {
             onChange={handleUpload}
             className="hidden"
           />
-          <button
+          <Button
+            type="button"
+            variant="primaryAmber"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-500 disabled:opacity-50"
+            className="text-sm"
           >
             {uploading ? "Uploading..." : "Upload"}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -120,17 +123,17 @@ export default function AdminMediaPage() {
       </div>
 
       {loading ? (
-        <div className="py-16 text-center text-slate-500">Loading...</div>
+        <LoadingState message="Loading..." />
       ) : items.length === 0 ? (
-        <div className="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 py-16 text-center">
-          <p className="text-slate-600">No media yet.</p>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="mt-3 text-amber-600 hover:underline"
-          >
-            Upload your first file
-          </button>
-        </div>
+        <EmptyState
+          message="No media yet."
+          action={
+            <Button type="button" variant="link" onClick={() => fileInputRef.current?.click()} className="text-amber-600">
+              Upload your first file
+            </Button>
+          }
+          className="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 py-16"
+        />
       ) : (
         <>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
@@ -203,23 +206,27 @@ export default function AdminMediaPage() {
 
           {pagination.pages > 1 && (
             <div className="mt-6 flex justify-center gap-2">
-              <button
+              <Button
+                type="button"
+                variant="secondary"
                 onClick={() => setPagination((p) => ({ ...p, page: Math.max(1, p.page - 1) }))}
                 disabled={pagination.page <= 1}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm disabled:opacity-50"
+                className="text-sm"
               >
                 Previous
-              </button>
+              </Button>
               <span className="flex items-center px-4 text-sm text-slate-600">
                 {pagination.page} / {pagination.pages}
               </span>
-              <button
+              <Button
+                type="button"
+                variant="secondary"
                 onClick={() => setPagination((p) => ({ ...p, page: Math.min(p.pages, p.page + 1) }))}
                 disabled={pagination.page >= pagination.pages}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm disabled:opacity-50"
+                className="text-sm"
               >
                 Next
-              </button>
+              </Button>
             </div>
           )}
         </>
@@ -247,18 +254,12 @@ export default function AdminMediaPage() {
               </a>
             )}
             <div className="mt-4 flex justify-center gap-2">
-              <button
-                onClick={() => copyUrl(selectedUrl)}
-                className="rounded-lg bg-amber-600 px-4 py-2 text-sm text-white hover:bg-amber-500"
-              >
+              <Button type="button" variant="primaryAmber" onClick={() => copyUrl(selectedUrl)} className="text-sm">
                 {copyFeedback ? "Copied!" : "Copy URL"}
-              </button>
-              <button
-                onClick={() => setSelectedUrl(null)}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700"
-              >
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => setSelectedUrl(null)} className="text-sm">
                 Close
-              </button>
+              </Button>
             </div>
           </div>
         </div>

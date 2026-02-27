@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { settingsApi, getMediaUrl } from "@/lib/api";
 import type { SeoSettings } from "@/lib/types";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
+import { Card, Input, Label, Button, LoadingState, Textarea } from "@/components/ui";
 
 const defaultForm: SeoSettings = {
   metaTitle: "",
@@ -82,62 +83,32 @@ export default function AdminSeoSettingsPage() {
       )}
 
       {loading ? (
-        <div className="py-12 text-center text-slate-600">Loading SEO settings...</div>
+        <LoadingState message="Loading SEO settings..." />
       ) : (
         <form onSubmit={handleSubmit} className="space-y-8">
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <Card>
             <h2 className="mb-4 text-lg font-semibold text-slate-900">Basic Meta Tags</h2>
             <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Meta Title</label>
-                <input
-                  type="text"
-                  name="metaTitle"
-                  value={form.metaTitle || ""}
-                  onChange={handleChange}
-                  placeholder="Site title for search results"
-                  maxLength={70}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
+                <Label>Meta Title</Label>
+                <Input variant="amber" name="metaTitle" value={form.metaTitle || ""} onChange={handleChange} placeholder="Site title for search results" maxLength={70} />
                 <p className="mt-1 text-xs text-slate-500">Recommended: 50–70 characters</p>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Meta Description</label>
-                <textarea
-                  name="metaDescription"
-                  value={form.metaDescription || ""}
-                  onChange={handleChange}
-                  rows={3}
-                  placeholder="Brief description for search results"
-                  maxLength={160}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
+                <Label>Meta Description</Label>
+                <Textarea variant="amber" name="metaDescription" value={form.metaDescription || ""} onChange={handleChange} rows={3} placeholder="Brief description for search results" maxLength={160} />
                 <p className="mt-1 text-xs text-slate-500">Recommended: 150–160 characters</p>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Meta Keywords</label>
-                <input
-                  type="text"
-                  name="metaKeywords"
-                  value={form.metaKeywords || ""}
-                  onChange={handleChange}
-                  placeholder="keyword1, keyword2, keyword3"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
+                <Label>Meta Keywords</Label>
+                <Input variant="amber" name="metaKeywords" value={form.metaKeywords || ""} onChange={handleChange} placeholder="keyword1, keyword2, keyword3" />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Canonical URL</label>
-                <input
-                  type="url"
-                  name="canonicalUrl"
-                  value={form.canonicalUrl || ""}
-                  onChange={handleChange}
-                  placeholder="https://example.com"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
+                <Label>Canonical URL</Label>
+                <Input variant="amber" type="url" name="canonicalUrl" value={form.canonicalUrl || ""} onChange={handleChange} placeholder="https://example.com" />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Robots</label>
+                <Label>Robots</Label>
                 <select
                   name="robots"
                   value={form.robots || "index, follow"}
@@ -151,35 +122,21 @@ export default function AdminSeoSettingsPage() {
                 </select>
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <Card>
             <h2 className="mb-4 text-lg font-semibold text-slate-900">Open Graph (Facebook, LinkedIn)</h2>
             <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">OG Title</label>
-                <input
-                  type="text"
-                  name="ogTitle"
-                  value={form.ogTitle || ""}
-                  onChange={handleChange}
-                  placeholder="Defaults to meta title if empty"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
+                <Label>OG Title</Label>
+                <Input variant="amber" name="ogTitle" value={form.ogTitle || ""} onChange={handleChange} placeholder="Defaults to meta title if empty" />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">OG Description</label>
-                <textarea
-                  name="ogDescription"
-                  value={form.ogDescription || ""}
-                  onChange={handleChange}
-                  rows={2}
-                  placeholder="Defaults to meta description if empty"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
+                <Label>OG Description</Label>
+                <Textarea variant="amber" name="ogDescription" value={form.ogDescription || ""} onChange={handleChange} rows={2} placeholder="Defaults to meta description if empty" />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">OG Image</label>
+                <Label>OG Image</Label>
                 <div className="flex items-center gap-3">
                   {form.ogImage ? (
                     <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-slate-200">
@@ -187,28 +144,20 @@ export default function AdminSeoSettingsPage() {
                     </div>
                   ) : null}
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setMediaModalFor("ogImage")}
-                      className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                    >
+                    <Button type="button" variant="secondary" onClick={() => setMediaModalFor("ogImage")} className="text-sm">
                       {form.ogImage ? "Change" : "Select"} Image
-                    </button>
+                    </Button>
                     {form.ogImage && (
-                      <button
-                        type="button"
-                        onClick={() => setForm((prev) => ({ ...prev, ogImage: "" }))}
-                        className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
-                      >
+                      <Button type="button" variant="secondary" onClick={() => setForm((prev) => ({ ...prev, ogImage: "" }))} className="text-sm border-red-200 text-red-600 hover:bg-red-50">
                         Remove
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
                 <p className="mt-1 text-xs text-slate-500">Recommended: 1200×630px</p>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">OG Type</label>
+                <Label>OG Type</Label>
                 <select
                   name="ogType"
                   value={form.ogType || "website"}
@@ -220,13 +169,13 @@ export default function AdminSeoSettingsPage() {
                 </select>
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <Card>
             <h2 className="mb-4 text-lg font-semibold text-slate-900">X Card</h2>
             <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">X Card Type</label>
+                <Label>X Card Type</Label>
                 <select
                   name="twitterCard"
                   value={form.twitterCard || "summary_large_image"}
@@ -239,29 +188,15 @@ export default function AdminSeoSettingsPage() {
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">X Title</label>
-                <input
-                  type="text"
-                  name="twitterTitle"
-                  value={form.twitterTitle || ""}
-                  onChange={handleChange}
-                  placeholder="Defaults to meta title if empty"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
+                <Label>X Title</Label>
+                <Input variant="amber" name="twitterTitle" value={form.twitterTitle || ""} onChange={handleChange} placeholder="Defaults to meta title if empty" />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">X Description</label>
-                <textarea
-                  name="twitterDescription"
-                  value={form.twitterDescription || ""}
-                  onChange={handleChange}
-                  rows={2}
-                  placeholder="Defaults to meta description if empty"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
+                <Label>X Description</Label>
+                <Textarea variant="amber" name="twitterDescription" value={form.twitterDescription || ""} onChange={handleChange} rows={2} placeholder="Defaults to meta description if empty" />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">X Image</label>
+                <Label>X Image</Label>
                 <div className="flex items-center gap-3">
                   {form.twitterImage ? (
                     <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-slate-200">
@@ -269,35 +204,23 @@ export default function AdminSeoSettingsPage() {
                     </div>
                   ) : null}
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setMediaModalFor("twitterImage")}
-                      className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                    >
+                    <Button type="button" variant="secondary" onClick={() => setMediaModalFor("twitterImage")} className="text-sm">
                       {form.twitterImage ? "Change" : "Select"} Image
-                    </button>
+                    </Button>
                     {form.twitterImage && (
-                      <button
-                        type="button"
-                        onClick={() => setForm((prev) => ({ ...prev, twitterImage: "" }))}
-                        className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
-                      >
+                      <Button type="button" variant="secondary" onClick={() => setForm((prev) => ({ ...prev, twitterImage: "" }))} className="text-sm border-red-200 text-red-600 hover:bg-red-50">
                         Remove
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-lg bg-amber-600 px-6 py-2.5 font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
-          >
+          <Button type="submit" variant="primaryAmber" disabled={submitting}>
             {submitting ? "Saving..." : "Save SEO Settings"}
-          </button>
+          </Button>
         </form>
       )}
 

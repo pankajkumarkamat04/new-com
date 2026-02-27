@@ -327,6 +327,25 @@ export const ordersApi = {
   getOrder: (id: string) => api<{ data: Order }>(`/orders/${id}`),
 };
 
+// Reports (admin)
+export type SalesReportResponse = {
+  summary: { totalRevenue: number; totalOrders: number; avgOrderValue: number };
+  rows: { periodKey: string; periodLabel: string; orders: number; revenue: number }[];
+  orders: Order[];
+};
+
+export const reportsApi = {
+  getSalesReport: (params?: { dateFrom?: string; dateTo?: string; status?: string; groupBy?: "day" | "week" | "month" }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.dateFrom) searchParams.set("dateFrom", params.dateFrom);
+    if (params?.dateTo) searchParams.set("dateTo", params.dateTo);
+    if (params?.status && params.status !== "all") searchParams.set("status", params.status);
+    if (params?.groupBy) searchParams.set("groupBy", params.groupBy);
+    const query = searchParams.toString();
+    return api<{ data: SalesReportResponse }>(`/reports/sales${query ? `?${query}` : ""}`);
+  },
+};
+
 // Admin orders (under /orders/admin)
 export const adminOrdersApi = {
   list: (params?: { status?: string; page?: number; limit?: number }) => {

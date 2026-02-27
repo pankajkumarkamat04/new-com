@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { adminApi } from "@/lib/api";
+import { Card, Input, Label, Button } from "@/components/ui";
 
 export default function AdminSignupPage() {
   const router = useRouter();
@@ -60,76 +61,37 @@ export default function AdminSignupPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-50 px-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">
+      <Card className="w-full max-w-md p-8 shadow-lg" padding="none">
         <h1 className="mb-2 text-2xl font-bold text-slate-900">Admin Sign Up</h1>
         <p className="mb-6 text-slate-600">Create an admin account</p>
 
         <form onSubmit={handleSignup} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-600">Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              placeholder="Admin name"
-              required
-            />
+            <Label required>Name</Label>
+            <Input variant="amber" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Admin name" required />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-600">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              placeholder="admin@example.com"
-              required
-            />
+            <Label required>Email</Label>
+            <Input variant="amber" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@example.com" required />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-600">Phone No</label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              placeholder="+1234567890"
-              required
-            />
+            <Label required>Phone No</Label>
+            <Input variant="amber" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1234567890" required />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-600">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              placeholder="••••••••"
-              required
-            />
+            <Label required>Password</Label>
+            <Input variant="amber" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-600">Confirm Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              placeholder="••••••••"
-              required
-            />
+            <Label required>Confirm Password</Label>
+            <Input variant="amber" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" required />
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-amber-600 py-3 font-semibold text-white transition hover:bg-amber-500 disabled:opacity-50"
-          >
+          <Button type="submit" variant="primaryAmber" disabled={loading} className="w-full py-3">
             {loading ? "Creating account..." : "Sign Up"}
-          </button>
+          </Button>
         </form>
 
         <p className="mt-6 text-center text-slate-600">
@@ -139,7 +101,7 @@ export default function AdminSignupPage() {
         <p className="mt-2 text-center">
           <Link href="/" className="text-sm text-slate-500 hover:underline">Back to home</Link>
         </p>
-      </div>
+      </Card>
     </div>
   );
 }

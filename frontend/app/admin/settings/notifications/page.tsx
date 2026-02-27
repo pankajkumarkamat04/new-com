@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { settingsApi } from "@/lib/api";
 import type { NotificationSettings } from "@/lib/types";
+import { Card, Input, Label, Button, LoadingState } from "@/components/ui";
 
 const defaultForm: NotificationSettings = {
   email: {
@@ -115,11 +116,11 @@ export default function AdminNotificationSettingsPage() {
       )}
 
       {loading ? (
-        <div className="py-12 text-center text-slate-600">Loading notification settings...</div>
+        <LoadingState message="Loading notification settings..." />
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Email Settings */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <Card>
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">Email Settings</h2>
@@ -144,31 +145,12 @@ export default function AdminNotificationSettingsPage() {
               <div className="space-y-4 border-t border-slate-200 pt-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-slate-600">SMTP Host</label>
-                    <input
-                      type="text"
-                      value={form.email.smtpHost}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, email: { ...prev.email, smtpHost: e.target.value } }))
-                      }
-                      placeholder="smtp.gmail.com"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    />
+                    <Label>SMTP Host</Label>
+                    <Input variant="amber" value={form.email.smtpHost} onChange={(e) => setForm((prev) => ({ ...prev, email: { ...prev.email, smtpHost: e.target.value } }))} placeholder="smtp.gmail.com" />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-slate-600">SMTP Port</label>
-                    <input
-                      type="number"
-                      value={form.email.smtpPort}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          email: { ...prev.email, smtpPort: parseInt(e.target.value, 10) || 587 },
-                        }))
-                      }
-                      placeholder="587"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    />
+                    <Label>SMTP Port</Label>
+                    <Input variant="amber" type="number" value={form.email.smtpPort} onChange={(e) => setForm((prev) => ({ ...prev, email: { ...prev.email, smtpPort: parseInt(e.target.value, 10) || 587 } }))} placeholder="587" />
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -187,61 +169,30 @@ export default function AdminNotificationSettingsPage() {
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-slate-600">SMTP Username</label>
-                    <input
-                      type="text"
-                      value={form.email.smtpUser}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, email: { ...prev.email, smtpUser: e.target.value } }))
-                      }
-                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    />
+                    <Label>SMTP Username</Label>
+                    <Input variant="amber" value={form.email.smtpUser} onChange={(e) => setForm((prev) => ({ ...prev, email: { ...prev.email, smtpUser: e.target.value } }))} />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-slate-600">SMTP Password</label>
-                    <input
-                      type="password"
-                      value={form.email.smtpPass}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, email: { ...prev.email, smtpPass: e.target.value } }))
-                      }
-                      placeholder="Leave blank to keep existing"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    />
+                    <Label>SMTP Password</Label>
+                    <Input variant="amber" type="password" value={form.email.smtpPass} onChange={(e) => setForm((prev) => ({ ...prev, email: { ...prev.email, smtpPass: e.target.value } }))} placeholder="Leave blank to keep existing" />
                   </div>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-slate-600">From Email</label>
-                    <input
-                      type="email"
-                      value={form.email.fromEmail}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, email: { ...prev.email, fromEmail: e.target.value } }))
-                      }
-                      placeholder="noreply@example.com"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    />
+                    <Label>From Email</Label>
+                    <Input variant="amber" type="email" value={form.email.fromEmail} onChange={(e) => setForm((prev) => ({ ...prev, email: { ...prev.email, fromEmail: e.target.value } }))} placeholder="noreply@example.com" />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-slate-600">From Name</label>
-                    <input
-                      type="text"
-                      value={form.email.fromName}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, email: { ...prev.email, fromName: e.target.value } }))
-                      }
-                      placeholder="Your Store"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    />
+                    <Label>From Name</Label>
+                    <Input variant="amber" value={form.email.fromName} onChange={(e) => setForm((prev) => ({ ...prev, email: { ...prev.email, fromName: e.target.value } }))} placeholder="Your Store" />
                   </div>
                 </div>
               </div>
             )}
-          </div>
+          </Card>
 
           {/* SMS Settings */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <Card>
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">SMS Settings</h2>
@@ -262,7 +213,7 @@ export default function AdminNotificationSettingsPage() {
             {form.sms.enabled && (
               <div className="space-y-4 border-t border-slate-200 pt-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-600">Provider</label>
+                  <Label>Provider</Label>
                   <select
                     value={form.sms.provider}
                     onChange={(e) =>
@@ -277,46 +228,24 @@ export default function AdminNotificationSettingsPage() {
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-slate-600">API Key / Account SID</label>
-                    <input
-                      type="text"
-                      value={form.sms.apiKey}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, sms: { ...prev.sms, apiKey: e.target.value } }))
-                      }
-                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    />
+                    <Label>API Key / Account SID</Label>
+                    <Input variant="amber" value={form.sms.apiKey} onChange={(e) => setForm((prev) => ({ ...prev, sms: { ...prev.sms, apiKey: e.target.value } }))} />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-slate-600">API Secret / Auth Token</label>
-                    <input
-                      type="password"
-                      value={form.sms.apiSecret}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, sms: { ...prev.sms, apiSecret: e.target.value } }))
-                      }
-                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    />
+                    <Label>API Secret / Auth Token</Label>
+                    <Input variant="amber" type="password" value={form.sms.apiSecret} onChange={(e) => setForm((prev) => ({ ...prev, sms: { ...prev.sms, apiSecret: e.target.value } }))} />
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-600">From Number</label>
-                  <input
-                    type="text"
-                    value={form.sms.fromNumber}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, sms: { ...prev.sms, fromNumber: e.target.value } }))
-                    }
-                    placeholder="+1234567890"
-                    className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                  />
+                  <Label>From Number</Label>
+                  <Input variant="amber" value={form.sms.fromNumber} onChange={(e) => setForm((prev) => ({ ...prev, sms: { ...prev.sms, fromNumber: e.target.value } }))} placeholder="+1234567890" />
                 </div>
               </div>
             )}
-          </div>
+          </Card>
 
           {/* WhatsApp Settings */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <Card>
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">WhatsApp Settings</h2>
@@ -337,7 +266,7 @@ export default function AdminNotificationSettingsPage() {
             {form.whatsapp.enabled && (
               <div className="space-y-4 border-t border-slate-200 pt-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-600">Provider</label>
+                  <Label>Provider</Label>
                   <select
                     value={form.whatsapp.provider}
                     onChange={(e) =>
@@ -352,71 +281,31 @@ export default function AdminNotificationSettingsPage() {
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-slate-600">API Key / Access Token</label>
-                    <input
-                      type="text"
-                      value={form.whatsapp.apiKey}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, whatsapp: { ...prev.whatsapp, apiKey: e.target.value } }))
-                      }
-                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    />
+                    <Label>API Key / Access Token</Label>
+                    <Input variant="amber" value={form.whatsapp.apiKey} onChange={(e) => setForm((prev) => ({ ...prev, whatsapp: { ...prev.whatsapp, apiKey: e.target.value } }))} />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-slate-600">API Secret</label>
-                    <input
-                      type="password"
-                      value={form.whatsapp.apiSecret}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, whatsapp: { ...prev.whatsapp, apiSecret: e.target.value } }))
-                      }
-                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    />
+                    <Label>API Secret</Label>
+                    <Input variant="amber" type="password" value={form.whatsapp.apiSecret} onChange={(e) => setForm((prev) => ({ ...prev, whatsapp: { ...prev.whatsapp, apiSecret: e.target.value } }))} />
                   </div>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-slate-600">Phone Number ID</label>
-                    <input
-                      type="text"
-                      value={form.whatsapp.phoneNumberId}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          whatsapp: { ...prev.whatsapp, phoneNumberId: e.target.value },
-                        }))
-                      }
-                      placeholder="For Meta WhatsApp"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    />
+                    <Label>Phone Number ID</Label>
+                    <Input variant="amber" value={form.whatsapp.phoneNumberId} onChange={(e) => setForm((prev) => ({ ...prev, whatsapp: { ...prev.whatsapp, phoneNumberId: e.target.value } }))} placeholder="For Meta WhatsApp" />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-slate-600">From Number</label>
-                    <input
-                      type="text"
-                      value={form.whatsapp.fromNumber}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          whatsapp: { ...prev.whatsapp, fromNumber: e.target.value },
-                        }))
-                      }
-                      placeholder="+1234567890"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    />
+                    <Label>From Number</Label>
+                    <Input variant="amber" value={form.whatsapp.fromNumber} onChange={(e) => setForm((prev) => ({ ...prev, whatsapp: { ...prev.whatsapp, fromNumber: e.target.value } }))} placeholder="+1234567890" />
                   </div>
                 </div>
               </div>
             )}
-          </div>
+          </Card>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-lg bg-amber-600 px-6 py-2.5 font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
-          >
+          <Button type="submit" variant="primaryAmber" disabled={submitting}>
             {submitting ? "Saving..." : "Save Notification Settings"}
-          </button>
+          </Button>
         </form>
       )}
     </div>

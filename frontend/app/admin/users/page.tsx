@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usersApi } from "@/lib/api";
 import type { UserItem } from "@/lib/types";
+import { Card, Input, Label, Button, LoadingState, EmptyState } from "@/components/ui";
 
 export default function AdminUsersPage() {
   const [mounted, setMounted] = useState(false);
@@ -102,82 +103,54 @@ export default function AdminUsersPage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-slate-900">Users</h1>
         <form onSubmit={handleSearch} className="flex gap-2">
-          <input
+          <Input
+            variant="amber"
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search by name, email, phone..."
-            className="w-48 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 sm:w-64"
+            className="w-48 text-sm sm:w-64"
           />
-          <button
-            type="submit"
-            className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-500"
-          >
+          <Button type="submit" variant="primaryAmber" className="text-sm">
             Search
-          </button>
+          </Button>
         </form>
       </div>
 
       {showForm && editing && (
-        <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <Card className="mb-8">
           <h2 className="mb-4 text-lg font-semibold text-slate-900">Edit User</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Name *</label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                required
-              />
+              <Label required>Name</Label>
+              <Input variant="amber" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Email</label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              />
+              <Label>Email</Label>
+              <Input variant="amber" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-600">Phone</label>
-              <input
-                type="tel"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              />
+              <Label>Phone</Label>
+              <Input variant="amber" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
             </div>
             <p className="text-xs text-slate-500">At least one of email or phone is required.</p>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="rounded-lg bg-amber-600 px-4 py-2 font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
-              >
+              <Button type="submit" variant="primaryAmber" disabled={submitting}>
                 {submitting ? "Saving..." : "Update"}
-              </button>
-              <button
-                type="button"
-                onClick={resetForm}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-100"
-              >
+              </Button>
+              <Button type="button" variant="secondary" onClick={resetForm}>
                 Cancel
-              </button>
+              </Button>
             </div>
           </form>
-        </div>
+        </Card>
       )}
 
       {loading ? (
-        <div className="py-12 text-center text-slate-600">Loading users...</div>
+        <LoadingState message="Loading users..." />
       ) : users.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-12 text-center text-slate-500">
-          {search ? "No users match your search." : "No users yet."}
-        </div>
+        <EmptyState message={search ? "No users match your search." : "No users yet."} />
       ) : (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <table className="min-w-full divide-y divide-slate-200">
@@ -200,18 +173,12 @@ export default function AdminUsersPage() {
                     {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "—"}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-right">
-                    <button
-                      onClick={() => handleEdit(user)}
-                      className="mr-2 text-amber-600 hover:underline"
-                    >
+                    <Button type="button" variant="link" onClick={() => handleEdit(user)} className="mr-2 text-amber-600">
                       Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(user._id)}
-                      className="text-red-600 hover:underline"
-                    >
+                    </Button>
+                    <Button type="button" variant="linkRed" onClick={() => handleDelete(user._id)}>
                       Delete
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -226,20 +193,24 @@ export default function AdminUsersPage() {
             Showing page {pagination.page} of {pagination.pages} ({pagination.total} total)
           </p>
           <div className="flex gap-2">
-            <button
+            <Button
+              type="button"
+              variant="secondary"
               onClick={() => setPagination((p) => ({ ...p, page: Math.max(1, p.page - 1) }))}
               disabled={pagination.page <= 1}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm disabled:opacity-50"
+              className="text-sm"
             >
               Previous
-            </button>
-            <button
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
               onClick={() => setPagination((p) => ({ ...p, page: Math.min(p.pages, p.page + 1) }))}
               disabled={pagination.page >= pagination.pages}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm disabled:opacity-50"
+              className="text-sm"
             >
               Next
-            </button>
+            </Button>
           </div>
         </div>
       )}

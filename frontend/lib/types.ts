@@ -220,6 +220,7 @@ export type ModuleSettings = {
   shippingEnabled: boolean;
   blogEnabled: boolean;
   abandonedCartEnabled: boolean;
+  salesReportEnabled: boolean;
   googleAnalyticsEnabled: boolean;
   googleAnalyticsId: string;
   facebookPixelEnabled: boolean;

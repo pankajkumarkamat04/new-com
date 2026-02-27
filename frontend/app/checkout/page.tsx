@@ -7,8 +7,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useSettings } from "@/contexts/SettingsContext";
 import { ordersApi, couponApi, shippingApi } from "@/lib/api";
 import type { ShippingOption } from "@/lib/types";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import { PageLayout, Card, Button, Input, Label } from "@/components/ui";
 
 const COUNTRY_OPTIONS: { code: string; name: string }[] = [
   { code: "IN", name: "India" },
@@ -283,106 +282,89 @@ export default function CheckoutPage() {
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-white">
-        <Header />
+      <PageLayout>
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-md rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center">
+          <Card padding="large" className="mx-auto max-w-md text-center bg-slate-50">
             <h1 className="text-xl font-bold text-slate-900">Login to Checkout</h1>
             <p className="mt-2 text-slate-600">Please sign in to your account to place an order.</p>
-            <Link
-              href={`/user/login?redirect=${encodeURIComponent("/checkout")}`}
-              className="mt-6 inline-block rounded-lg bg-emerald-600 px-6 py-3 font-medium text-white transition hover:bg-emerald-500"
-            >
+            <Button as="link" href={`/user/login?redirect=${encodeURIComponent("/checkout")}`} variant="primary" className="mt-6">
               Log In
-            </Link>
+            </Button>
             <Link href="/cart" className="mt-4 block text-sm text-slate-500 hover:underline">
               ← Back to Cart
             </Link>
-          </div>
+          </Card>
         </div>
-        <Footer />
-      </div>
+      </PageLayout>
     );
   }
 
   if (orderId) {
     return (
-      <div className="min-h-screen bg-white">
-        <Header />
+      <PageLayout>
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-md rounded-2xl border border-emerald-200 bg-emerald-50 p-8 text-center">
+          <Card padding="large" className="mx-auto max-w-md border-emerald-200 bg-emerald-50 text-center">
             <h1 className="text-2xl font-bold text-emerald-800">Order Placed</h1>
             <p className="mt-2 text-emerald-700">Thank you for your order.</p>
             <p className="mt-2 text-sm text-slate-600">Order ID: {orderId}</p>
-            <Link
-              href="/user/orders"
-              className="mt-6 inline-block rounded-lg bg-emerald-600 px-6 py-3 font-medium text-white transition hover:bg-emerald-500"
-            >
+            <Button as="link" href="/user/orders" variant="primary" className="mt-6">
               View My Orders
-            </Link>
+            </Button>
             <Link href="/shop" className="mt-4 block text-sm text-slate-500 hover:underline">
               Continue Shopping
             </Link>
-          </div>
+          </Card>
         </div>
-        <Footer />
-      </div>
+      </PageLayout>
     );
   }
 
   if (loading || items.length === 0) {
     return (
-      <div className="min-h-screen bg-white">
-        <Header />
+      <PageLayout>
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="text-center text-slate-600">
             {loading ? "Loading..." : "Your cart is empty."}
             {!loading && <Link href="/cart" className="ml-2 text-emerald-600 hover:underline">Go to cart</Link>}
           </div>
         </div>
-        <Footer />
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <Header />
+    <PageLayout>
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <h1 className="mb-8 text-2xl font-bold text-slate-900">Checkout</h1>
 
         <form onSubmit={handleSubmit} className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <Card>
               <h2 className="mb-4 text-lg font-semibold text-slate-900">Shipping Address</h2>
               <div className="space-y-4">
                 {checkoutSettings.name.enabled !== false && (
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-slate-600">
+                    <Label required={checkoutSettings.name.required !== false}>
                       {checkoutSettings.name.label || "Full Name"}
-                      {checkoutSettings.name.required !== false && <span> *</span>}
-                    </label>
-                    <input
+                    </Label>
+                    <Input
                       type="text"
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       required={checkoutSettings.name.required !== false}
                     />
                   </div>
                 )}
                 {checkoutSettings.address.enabled !== false && (
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-slate-600">
+                    <Label required={checkoutSettings.address.required !== false}>
                       {checkoutSettings.address.label || "Address"}
-                      {checkoutSettings.address.required !== false && <span> *</span>}
-                    </label>
-                    <input
+                    </Label>
+                    <Input
                       type="text"
                       value={form.address}
                       onChange={(e) => setForm({ ...form, address: e.target.value })}
-                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                       required={checkoutSettings.address.required !== false}
                     />
                   </div>
@@ -390,25 +372,22 @@ export default function CheckoutPage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   {checkoutSettings.city.enabled !== false && (
                     <div>
-                      <label className="mb-1 block text-sm font-medium text-slate-600">
+                      <Label required={checkoutSettings.city.required !== false}>
                         {checkoutSettings.city.label || "City"}
-                        {checkoutSettings.city.required !== false && <span> *</span>}
-                      </label>
-                      <input
+                      </Label>
+                      <Input
                         type="text"
                         value={form.city}
                         onChange={(e) => setForm({ ...form, city: e.target.value })}
-                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                         required={checkoutSettings.city.required !== false}
                       />
                     </div>
                   )}
                   {checkoutSettings.state.enabled !== false && (
                     <div>
-                      <label className="mb-1 block text-sm font-medium text-slate-600">
+                      <Label required={!!checkoutSettings.state.required}>
                         {checkoutSettings.state.label || "State / Province"}
-                        {checkoutSettings.state.required && <span> *</span>}
-                      </label>
+                      </Label>
                       {form.country === "IN" ? (
                         <select
                           value={form.state}
@@ -424,12 +403,11 @@ export default function CheckoutPage() {
                           ))}
                         </select>
                       ) : (
-                        <input
+                        <Input
                           type="text"
                           value={form.state}
                           onChange={(e) => setForm({ ...form, state: e.target.value })}
                           placeholder="State / Province"
-                          className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                           required={!!checkoutSettings.state.required}
                         />
                       )}
@@ -439,21 +417,19 @@ export default function CheckoutPage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   {checkoutSettings.zip.enabled !== false && (
                     <div>
-                      <label className="mb-1 block text-sm font-medium text-slate-600">
+                      <Label required={checkoutSettings.zip.required !== false}>
                         {checkoutSettings.zip.label || "ZIP / Postal Code"}
-                        {checkoutSettings.zip.required !== false && <span> *</span>}
-                      </label>
-                      <input
+                      </Label>
+                      <Input
                         type="text"
                         value={form.zip}
                         onChange={(e) => setForm({ ...form, zip: e.target.value })}
-                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                         required={checkoutSettings.zip.required !== false}
                       />
                     </div>
                   )}
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-slate-600">Country</label>
+                    <Label>Country</Label>
                     <select
                       value={form.country}
                       onChange={(e) => setForm({ ...form, country: e.target.value })}
@@ -470,15 +446,13 @@ export default function CheckoutPage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   {checkoutSettings.phone.enabled !== false && (
                     <div>
-                      <label className="mb-1 block text-sm font-medium text-slate-600">
+                      <Label required={checkoutSettings.phone.required !== false}>
                         {checkoutSettings.phone.label || "Phone"}
-                        {checkoutSettings.phone.required !== false && <span> *</span>}
-                      </label>
-                      <input
+                      </Label>
+                      <Input
                         type="tel"
                         value={form.phone}
                         onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                         required={checkoutSettings.phone.required !== false}
                       />
                     </div>
@@ -488,11 +462,10 @@ export default function CheckoutPage() {
                   .filter((f) => f.enabled !== false)
                   .map((field) => (
                     <div key={field.key || field.label}>
-                      <label className="mb-1 block text-sm font-medium text-slate-600">
+                      <Label required={!!field.required}>
                         {field.label || field.key || "Custom Field"}
-                        {field.required && <span> *</span>}
-                      </label>
-                      <input
+                      </Label>
+                      <Input
                         type="text"
                         value={customValues[field.key || ""] || ""}
                         onChange={(e) =>
@@ -501,13 +474,12 @@ export default function CheckoutPage() {
                             [field.key || ""]: e.target.value,
                           }))
                         }
-                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                         required={!!field.required}
                       />
                     </div>
                   ))}
               </div>
-            </div>
+            </Card>
           </div>
 
           <div className="lg:col-span-1">
@@ -640,7 +612,7 @@ export default function CheckoutPage() {
                           Coupon Code
                         </label>
                         <div className="flex gap-2">
-                          <input
+                          <Input
                             type="text"
                             value={couponCode}
                             onChange={(e) => {
@@ -654,16 +626,17 @@ export default function CheckoutPage() {
                               }
                             }}
                             placeholder="Enter code"
-                            className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm uppercase text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                            className="flex-1 font-mono text-sm uppercase"
                           />
-                          <button
+                          <Button
                             type="button"
+                            variant="primary"
                             onClick={handleApplyCoupon}
                             disabled={applyingCoupon || !couponCode.trim()}
-                            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50"
+                            className="text-sm"
                           >
                             {applyingCoupon ? "..." : "Apply"}
-                          </button>
+                          </Button>
                         </div>
                         {couponError && (
                           <p className="mt-1 text-xs text-red-600">{couponError}</p>
@@ -702,25 +675,21 @@ export default function CheckoutPage() {
                 </div>
               </div>
               {error && <p className="text-sm text-red-600">{error}</p>}
-              <button
+              <Button
                 type="submit"
+                variant="fullPrimary"
                 disabled={submitting}
-                className="mt-6 w-full rounded-lg bg-emerald-600 py-3 font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
+                className="mt-6"
               >
                 {submitting ? "Placing Order..." : `Place Order (${itemCount} item${itemCount !== 1 ? "s" : ""})`}
-              </button>
-              <Link
-                href="/cart"
-                className="mt-4 block w-full rounded-lg border border-slate-300 bg-white py-3 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-              >
+              </Button>
+              <Button as="link" href="/cart" variant="fullSecondary" className="mt-4">
                 Back to Cart
-              </Link>
+              </Button>
             </div>
           </div>
         </form>
       </div>
-
-      <Footer />
-    </div>
+    </PageLayout>
   );
 }

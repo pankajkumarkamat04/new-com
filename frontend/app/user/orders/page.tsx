@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ordersApi } from "@/lib/api";
 import type { Order } from "@/lib/types";
 import { useSettings } from "@/contexts/SettingsContext";
+import { LoadingState, EmptyState, Badge, Button } from "@/components/ui";
 
 const ORDERS_PER_PAGE = 5;
 
@@ -29,7 +30,8 @@ export default function UserOrdersPage() {
     return (
       <div className="px-6 py-8 lg:px-10">
         <h1 className="text-2xl font-bold text-slate-900">My Orders</h1>
-        <p className="mt-2 text-slate-500">Loading orders...</p>
+        <p className="mt-2 text-slate-500">View and track your orders.</p>
+        <LoadingState message="Loading orders..." className="mt-8" />
       </div>
     );
   }
@@ -39,12 +41,15 @@ export default function UserOrdersPage() {
       <div className="px-6 py-8 lg:px-10">
         <h1 className="text-2xl font-bold text-slate-900">My Orders</h1>
         <p className="mt-2 text-slate-500">View and track your orders.</p>
-        <div className="mt-8 flex flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-50 py-16">
-          <p className="text-slate-500">No orders yet</p>
-          <Link href="/shop" className="mt-4 text-emerald-600 hover:underline">
-            Start Shopping
-          </Link>
-        </div>
+        <EmptyState
+          message="No orders yet"
+          action={
+            <Button as="link" href="/shop" variant="link" className="text-emerald-600">
+              Start Shopping
+            </Button>
+          }
+          className="mt-8"
+        />
       </div>
     );
   }
@@ -98,19 +103,19 @@ export default function UserOrdersPage() {
                     {formatCurrency(order.total)}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${
+                    <Badge
+                      variant={
                         order.status === "pending"
-                          ? "bg-amber-100 text-amber-800"
+                          ? "warning"
                           : order.status === "delivered"
-                          ? "bg-emerald-100 text-emerald-800"
-                          : order.status === "cancelled"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-slate-100 text-slate-700"
-                      }`}
+                            ? "success"
+                            : order.status === "cancelled"
+                              ? "danger"
+                              : "neutral"
+                      }
                     >
                       {order.status}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="max-w-[180px] truncate px-4 py-3 text-sm text-slate-600" title={`${order.shippingAddress.name}, ${order.shippingAddress.city}`}>
                     {order.shippingAddress.name}, {order.shippingAddress.city}
@@ -130,13 +135,9 @@ export default function UserOrdersPage() {
         </div>
         {hasMore && (
           <div className="border-t border-slate-200 bg-slate-50 px-4 py-3 text-center">
-            <button
-              type="button"
-              onClick={viewMore}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-            >
+            <Button type="button" variant="secondary" onClick={viewMore}>
               View more
-            </button>
+            </Button>
           </div>
         )}
       </div>

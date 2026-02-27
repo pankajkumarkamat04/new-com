@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { settingsApi } from "@/lib/api";
 import type { PaymentSettings } from "@/lib/types";
+import { Card, Label, Button, LoadingState } from "@/components/ui";
 
 const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AED", "SGD", "CAD", "AUD", "JPY"] as const;
 
@@ -64,9 +65,13 @@ export default function AdminPaymentSettingsPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="w-full space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      {loading ? (
+        <LoadingState message="Loading payment settings..." />
+      ) : (
+      <Card>
+      <form onSubmit={handleSubmit} className="w-full space-y-6">
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">Default currency</label>
+          <Label className="text-slate-700">Default currency</Label>
           <select
             value={form.currency}
             onChange={(e) => setForm({ ...form, currency: e.target.value })}
@@ -138,18 +143,12 @@ export default function AdminPaymentSettingsPage() {
         )}
 
         <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-lg bg-amber-600 px-4 py-2 font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
-          >
+          <Button type="submit" variant="primaryAmber" disabled={submitting}>
             {submitting ? "Saving..." : "Save payment settings"}
-          </button>
+          </Button>
         </div>
       </form>
-
-      {loading && (
-        <div className="mt-4 text-sm text-slate-500">Loading payment settings...</div>
+      </Card>
       )}
     </div>
   );

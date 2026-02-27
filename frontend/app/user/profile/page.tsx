@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { userApi } from "@/lib/api";
+import { Card, Input, Label, Button, LoadingState } from "@/components/ui";
 
 type UserProfile = { name: string; email?: string; phone?: string };
 
@@ -81,7 +82,7 @@ export default function UserProfilePage() {
   if (loading) {
     return (
       <div className="px-4 py-8 sm:px-6 lg:px-8">
-        <div className="text-slate-500">Loading...</div>
+        <LoadingState message="Loading..." />
       </div>
     );
   }
@@ -92,15 +93,14 @@ export default function UserProfilePage() {
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-slate-900">Profile</h1>
           {!isEditing && (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-            >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
-              Edit Profile
-            </button>
+            <Button type="button" variant="secondary" onClick={() => setIsEditing(true)}>
+              <span className="inline-flex items-center gap-2">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+                Edit Profile
+              </span>
+            </Button>
           )}
         </div>
 
@@ -115,71 +115,32 @@ export default function UserProfilePage() {
         )}
 
         {isEditing ? (
-          <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="space-y-4">
+          <Card>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-slate-700">
-                  Name
-                </label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  value={form.name}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-4 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
+                <Label htmlFor="name" required>Name</Label>
+                <Input id="name" name="name" type="text" required value={form.name} onChange={handleChange} />
               </div>
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-700">
-                  Email
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  placeholder="Optional if phone is provided"
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-4 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" name="email" type="email" value={form.email} onChange={handleChange} placeholder="Optional if phone is provided" />
               </div>
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-slate-700">
-                  Phone
-                </label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={form.phone}
-                  onChange={handleChange}
-                  placeholder="Optional if email is provided"
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-4 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
+                <Label htmlFor="phone">Phone</Label>
+                <Input id="phone" name="phone" type="tel" value={form.phone} onChange={handleChange} placeholder="Optional if email is provided" />
               </div>
-            </div>
-            <div className="mt-6 flex gap-3">
-              <button
-                type="submit"
-                disabled={saving}
-                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50"
-              >
-                {saving ? "Saving..." : "Save Changes"}
-              </button>
-              <button
-                type="button"
-                onClick={handleCancel}
-                disabled={saving}
-                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+              <div className="mt-6 flex gap-3">
+                <Button type="submit" variant="primary" disabled={saving}>
+                  {saving ? "Saving..." : "Save Changes"}
+                </Button>
+                <Button type="button" variant="secondary" onClick={handleCancel} disabled={saving}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </Card>
         ) : (
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <Card>
             <dl className="space-y-4">
               <div>
                 <dt className="text-sm font-medium text-slate-500">Name</dt>
@@ -194,7 +155,7 @@ export default function UserProfilePage() {
                 <dd className="mt-1 text-slate-900">{user?.phone || "—"}</dd>
               </div>
             </dl>
-          </div>
+          </Card>
         )}
       </div>
     </div>

@@ -199,6 +199,10 @@ const settingsSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  salesReportEnabled: {
+    type: Boolean,
+    default: false,
+  },
   googleAnalyticsEnabled: {
     type: Boolean,
     default: false,

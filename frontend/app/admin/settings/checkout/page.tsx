@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { settingsApi } from "@/lib/api";
 import type { CheckoutSettings } from "@/lib/types";
+import { Card, Button, Input, Label, LoadingState } from "@/components/ui";
 
 const defaultForm: CheckoutSettings = {
   name: { enabled: true, required: true, label: "Full Name" },
@@ -147,7 +148,7 @@ export default function AdminCheckoutSettingsPage() {
       )}
 
       {loading ? (
-        <div className="py-12 text-center text-slate-600">Loading...</div>
+        <LoadingState message="Loading..." />
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
@@ -293,13 +294,13 @@ export default function AdminCheckoutSettingsPage() {
             )}
           </div>
 
-          <button
+          <Button
             type="submit"
+            variant="primaryAmber"
             disabled={submitting}
-            className="rounded-lg bg-amber-600 px-6 py-2.5 font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
           >
             {submitting ? "Saving..." : "Save Checkout Settings"}
-          </button>
+          </Button>
         </form>
       )}
     </div>

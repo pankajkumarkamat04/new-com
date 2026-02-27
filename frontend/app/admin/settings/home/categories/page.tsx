@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { settingsApi } from "@/lib/api";
 import type { HomeCategorySettings } from "@/lib/types";
+import { BackLink, Card, Button, Input, Label, LoadingState } from "@/components/ui";
 
 export default function AdminHomeCategoriesSettingsPage() {
   const [title, setTitle] = useState<string>("Shop by Category");
@@ -52,14 +52,8 @@ export default function AdminHomeCategoriesSettingsPage() {
 
   return (
     <div className="px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 flex items-center gap-4">
-        <Link href="/admin/settings/home" className="text-slate-500 hover:text-slate-700">
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </Link>
-        <h1 className="text-2xl font-bold text-slate-900">Homepage Categories</h1>
-      </div>
+      <BackLink href="/admin/settings/home" label="Back to Home Settings" />
+      <h1 className="mb-6 text-2xl font-bold text-slate-900">Homepage Categories</h1>
 
       {message && (
         <div
@@ -72,7 +66,7 @@ export default function AdminHomeCategoriesSettingsPage() {
       )}
 
       {loading ? (
-        <div className="py-12 text-center text-slate-600">Loading...</div>
+        <LoadingState message="Loading..." />
       ) : (
         <form onSubmit={handleSave} className="space-y-6">
           <p className="text-sm text-slate-600">
@@ -143,13 +137,9 @@ export default function AdminHomeCategoriesSettingsPage() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-lg bg-amber-600 px-6 py-2.5 font-medium text-white hover:bg-amber-500 disabled:opacity-50"
-          >
+          <Button type="submit" variant="primaryAmber" disabled={saving}>
             {saving ? "Saving..." : "Save section"}
-          </button>
+          </Button>
         </form>
       )}
     </div>

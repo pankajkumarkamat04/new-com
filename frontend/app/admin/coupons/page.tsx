@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { couponApi, settingsApi } from "@/lib/api";
 import type { Coupon } from "@/lib/types";
+import { Button, Card, Input, Label, LoadingState, EmptyState, Badge } from "@/components/ui";
 
 export default function AdminCouponsPage() {
   const [mounted, setMounted] = useState(false);
@@ -158,19 +159,13 @@ export default function AdminCouponsPage() {
     <div className="px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-900">Coupons</h1>
-        <button
-          onClick={() => {
-            resetForm();
-            setShowForm(true);
-          }}
-          className="rounded-lg bg-amber-600 px-4 py-2 font-medium text-white transition hover:bg-amber-500"
-        >
+        <Button variant="primaryAmber" onClick={() => { resetForm(); setShowForm(true); }}>
           Add Coupon
-        </button>
+        </Button>
       </div>
 
       {showForm && (
-        <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <Card className="mb-8">
           <h2 className="mb-4 text-lg font-semibold text-slate-900">
             {editing ? "Edit Coupon" : "Add Coupon"}
           </h2>
@@ -295,31 +290,21 @@ export default function AdminCouponsPage() {
             </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="rounded-lg bg-amber-600 px-4 py-2 font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
-              >
+              <Button type="submit" variant="primaryAmber" disabled={submitting}>
                 {submitting ? "Saving..." : editing ? "Update" : "Create"}
-              </button>
-              <button
-                type="button"
-                onClick={resetForm}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-100"
-              >
+              </Button>
+              <Button type="button" variant="secondary" onClick={resetForm}>
                 Cancel
-              </button>
+              </Button>
             </div>
           </form>
-        </div>
+        </Card>
       )}
 
       {loading ? (
-        <div className="py-12 text-center text-slate-600">Loading coupons...</div>
+        <LoadingState message="Loading coupons..." />
       ) : coupons.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-12 text-center text-slate-500">
-          No coupons yet. Click &quot;Add Coupon&quot; to create one.
-        </div>
+        <EmptyState message='No coupons yet. Click "Add Coupon" to create one.' />
       ) : (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <table className="min-w-full divide-y divide-slate-200">
@@ -387,37 +372,21 @@ export default function AdminCouponsPage() {
                         : "—"}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">
-                      {!coupon.isActive ? (
-                        <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
-                          Inactive
-                        </span>
-                      ) : expired ? (
-                        <span className="inline-flex rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700">
-                          Expired
-                        </span>
-                      ) : notStarted ? (
-                        <span className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700">
-                          Scheduled
-                        </span>
-                      ) : (
-                        <span className="inline-flex rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-800">
-                          Active
-                        </span>
-                      )}
+                      <Badge
+                        variant={
+                          !coupon.isActive ? "neutral" : expired ? "danger" : notStarted ? "warning" : "success"
+                        }
+                      >
+                        {!coupon.isActive ? "Inactive" : expired ? "Expired" : notStarted ? "Scheduled" : "Active"}
+                      </Badge>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right">
-                      <button
-                        onClick={() => handleEdit(coupon)}
-                        className="mr-2 text-amber-600 hover:underline"
-                      >
+                      <Button type="button" variant="link" onClick={() => handleEdit(coupon)} className="mr-2 text-amber-600">
                         Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(coupon._id)}
-                        className="text-red-600 hover:underline"
-                      >
+                      </Button>
+                      <Button type="button" variant="linkRed" onClick={() => handleDelete(coupon._id)}>
                         Delete
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 );

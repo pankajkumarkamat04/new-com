@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import { settingsApi } from "@/lib/api";
 import { useSettings } from "@/contexts/SettingsContext";
 import type { ModuleSettings } from "@/lib/types";
+import { Card, Input, Label, Button, LoadingState } from "@/components/ui";
 
 const defaultForm: Partial<ModuleSettings> = {
     couponEnabled: false,
     shippingEnabled: false,
     blogEnabled: false,
     abandonedCartEnabled: false,
+    salesReportEnabled: false,
     googleAnalyticsEnabled: false,
     googleAnalyticsId: "",
     facebookPixelEnabled: false,
@@ -46,6 +48,7 @@ export default function AdminModuleSettingsPage() {
                     shippingEnabled: !!d.shippingEnabled,
                     blogEnabled: !!d.blogEnabled,
                     abandonedCartEnabled: !!d.abandonedCartEnabled,
+                    salesReportEnabled: !!d.salesReportEnabled,
                     googleAnalyticsEnabled: !!d.googleAnalyticsEnabled,
                     googleAnalyticsId: d.googleAnalyticsId || "",
                     facebookPixelEnabled: !!d.facebookPixelEnabled,
@@ -95,11 +98,11 @@ export default function AdminModuleSettingsPage() {
             )}
 
             {loading ? (
-                <div className="py-12 text-center text-slate-600">Loading settings...</div>
+                <LoadingState message="Loading settings..." />
             ) : (
                 <form onSubmit={handleSubmit} className="space-y-8">
                     {/* Commerce */}
-                    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <Card>
                         <h2 className="mb-1 text-lg font-semibold text-slate-900">Commerce</h2>
                         <p className="mb-4 text-xs text-slate-500">Core store features that affect checkout and order management.</p>
                         <div className="space-y-3">
@@ -171,6 +174,28 @@ export default function AdminModuleSettingsPage() {
                                 </label>
                             </div>
 
+                            {/* Sales Report */}
+                            <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                                <div>
+                                    <p className="text-sm font-medium text-slate-900">Advanced Sales Report</p>
+                                    <p className="text-xs text-slate-500">
+                                        Enable the Sales Report page under Reports. View revenue, orders, and trends by date range, status, and grouping (day/week/month).
+                                    </p>
+                                </div>
+                                <label className="relative inline-flex cursor-pointer items-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={!!form.salesReportEnabled}
+                                        onChange={(e) => {
+                                            setForm((prev) => ({ ...prev, salesReportEnabled: e.target.checked }));
+                                            setMessage(null);
+                                        }}
+                                        className="peer sr-only"
+                                    />
+                                    <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-600 peer-checked:after:translate-x-full" />
+                                </label>
+                            </div>
+
                             {/* Tax */}
                             <div className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
                                 <div className="flex items-center justify-between">
@@ -196,12 +221,13 @@ export default function AdminModuleSettingsPage() {
                                 </div>
                                 {form.taxEnabled && (
                                     <div>
-                                        <label className="mb-1 block text-xs font-medium text-slate-600">Default Tax Percentage (%)</label>
-                                        <input
+                                        <Label className="text-xs">Default Tax Percentage (%)</Label>
+                                        <Input
+                                            variant="amber"
                                             type="number"
-                                            min="0"
-                                            max="100"
-                                            step="0.01"
+                                            min={0}
+                                            max={100}
+                                            step={0.01}
                                             name="defaultTaxPercentage"
                                             value={form.defaultTaxPercentage ?? 0}
                                             onChange={(e) => {
@@ -213,16 +239,16 @@ export default function AdminModuleSettingsPage() {
                                                 setMessage(null);
                                             }}
                                             placeholder="0"
-                                            className="w-full max-w-xs rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                            className="max-w-xs text-sm"
                                         />
                                     </div>
                                 )}
                             </div>
                         </div>
-                    </div>
+                    </Card>
 
                     {/* Content */}
-                    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <Card>
                         <h2 className="mb-1 text-lg font-semibold text-slate-900">Content</h2>
                         <p className="mb-4 text-xs text-slate-500">Content and publishing features for your store.</p>
                         <div className="space-y-3">
@@ -249,10 +275,10 @@ export default function AdminModuleSettingsPage() {
                                 </label>
                             </div>
                         </div>
-                    </div>
+                    </Card>
 
                     {/* Analytics & Marketing */}
-                    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <Card>
                         <h2 className="mb-1 text-lg font-semibold text-slate-900">Analytics & Marketing</h2>
                         <p className="mb-4 text-xs text-slate-500">Track and analyse visitors, and power your marketing campaigns.</p>
                         <div className="space-y-3">
@@ -280,9 +306,9 @@ export default function AdminModuleSettingsPage() {
                                 </div>
                                 {form.googleAnalyticsEnabled && (
                                     <div>
-                                        <label className="mb-1 block text-xs font-medium text-slate-600">Measurement ID</label>
-                                        <input
-                                            type="text"
+                                        <Label className="text-xs">Measurement ID</Label>
+                                        <Input
+                                            variant="amber"
                                             name="googleAnalyticsId"
                                             value={form.googleAnalyticsId || ""}
                                             onChange={(e) => {
@@ -290,7 +316,7 @@ export default function AdminModuleSettingsPage() {
                                                 setMessage(null);
                                             }}
                                             placeholder="G-XXXXXXXXXX"
-                                            className="w-full max-w-sm rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                            className="max-w-sm text-sm"
                                         />
                                     </div>
                                 )}
@@ -320,9 +346,9 @@ export default function AdminModuleSettingsPage() {
                                 </div>
                                 {form.facebookPixelEnabled && (
                                     <div>
-                                        <label className="mb-1 block text-xs font-medium text-slate-600">Pixel ID</label>
-                                        <input
-                                            type="text"
+                                        <Label className="text-xs">Pixel ID</Label>
+                                        <Input
+                                            variant="amber"
                                             name="facebookPixelId"
                                             value={form.facebookPixelId || ""}
                                             onChange={(e) => {
@@ -330,16 +356,16 @@ export default function AdminModuleSettingsPage() {
                                                 setMessage(null);
                                             }}
                                             placeholder="1234567890123456"
-                                            className="w-full max-w-sm rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                            className="max-w-sm text-sm"
                                         />
                                     </div>
                                 )}
                             </div>
                         </div>
-                    </div>
+                    </Card>
 
                     {/* Communication */}
-                    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <Card>
                         <h2 className="mb-1 text-lg font-semibold text-slate-900">Communication</h2>
                         <p className="mb-4 text-xs text-slate-500">Customer-facing communication and support tools.</p>
                         <div className="space-y-3">
@@ -376,7 +402,7 @@ export default function AdminModuleSettingsPage() {
                                 {form.whatsappChat?.enabled && (
                                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
                                         <div className="flex-1">
-                                            <label className="mb-1 block text-xs font-medium text-slate-600">Position</label>
+                                            <Label className="text-xs">Position</Label>
                                             <select
                                                 value={form.whatsappChat?.position ?? "right"}
                                                 onChange={(e) => {
@@ -399,8 +425,9 @@ export default function AdminModuleSettingsPage() {
                                             </select>
                                         </div>
                                         <div className="flex-1">
-                                            <label className="mb-1 block text-xs font-medium text-slate-600">WhatsApp Number</label>
-                                            <input
+                                            <Label className="text-xs">WhatsApp Number</Label>
+                                            <Input
+                                                variant="amber"
                                                 type="tel"
                                                 value={form.whatsappChat?.phoneNumber ?? ""}
                                                 onChange={(e) => {
@@ -416,7 +443,7 @@ export default function AdminModuleSettingsPage() {
                                                     setMessage(null);
                                                 }}
                                                 placeholder="919876543210"
-                                                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                                className="text-sm"
                                             />
                                             <p className="mt-0.5 text-xs text-slate-500">Country code + number, no spaces (e.g. 919876543210)</p>
                                         </div>
@@ -424,15 +451,11 @@ export default function AdminModuleSettingsPage() {
                                 )}
                             </div>
                         </div>
-                    </div>
+                    </Card>
 
-                    <button
-                        type="submit"
-                        disabled={submitting}
-                        className="rounded-lg bg-amber-600 px-6 py-2.5 font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
-                    >
+                    <Button type="submit" variant="primaryAmber" disabled={submitting}>
                         {submitting ? "Saving..." : "Save Settings"}
-                    </button>
+                    </Button>
                 </form>
             )}
         </div>

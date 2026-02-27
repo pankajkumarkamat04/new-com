@@ -288,6 +288,7 @@ export default function AdminLayout({
   const [loading, setLoading] = useState(true);
   const [couponEnabled, setCouponEnabled] = useState(false);
   const [blogEnabled, setBlogEnabled] = useState(false);
+  const [salesReportEnabled, setSalesReportEnabled] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -306,11 +307,15 @@ export default function AdminLayout({
       if (res.data?.admin) setAdmin(res.data.admin);
       else if (res.error) router.replace("/admin/login");
     });
-    settingsApi.get().then((res) => {
-      if (res.data?.data) {
-        const data = res.data.data as any;
+    Promise.all([settingsApi.get(), settingsApi.getModules()]).then(([settingsRes, modulesRes]) => {
+      if (settingsRes.data?.data) {
+        const data = settingsRes.data.data as { couponEnabled?: boolean; blogEnabled?: boolean };
         setCouponEnabled(!!data.couponEnabled);
         setBlogEnabled(!!data.blogEnabled);
+      }
+      if (modulesRes.data?.data) {
+        const modules = modulesRes.data.data as { salesReportEnabled?: boolean };
+        setSalesReportEnabled(!!modules.salesReportEnabled);
       }
     });
   }, [mounted, router, isAuthPage]);
@@ -389,6 +394,21 @@ export default function AdminLayout({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10M4 18h6" />
                   </svg>
                   Blogs
+                </Link>
+              )}
+
+              {salesReportEnabled && (
+                <Link
+                  href="/admin/reports/sales"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${pathname === "/admin/reports/sales"
+                      ? "bg-amber-50 text-amber-700"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    }`}
+                >
+                  <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  Sales Report
                 </Link>
               )}
 

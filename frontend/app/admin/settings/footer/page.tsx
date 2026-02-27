@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { settingsApi } from "@/lib/api";
 import type { FooterSettings, FooterColumn, FooterLink, FooterColumnType } from "@/lib/types";
+import { Card, Button, Input, Label, LoadingState } from "@/components/ui";
 
 const COLUMN_TYPES: { value: FooterColumnType; label: string; description: string }[] = [
   { value: "links", label: "Links", description: "A list of text links (e.g. Shop, FAQ, Privacy)." },
@@ -219,7 +220,7 @@ export default function AdminFooterSettingsPage() {
       )}
 
       {loading ? (
-        <div className="py-12 text-center text-slate-600">Loading footer settings...</div>
+        <LoadingState message="Loading footer settings..." />
       ) : (
         <form onSubmit={handleSubmit} className="w-full space-y-6">
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -377,13 +378,9 @@ export default function AdminFooterSettingsPage() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-lg bg-amber-600 px-6 py-2.5 font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
-          >
+          <Button type="submit" variant="primaryAmber" disabled={submitting}>
             {submitting ? "Saving..." : "Save footer settings"}
-          </button>
+          </Button>
         </form>
       )}
 

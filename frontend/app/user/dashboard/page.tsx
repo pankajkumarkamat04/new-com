@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { userApi } from "@/lib/api";
+import { Card, Button, EmptyState } from "@/components/ui";
 
 export default function UserDashboardPage() {
   const [user, setUser] = useState<{ name: string; email?: string; phone?: string } | null>(null);
@@ -23,7 +24,7 @@ export default function UserDashboardPage() {
 
       {/* Order Summary Cards */}
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <Card>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-2xl font-bold text-slate-900">0</p>
@@ -35,8 +36,8 @@ export default function UserDashboardPage() {
               </svg>
             </div>
           </div>
-        </div>
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        </Card>
+        <Card>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-2xl font-bold text-green-600">0</p>
@@ -48,8 +49,8 @@ export default function UserDashboardPage() {
               </svg>
             </div>
           </div>
-        </div>
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        </Card>
+        <Card>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-2xl font-bold text-amber-600">0</p>
@@ -61,13 +62,13 @@ export default function UserDashboardPage() {
               </svg>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Two columns: Account Info + Recent Orders */}
       <div className="grid gap-8 lg:grid-cols-2">
         {/* Account Information */}
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <Card>
           <h2 className="mb-4 text-lg font-bold text-slate-900">Account Information</h2>
           <div className="flex items-start gap-4">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600">
@@ -85,53 +86,42 @@ export default function UserDashboardPage() {
             </div>
           </div>
           <div className="mt-6 flex gap-3">
-            <Link
-              href="/user/profile"
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-            >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
-              Edit Profile
-            </Link>
-            <Link
-              href="/user/profile?tab=password"
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-            >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              Change Password
-            </Link>
+            <Button as="link" href="/user/profile" variant="secondary">
+              <span className="inline-flex items-center gap-2">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+                Edit Profile
+              </span>
+            </Button>
+            <Button as="link" href="/user/profile?tab=password" variant="secondary">
+              <span className="inline-flex items-center gap-2">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Change Password
+              </span>
+            </Button>
           </div>
-        </div>
+        </Card>
 
         {/* Recent Orders */}
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <Card>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-900">Recent Orders</h2>
-            <Link
-              href="/user/orders"
-              className="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600"
-            >
+            <Button as="link" href="/user/orders" variant="primary" className="bg-red-500 hover:bg-red-600">
               View All
-            </Link>
+            </Button>
           </div>
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-              <svg className="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8 4-8-4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
-            </div>
-            <p className="text-slate-500">No orders yet</p>
-            <Link
-              href="/shop"
-              className="mt-4 rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
-            >
-              Start Shopping
-            </Link>
-          </div>
-        </div>
+          <EmptyState
+            message="No orders yet"
+            action={
+              <Button as="link" href="/shop" variant="primary" className="bg-slate-900 hover:bg-slate-800">
+                Start Shopping
+              </Button>
+            }
+          />
+        </Card>
       </div>
     </div>
   );

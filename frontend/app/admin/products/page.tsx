@@ -5,6 +5,7 @@ import Link from "next/link";
 import { productApi } from "@/lib/api";
 import type { Product } from "@/lib/types";
 import { useSettings } from "@/contexts/SettingsContext";
+import { Button, Badge, LoadingState, EmptyState } from "@/components/ui";
 
 export default function AdminProductsPage() {
   const { formatCurrency } = useSettings();
@@ -41,20 +42,15 @@ export default function AdminProductsPage() {
     <div className="px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-900">Products</h1>
-        <Link
-          href="/admin/products/add"
-          className="rounded-lg bg-amber-600 px-4 py-2 font-medium text-white transition hover:bg-amber-500"
-        >
+        <Button as="link" href="/admin/products/add" variant="primaryAmber">
           Add Product
-        </Link>
+        </Button>
       </div>
 
       {loading ? (
-        <div className="py-12 text-center text-slate-600">Loading products...</div>
+        <LoadingState message="Loading products..." />
       ) : products.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-12 text-center text-slate-500">
-          No products yet. Click &quot;Add Product&quot; to create one.
-        </div>
+        <EmptyState message='No products yet. Click "Add Product" to create one.' />
       ) : (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <table className="min-w-full divide-y divide-slate-200">
@@ -86,15 +82,9 @@ export default function AdminProductsPage() {
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-slate-600">{product.stock}</td>
                   <td className="whitespace-nowrap px-6 py-4">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                        product.isActive
-                          ? "bg-emerald-100 text-emerald-800"
-                          : "bg-slate-100 text-slate-800"
-                      }`}
-                    >
+                    <Badge variant={product.isActive ? "success" : "neutral"}>
                       {product.isActive ? "Active" : "Inactive"}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-right">
                     <Link
@@ -103,12 +93,9 @@ export default function AdminProductsPage() {
                     >
                       Edit
                     </Link>
-                    <button
-                      onClick={() => handleDelete(product._id)}
-                      className="text-red-600 hover:underline"
-                    >
+                    <Button as="button" type="button" variant="linkRed" onClick={() => handleDelete(product._id)}>
                       Delete
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}
