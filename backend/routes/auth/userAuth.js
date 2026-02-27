@@ -7,8 +7,8 @@ const router = express.Router();
 
 const signupValidation = [
   body('name').trim().notEmpty().withMessage('Name is required'),
-  body('email').optional().isEmail().withMessage('Valid email required'),
-  body('phone').optional().isMobilePhone('any').withMessage('Valid phone required'),
+  body('email').optional().trim().isEmail().withMessage('Valid email required'),
+  body('phone').optional().trim(),
   body('password').optional().isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body().custom((val, { req }) => {
     if (!req.body.email && !req.body.phone) throw new Error('Either email or phone is required');
@@ -17,8 +17,8 @@ const signupValidation = [
 ];
 
 const loginValidation = [
-  body('email').optional().isEmail().withMessage('Valid email required'),
-  body('phone').optional().isMobilePhone('any').withMessage('Valid phone required'),
+  body('email').optional().trim().isEmail().withMessage('Valid email required'),
+  body('phone').optional().trim(),
   body().custom((val, { req }) => {
     if (!req.body.email && !req.body.phone) throw new Error('Either email or phone is required');
     return true;
@@ -26,8 +26,8 @@ const loginValidation = [
 ];
 
 const otpRequestValidation = [
-  body('email').optional().isEmail().withMessage('Valid email required'),
-  body('phone').optional().isMobilePhone('any').withMessage('Valid phone required'),
+  body('email').optional().trim().isEmail().withMessage('Valid email required'),
+  body('phone').optional().trim(),
   body().custom((val, { req }) => {
     if (!req.body.email && !req.body.phone) throw new Error('Either email or phone is required');
     return true;
@@ -35,8 +35,8 @@ const otpRequestValidation = [
 ];
 
 const otpLoginValidation = [
-  body('email').optional().isEmail().withMessage('Valid email required'),
-  body('phone').optional().isMobilePhone('any').withMessage('Valid phone required'),
+  body('email').optional().trim().isEmail().withMessage('Valid email required'),
+  body('phone').optional().trim(),
   body().custom((val, { req }) => {
     if (!req.body.email && !req.body.phone) throw new Error('Either email or phone is required');
     return true;
@@ -46,8 +46,8 @@ const otpLoginValidation = [
 
 const updateProfileValidation = [
   body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
-  body('email').optional({ values: 'falsy' }).isEmail().withMessage('Valid email required'),
-  body('phone').optional({ values: 'falsy' }).isMobilePhone('any').withMessage('Valid phone required'),
+  body('email').optional({ values: 'falsy' }).trim().isEmail().withMessage('Valid email required'),
+  body('phone').optional({ values: 'falsy' }).trim(),
 ];
 
 router.get('/me', protectUser, userAuthController.getMe);

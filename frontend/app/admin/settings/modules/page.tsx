@@ -7,6 +7,7 @@ import type { ModuleSettings } from "@/lib/types";
 
 const defaultForm: Partial<ModuleSettings> = {
     couponEnabled: false,
+    shippingEnabled: false,
     blogEnabled: false,
     abandonedCartEnabled: false,
     googleAnalyticsEnabled: false,
@@ -42,6 +43,7 @@ export default function AdminModuleSettingsPage() {
                 const d = res.data.data;
                 setForm({
                     couponEnabled: !!d.couponEnabled,
+                    shippingEnabled: !!d.shippingEnabled,
                     blogEnabled: !!d.blogEnabled,
                     abandonedCartEnabled: !!d.abandonedCartEnabled,
                     googleAnalyticsEnabled: !!d.googleAnalyticsEnabled,
@@ -116,6 +118,28 @@ export default function AdminModuleSettingsPage() {
                                         checked={!!form.couponEnabled}
                                         onChange={(e) => {
                                             setForm((prev) => ({ ...prev, couponEnabled: e.target.checked }));
+                                            setMessage(null);
+                                        }}
+                                        className="peer sr-only"
+                                    />
+                                    <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-600 peer-checked:after:translate-x-full" />
+                                </label>
+                            </div>
+
+                            {/* Shipping */}
+                            <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                                <div>
+                                    <p className="text-sm font-medium text-slate-900">Shipping</p>
+                                    <p className="text-xs text-slate-500">
+                                        Enable zone-based shipping at checkout. When enabled, configure zones and methods under Settings → Shipping; customers will see shipping options and cost at checkout.
+                                    </p>
+                                </div>
+                                <label className="relative inline-flex cursor-pointer items-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={!!form.shippingEnabled}
+                                        onChange={(e) => {
+                                            setForm((prev) => ({ ...prev, shippingEnabled: e.target.checked }));
                                             setMessage(null);
                                         }}
                                         className="peer sr-only"

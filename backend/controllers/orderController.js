@@ -4,8 +4,45 @@ import Product from '../models/Product.js';
 import Inventory from '../models/Inventory.js';
 import Settings from '../models/Settings.js';
 import Coupon from '../models/Coupon.js';
+import ShippingZone from '../models/ShippingZone.js';
+import ShippingMethod from '../models/ShippingMethod.js';
 import { redisDel, redisDeleteByPattern } from '../utils/redisClient.js';
 import { sendNotification } from '../utils/notificationService.js';
+
+function findZoneForAddress(zones, country, state, zip) {
+  const countryUpper = (country || '').trim().toUpperCase();
+  const stateTrim = (state || '').trim();
+  const zipTrim = (zip || '').trim();
+  for (const zone of zones) {
+    const codes = zone.countryCodes || [];
+    const allCountries = codes.length === 0 || codes.includes('*');
+    const countryMatch = allCountries || codes.some((c) => (c || '').toUpperCase() === countryUpper);
+    if (!countryMatch) continue;
+    if (Array.isArray(zone.stateCodes) && zone.stateCodes.length > 0) {
+      const stateMatch = zone.stateCodes.some((s) => (s || '').trim().toLowerCase() === stateTrim.toLowerCase());
+      if (!stateMatch) continue;
+    }
+    if (Array.isArray(zone.zipPrefixes) && zone.zipPrefixes.length > 0 && zipTrim) {
+      const zipMatch = zone.zipPrefixes.some((p) => (zipTrim || '').startsWith((p || '').trim()));
+      if (!zipMatch) continue;
+    }
+    return zone;
+  }
+  return null;
+}
+
+function calculateShippingCost(method, subtotal, itemCount) {
+  if (method.minOrderForFree > 0 && subtotal >= method.minOrderForFree) return 0;
+  const rateValue = method.rateValue ?? 0;
+  switch (method.rateType) {
+    case 'per_item':
+      return Math.round(rateValue * itemCount * 100) / 100;
+    case 'per_order':
+    case 'flat':
+    default:
+      return rateValue;
+  }
+}
 
 const getEffectiveCheckoutConfig = async () => {
   const settings = await Settings.getSettings();
@@ -40,8 +77,8 @@ const getEffectivePaymentConfig = async () => {
 
 export const placeOrder = async (req, res) => {
   try {
-    const { shippingAddress, paymentMethod: requestedMethod, couponCode: rawCouponCode } = req.body;
-    const { name, address, city, state, zip, phone, customFields } = shippingAddress || {};
+    const { shippingAddress, paymentMethod: requestedMethod, couponCode: rawCouponCode, shippingMethodId, shippingAmount: requestedShippingAmount } = req.body;
+    const { name, address, city, state, zip, phone, country, customFields } = shippingAddress || {};
 
     const checkout = await getEffectiveCheckoutConfig();
     const paymentConfig = await getEffectivePaymentConfig();
@@ -159,6 +196,43 @@ export const placeOrder = async (req, res) => {
     let discountAmount = 0;
     let appliedCouponCode = null;
 
+    let shippingAmount = 0;
+    let shippingMethodName = null;
+    const settingsForShipping = await Settings.getSettings();
+    if (settingsForShipping.shippingEnabled) {
+      if (shippingMethodId) {
+        const method = await ShippingMethod.findById(shippingMethodId).lean();
+        if (!method || !method.isActive) {
+          return res.status(400).json({ success: false, message: 'Invalid or inactive shipping method.' });
+        }
+        const zone = await ShippingZone.findById(method.zoneId).lean();
+        if (!zone || !zone.isActive) {
+          return res.status(400).json({ success: false, message: 'Shipping zone not found or inactive.' });
+        }
+        const zones = await ShippingZone.find({ isActive: true }).sort({ sortOrder: 1 }).lean();
+        const matchedZone = findZoneForAddress(zones, (country || '').trim() || 'IN', (state || '').trim(), (zip || '').trim());
+        if (!matchedZone || String(matchedZone._id) !== String(zone._id)) {
+          return res.status(400).json({ success: false, message: 'Selected shipping method does not apply to this address.' });
+        }
+        const itemCount = orderItems.reduce((s, i) => s + i.quantity, 0);
+        const expectedAmount = calculateShippingCost(method, subtotal, itemCount);
+        const requested = Math.max(0, parseFloat(requestedShippingAmount) || 0);
+        if (Math.abs(requested - expectedAmount) > 0.02) {
+          return res.status(400).json({ success: false, message: 'Shipping amount mismatch. Please refresh and try again.' });
+        }
+        shippingAmount = Math.round(expectedAmount * 100) / 100;
+        shippingMethodName = method.name || 'Shipping';
+      } else {
+        // No zone configured or no method selected: use 0 shipping
+        const requested = Math.max(0, parseFloat(requestedShippingAmount) || 0);
+        if (requested > 0.02) {
+          return res.status(400).json({ success: false, message: 'Shipping amount must be 0 when no method is selected.' });
+        }
+        shippingAmount = 0;
+        shippingMethodName = 'Free Shipping';
+      }
+    }
+
     if (rawCouponCode && typeof rawCouponCode === 'string' && rawCouponCode.trim()) {
       if (settings.couponEnabled) {
         const coupon = await Coupon.findOne({ code: rawCouponCode.trim().toUpperCase(), isActive: true });
@@ -186,7 +260,7 @@ export const placeOrder = async (req, res) => {
       }
     }
 
-    const finalTotal = Math.round((subtotal - discountAmount + totalTax) * 100) / 100;
+    const finalTotal = Math.round((subtotal - discountAmount + totalTax + shippingAmount) * 100) / 100;
 
     const normalizedCustomFields = Array.isArray(customFields)
       ? customFields
@@ -206,6 +280,11 @@ export const placeOrder = async (req, res) => {
       total: finalTotal,
       ...(appliedCouponCode && { couponCode: appliedCouponCode }),
       ...(discountAmount > 0 && { discountAmount }),
+      ...(settingsForShipping.shippingEnabled && {
+        ...(shippingMethodId && { shippingMethodId }),
+        shippingMethodName: shippingMethodName || 'Free Shipping',
+        shippingAmount: shippingAmount ?? 0,
+      }),
       shippingAddress: {
         name: name.trim(),
         address: address.trim(),
@@ -213,6 +292,7 @@ export const placeOrder = async (req, res) => {
         state: (state || '').trim(),
         zip: zip.trim(),
         phone: phone.trim(),
+        ...((country || '').trim() && { country: String(country).trim() }),
         customFields: normalizedCustomFields,
       },
       status: 'pending',

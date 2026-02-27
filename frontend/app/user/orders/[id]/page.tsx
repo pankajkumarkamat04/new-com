@@ -132,10 +132,13 @@ export default function UserOrderDetailPage() {
               </ul>
               <div className="mt-4 border-t border-slate-200 pt-4 space-y-1 text-right">
                 {order.subtotal != null && order.subtotal !== order.total && (
-                  <div className="flex justify-end gap-4 text-sm text-slate-600">
+                  <div className="flex flex-wrap justify-end gap-x-4 gap-y-1 text-sm text-slate-600">
                     <span>Subtotal: {formatCurrency(order.subtotal)}</span>
                     {order.taxAmount != null && order.taxAmount > 0 && (
                       <span>Tax: {formatCurrency(order.taxAmount)}</span>
+                    )}
+                    {(order.shippingMethodName != null || (order.shippingAmount ?? 0) > 0) && (
+                      <span>Shipping{order.shippingMethodName ? ` (${order.shippingMethodName})` : ""}: {(order.shippingAmount ?? 0) > 0 ? formatCurrency(order.shippingAmount!) : "Free"}</span>
                     )}
                     {(order.discountAmount ?? 0) > 0 && (
                       <span>Discount: -{formatCurrency(order.discountAmount!)}</span>

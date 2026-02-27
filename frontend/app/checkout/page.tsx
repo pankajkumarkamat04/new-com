@@ -5,14 +5,67 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
 import { useSettings } from "@/contexts/SettingsContext";
-import { ordersApi, couponApi } from "@/lib/api";
+import { ordersApi, couponApi, shippingApi } from "@/lib/api";
+import type { ShippingOption } from "@/lib/types";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+
+const COUNTRY_OPTIONS: { code: string; name: string }[] = [
+  { code: "IN", name: "India" },
+  { code: "US", name: "United States" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "AE", name: "United Arab Emirates" },
+  { code: "AU", name: "Australia" },
+  { code: "CA", name: "Canada" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "SG", name: "Singapore" },
+  { code: "MY", name: "Malaysia" },
+  { code: "SA", name: "Saudi Arabia" },
+  { code: "PK", name: "Pakistan" },
+  { code: "BD", name: "Bangladesh" },
+  { code: "NP", name: "Nepal" },
+  { code: "LK", name: "Sri Lanka" },
+  { code: "JP", name: "Japan" },
+  { code: "CN", name: "China" },
+  { code: "HK", name: "Hong Kong" },
+  { code: "NZ", name: "New Zealand" },
+  { code: "ZA", name: "South Africa" },
+  { code: "BR", name: "Brazil" },
+  { code: "MX", name: "Mexico" },
+  { code: "ES", name: "Spain" },
+  { code: "IT", name: "Italy" },
+  { code: "NL", name: "Netherlands" },
+  { code: "SE", name: "Sweden" },
+  { code: "CH", name: "Switzerland" },
+  { code: "PL", name: "Poland" },
+  { code: "TH", name: "Thailand" },
+  { code: "ID", name: "Indonesia" },
+  { code: "PH", name: "Philippines" },
+  { code: "VN", name: "Vietnam" },
+  { code: "KE", name: "Kenya" },
+  { code: "NG", name: "Nigeria" },
+  { code: "EG", name: "Egypt" },
+  { code: "QA", name: "Qatar" },
+  { code: "KW", name: "Kuwait" },
+  { code: "BH", name: "Bahrain" },
+  { code: "OM", name: "Oman" },
+];
+
+const INDIAN_STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+  "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+  "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry",
+];
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, loading, refreshCart } = useCart();
-  const { checkoutSettings, paymentMethods, formatCurrency, couponEnabled, taxEnabled, defaultTaxPercentage } = useSettings();
+  const { checkoutSettings, paymentMethods, formatCurrency, couponEnabled, taxEnabled, defaultTaxPercentage, shippingEnabled } = useSettings();
   const [mounted, setMounted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -25,6 +78,7 @@ export default function CheckoutPage() {
     state: "",
     zip: "",
     phone: "",
+    country: "IN",
   });
   const [customValues, setCustomValues] = useState<Record<string, string>>({});
   const [couponCode, setCouponCode] = useState("");
@@ -36,6 +90,9 @@ export default function CheckoutPage() {
   } | null>(null);
   const [couponError, setCouponError] = useState("");
   const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [shippingOptions, setShippingOptions] = useState<{ methods: ShippingOption[]; zoneMatched?: boolean; message?: string; useZeroShipping?: boolean } | null>(null);
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [selectedShipping, setSelectedShipping] = useState<{ methodId: string; name: string; amount: number } | null>(null);
 
   const isLoggedIn = mounted && typeof window !== "undefined" && !!localStorage.getItem("token") && localStorage.getItem("userType") === "user";
   const subtotal = items.reduce(
@@ -55,7 +112,8 @@ export default function CheckoutPage() {
       }, 0)
     : 0;
   const discount = appliedCoupon?.discount ?? 0;
-  const total = Math.max(0, subtotal - discount + taxAmount);
+  const shippingAmount = selectedShipping?.amount ?? 0;
+  const total = Math.max(0, subtotal - discount + taxAmount + shippingAmount);
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
   const handleApplyCoupon = async () => {
@@ -84,10 +142,63 @@ export default function CheckoutPage() {
   }, []);
 
   useEffect(() => {
+    setForm((prev) => ({ ...prev, state: "" }));
+  }, [form.country]);
+
+  useEffect(() => {
     if (paymentMethods.length > 0 && !paymentMethods.some((m) => m.id === paymentMethod)) {
       setPaymentMethod(paymentMethods[0].id);
     }
   }, [paymentMethods, paymentMethod]);
+
+  // Fetch shipping options when address has zip/country and shipping is enabled
+  useEffect(() => {
+    if (!shippingEnabled || !form.zip?.trim() || !form.country?.trim()) {
+      setShippingOptions(null);
+      setSelectedShipping(null);
+      return;
+    }
+    setShippingLoading(true);
+    shippingApi
+      .getOptions({
+        country: form.country.trim(),
+        state: form.state.trim(),
+        zip: form.zip.trim(),
+        subtotal,
+        itemCount,
+      })
+      .then((res) => {
+        setShippingLoading(false);
+        if (res.data?.data) {
+          const d = res.data.data;
+          if (d.enabled && d.methods && d.methods.length > 0) {
+            setShippingOptions({ methods: d.methods, zoneMatched: d.zoneMatched });
+            const first = d.methods[0];
+            setSelectedShipping((prev) => {
+              const stillValid = prev && d.methods.some((m) => m._id === prev.methodId);
+              return stillValid ? prev : { methodId: first._id, name: first.name, amount: first.amount };
+            });
+          } else {
+            // No zone or no methods: use 0 shipping (free)
+            setShippingOptions({
+              methods: [],
+              zoneMatched: d.zoneMatched,
+              message: d.message,
+              useZeroShipping: d.useZeroShipping,
+            });
+            setSelectedShipping({ methodId: "", name: "Free Shipping", amount: 0 });
+          }
+        } else {
+          setShippingOptions(null);
+          setSelectedShipping(null);
+        }
+      })
+      .catch(() => {
+        setShippingLoading(false);
+        setShippingOptions(null);
+        setSelectedShipping(null);
+      });
+  }, [shippingEnabled, form.country, form.state, form.zip, subtotal, itemCount]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -124,6 +235,10 @@ export default function CheckoutPage() {
       setError("Please fill in all required shipping fields.");
       return;
     }
+    if (shippingEnabled && !selectedShipping) {
+      setError("Please enter your address to see shipping options.");
+      return;
+    }
     const allowedIds = paymentMethods.map((m) => m.id);
     const chosen = allowedIds.includes(paymentMethod) ? paymentMethod : (allowedIds[0] || "cod");
 
@@ -136,6 +251,7 @@ export default function CheckoutPage() {
         state: form.state.trim(),
         zip: form.zip.trim(),
         phone: form.phone.trim(),
+        country: form.country.trim() || "IN",
         customFields: (checkoutSettings.customFields || [])
           .filter((f) => f.enabled !== false && (f.key || f.label))
           .map((f) => ({
@@ -147,6 +263,10 @@ export default function CheckoutPage() {
       },
       paymentMethod: chosen,
       ...(appliedCoupon && { couponCode: appliedCoupon.code }),
+      ...(shippingEnabled && selectedShipping && {
+        ...(selectedShipping.methodId && { shippingMethodId: selectedShipping.methodId }),
+        shippingAmount: selectedShipping.amount,
+      }),
     });
     setSubmitting(false);
     if (res.error) {
@@ -289,13 +409,30 @@ export default function CheckoutPage() {
                         {checkoutSettings.state.label || "State / Province"}
                         {checkoutSettings.state.required && <span> *</span>}
                       </label>
-                      <input
-                        type="text"
-                        value={form.state}
-                        onChange={(e) => setForm({ ...form, state: e.target.value })}
-                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                        required={!!checkoutSettings.state.required}
-                      />
+                      {form.country === "IN" ? (
+                        <select
+                          value={form.state}
+                          onChange={(e) => setForm({ ...form, state: e.target.value })}
+                          className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          required={!!checkoutSettings.state.required}
+                        >
+                          <option value="">Select state</option>
+                          {INDIAN_STATES.map((state) => (
+                            <option key={state} value={state}>
+                              {state}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          value={form.state}
+                          onChange={(e) => setForm({ ...form, state: e.target.value })}
+                          placeholder="State / Province"
+                          className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          required={!!checkoutSettings.state.required}
+                        />
+                      )}
                     </div>
                   )}
                 </div>
@@ -315,6 +452,22 @@ export default function CheckoutPage() {
                       />
                     </div>
                   )}
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-600">Country</label>
+                    <select
+                      value={form.country}
+                      onChange={(e) => setForm({ ...form, country: e.target.value })}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    >
+                      {COUNTRY_OPTIONS.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.name} ({c.code})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
                   {checkoutSettings.phone.enabled !== false && (
                     <div>
                       <label className="mb-1 block text-sm font-medium text-slate-600">
@@ -377,6 +530,46 @@ export default function CheckoutPage() {
                   ))}
                 </div>
               </div>
+              {shippingEnabled && (
+                <div>
+                  <h2 className="mb-3 text-lg font-semibold text-slate-900">Shipping method</h2>
+                  <p className="mb-3 text-sm text-slate-500">Shipping will be calculated after entering address.</p>
+                  {shippingLoading ? (
+                    <p className="text-sm text-slate-500">Loading options...</p>
+                  ) : !form.zip?.trim() ? (
+                    <p className="text-sm text-slate-500">Enter your ZIP and country above to see shipping options.</p>
+                  ) : shippingOptions?.useZeroShipping || (shippingOptions?.message && !shippingOptions?.methods?.length) ? (
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                      <p className="text-sm font-medium text-slate-900">Free Shipping</p>
+                      {shippingOptions?.message && (
+                        <p className="mt-0.5 text-xs text-slate-500">{shippingOptions.message}</p>
+                      )}
+                      <p className="mt-1 text-sm text-emerald-600">{formatCurrency(0)}</p>
+                    </div>
+                  ) : shippingOptions?.methods?.length ? (
+                    <div className="space-y-2">
+                      {shippingOptions.methods.map((m) => (
+                        <label
+                          key={m._id}
+                          className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition hover:bg-slate-50"
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="radio"
+                              name="shippingMethod"
+                              checked={selectedShipping?.methodId === m._id}
+                              onChange={() => setSelectedShipping({ methodId: m._id, name: m.name, amount: m.amount })}
+                              className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                            />
+                            <span className="text-sm font-medium text-slate-900">{m.name}</span>
+                          </div>
+                          <span className="text-sm font-medium text-slate-900">{formatCurrency(m.amount)}</span>
+                        </label>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              )}
               <div>
                 <h2 className="mb-4 text-lg font-semibold text-slate-900">Order Summary</h2>
                 <ul className="space-y-2 border-b border-slate-200 pb-4">
@@ -489,6 +682,12 @@ export default function CheckoutPage() {
                     <div className="flex justify-between text-sm text-slate-600">
                       <span>Tax</span>
                       <span>{formatCurrency(taxAmount)}</span>
+                    </div>
+                  )}
+                  {shippingEnabled && selectedShipping && (
+                    <div className="flex justify-between text-sm text-slate-600">
+                      <span>Shipping ({selectedShipping.name})</span>
+                      <span>{formatCurrency(selectedShipping.amount)}</span>
                     </div>
                   )}
                   {discount > 0 && (

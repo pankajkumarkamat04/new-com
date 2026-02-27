@@ -88,6 +88,9 @@ import type {
   MediaItem,
   BlogPost,
   InventoryMovement,
+  ShippingZone,
+  ShippingMethod,
+  ShippingOptionsResponse,
 } from "./types";
 
 // User Auth
@@ -302,10 +305,13 @@ export const ordersApi = {
       state?: string;
       zip: string;
       phone: string;
+      country?: string;
       customFields?: { key: string; label: string; value: string }[];
     };
     paymentMethod?: string;
     couponCode?: string;
+    shippingMethodId?: string;
+    shippingAmount?: number;
   }) =>
     api<{ data: Order }>('/orders', {
       method: 'POST',
@@ -313,6 +319,8 @@ export const ordersApi = {
         shippingAddress: params.shippingAddress,
         paymentMethod: params.paymentMethod || 'cod',
         ...(params.couponCode && { couponCode: params.couponCode }),
+        ...(params.shippingMethodId && { shippingMethodId: params.shippingMethodId }),
+        ...(params.shippingAmount !== undefined && params.shippingAmount !== null && { shippingAmount: params.shippingAmount }),
       }),
     }),
   getMyOrders: () => api<{ data: Order[] }>('/orders'),
@@ -454,6 +462,82 @@ export const blogApi = {
     publishedAt: string;
   }>) => api<{ data: BlogPost }>(`/blog/admin/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   adminDelete: (id: string) => api(`/blog/admin/${id}`, { method: 'DELETE' }),
+};
+
+// Public: get shipping options for address (query: country, state, zip, subtotal, itemCount)
+export const shippingApi = {
+  getOptions: (params: { country?: string; state?: string; zip?: string; city?: string; subtotal?: number; itemCount?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params.country) searchParams.set("country", params.country);
+    if (params.state) searchParams.set("state", params.state);
+    if (params.zip) searchParams.set("zip", params.zip);
+    if (params.city) searchParams.set("city", params.city);
+    if (params.subtotal !== undefined) searchParams.set("subtotal", String(params.subtotal));
+    if (params.itemCount !== undefined) searchParams.set("itemCount", String(params.itemCount));
+    const query = searchParams.toString();
+    return api<{ data: ShippingOptionsResponse }>(`/shipping/options${query ? `?${query}` : ""}`);
+  },
+};
+
+// Admin shipping (zones + methods)
+export const adminShippingApi = {
+  listZones: () => api<{ data: ShippingZone[] }>("/shipping/admin/zones"),
+  createZone: (body: {
+    name: string;
+    description?: string;
+    countryCodes?: string[];
+    stateCodes?: string[];
+    zipPrefixes?: string[];
+    sortOrder?: number;
+    isActive?: boolean;
+  }) => api<{ data: ShippingZone }>("/shipping/admin/zones", { method: "POST", body: JSON.stringify(body) }),
+  updateZone: (
+    id: string,
+    body: Partial<{
+      name: string;
+      description: string;
+      countryCodes: string[];
+      stateCodes: string[];
+      zipPrefixes: string[];
+      sortOrder: number;
+      isActive: boolean;
+    }>
+  ) => api<{ data: ShippingZone }>(`/shipping/admin/zones/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  deleteZone: (id: string) => api(`/shipping/admin/zones/${id}`, { method: "DELETE" }),
+  listMethods: (zoneId: string) => api<{ data: ShippingMethod[] }>(`/shipping/admin/zones/${zoneId}/methods`),
+  createMethod: (
+    zoneId: string,
+    body: {
+      name: string;
+      description?: string;
+      rateType?: "flat" | "per_item" | "per_order";
+      rateValue: number;
+      minOrderForFree?: number;
+      estimatedDaysMin?: number;
+      estimatedDaysMax?: number;
+      sortOrder?: number;
+      isActive?: boolean;
+    }
+  ) =>
+    api<{ data: ShippingMethod }>(`/shipping/admin/zones/${zoneId}/methods`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  updateMethod: (
+    id: string,
+    body: Partial<{
+      name: string;
+      description: string;
+      rateType: "flat" | "per_item" | "per_order";
+      rateValue: number;
+      minOrderForFree: number;
+      estimatedDaysMin: number;
+      estimatedDaysMax: number;
+      sortOrder: number;
+      isActive: boolean;
+    }>
+  ) => api<{ data: ShippingMethod }>(`/shipping/admin/methods/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  deleteMethod: (id: string) => api(`/shipping/admin/methods/${id}`, { method: "DELETE" }),
 };
 
 export const mediaApi = {

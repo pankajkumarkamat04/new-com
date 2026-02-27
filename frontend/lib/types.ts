@@ -25,6 +25,7 @@ export type Settings = {
   companyGstin?: string;
   taxEnabled?: boolean;
   defaultTaxPercentage?: number;
+  shippingEnabled?: boolean;
   whatsappChat?: {
     enabled?: boolean;
     position?: "left" | "right";
@@ -163,8 +164,60 @@ export type LoginSettings = {
   loginMethod: "password" | "otp";
 };
 
+export type ShippingZone = {
+  _id: string;
+  name: string;
+  description?: string;
+  countryCodes: string[];
+  stateCodes?: string[];
+  zipPrefixes?: string[];
+  sortOrder?: number;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type ShippingMethod = {
+  _id: string;
+  zoneId: string;
+  name: string;
+  description?: string;
+  rateType: "flat" | "per_item" | "per_order";
+  rateValue: number;
+  minOrderForFree?: number;
+  estimatedDaysMin?: number;
+  estimatedDaysMax?: number;
+  sortOrder?: number;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type ShippingOption = {
+  _id: string;
+  name: string;
+  description?: string;
+  rateType: string;
+  rateValue: number;
+  minOrderForFree?: number;
+  estimatedDaysMin?: number;
+  estimatedDaysMax?: number;
+  amount: number;
+};
+
+export type ShippingOptionsResponse = {
+  enabled: boolean;
+  zoneMatched?: boolean;
+  zoneId?: string;
+  zoneName?: string;
+  methods: ShippingOption[];
+  message?: string;
+  useZeroShipping?: boolean;
+};
+
 export type ModuleSettings = {
   couponEnabled: boolean;
+  shippingEnabled: boolean;
   blogEnabled: boolean;
   abandonedCartEnabled: boolean;
   googleAnalyticsEnabled: boolean;
@@ -322,6 +375,9 @@ export type Order = {
   total: number;
   couponCode?: string;
   discountAmount?: number;
+  shippingMethodId?: string;
+  shippingMethodName?: string;
+  shippingAmount?: number;
   shippingAddress: {
     name: string;
     address: string;
@@ -329,6 +385,7 @@ export type Order = {
     state?: string;
     zip: string;
     phone: string;
+    country?: string;
     customFields?: { key: string; label: string; value: string }[];
   };
   status: string;

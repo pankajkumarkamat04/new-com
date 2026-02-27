@@ -5,6 +5,7 @@ import Settings from '../../models/Settings.js';
 import { saveOtp, verifyOtp } from '../../utils/otp.js';
 import { sendOtp } from '../../utils/sendOtp.js';
 import { sendNotification } from '../../utils/notificationService.js';
+import { normalizePhoneTo10Digits } from '../../utils/phone.js';
 
 async function getLoginSettings() {
   const settings = await Settings.getSettings();
@@ -56,7 +57,13 @@ export const updateProfile = async (req, res) => {
 
     if (name !== undefined && name.trim()) user.name = name.trim();
     if (email !== undefined) user.email = email ? email.toLowerCase() : undefined;
-    if (phone !== undefined) user.phone = phone || undefined;
+    if (phone !== undefined) {
+      const normalized = phone ? normalizePhoneTo10Digits(phone) : null;
+      if (phone && !normalized) {
+        return res.status(400).json({ success: false, message: 'Phone must be a valid 10-digit number (digits only, no country code or leading zero).' });
+      }
+      user.phone = normalized || undefined;
+    }
 
     if (!user.email && !user.phone) {
       return res.status(400).json({ success: false, message: 'Either email or phone is required' });
@@ -103,14 +110,19 @@ export const signup = async (req, res) => {
 
     const { name, email, phone, password } = req.body;
 
-    if (!email && !phone) {
+    const normalizedPhone = phone ? normalizePhoneTo10Digits(phone) : null;
+    if (phone && !normalizedPhone) {
+      return res.status(400).json({ success: false, message: 'Phone must be a valid 10-digit number (digits only, no country code or leading zero).' });
+    }
+
+    if (!email && !normalizedPhone) {
       return res.status(400).json({ success: false, message: 'Email or phone is required' });
     }
 
     const existing = await User.findOne({
       $or: [
         ...(email ? [{ email: email.toLowerCase() }] : []),
-        ...(phone ? [{ phone }] : []),
+        ...(normalizedPhone ? [{ phone: normalizedPhone }] : []),
       ].filter(Boolean),
     });
 
@@ -126,7 +138,7 @@ export const signup = async (req, res) => {
     const user = await User.create({
       name,
       email: email?.toLowerCase() || undefined,
-      phone: phone || undefined,
+      phone: normalizedPhone || undefined,
       password: password || undefined,
     });
 
@@ -163,7 +175,11 @@ export const loginPassword = async (req, res) => {
 
     const { email, phone, password } = req.body;
 
-    if (!email && !phone) {
+    const normalizedPhone = phone ? normalizePhoneTo10Digits(phone) : null;
+    if (loginCfg.loginIdentifier === 'phone' && phone && !normalizedPhone) {
+      return res.status(400).json({ success: false, message: 'Phone must be a valid 10-digit number.' });
+    }
+    if (!email && !normalizedPhone) {
       return res.status(400).json({ success: false, message: 'Email or phone is required' });
     }
 
@@ -180,14 +196,14 @@ export const loginPassword = async (req, res) => {
     if (loginCfg.loginIdentifier === 'email' && !email) {
       return res.status(400).json({ success: false, message: 'Email is required.' });
     }
-    if (loginCfg.loginIdentifier === 'phone' && !phone) {
+    if (loginCfg.loginIdentifier === 'phone' && !normalizedPhone) {
       return res.status(400).json({ success: false, message: 'Phone is required.' });
     }
 
     const user = await User.findOne({
       $or: [
         ...(email ? [{ email: email.toLowerCase() }] : []),
-        ...(phone ? [{ phone }] : []),
+        ...(normalizedPhone ? [{ phone: normalizedPhone }] : []),
       ].filter(Boolean),
     }).select('+password');
 
@@ -232,7 +248,8 @@ export const requestOtp = async (req, res) => {
 
     const { email, phone } = req.body;
 
-    if (!email && !phone) {
+    const normalizedPhone = phone ? normalizePhoneTo10Digits(phone) : null;
+    if (!email && !normalizedPhone) {
       return res.status(400).json({ success: false, message: 'Email or phone is required' });
     }
 
@@ -243,17 +260,17 @@ export const requestOtp = async (req, res) => {
     if (loginCfg.loginIdentifier === 'email' && (phone || !email)) {
       return res.status(400).json({ success: false, message: 'Login with email only. Provide your email.' });
     }
-    if (loginCfg.loginIdentifier === 'phone' && (email || !phone)) {
+    if (loginCfg.loginIdentifier === 'phone' && (email || !normalizedPhone)) {
       return res.status(400).json({ success: false, message: 'Login with phone only. Provide your phone.' });
     }
 
-    const identifier = email || phone;
+    const identifier = email || normalizedPhone;
     const type = email ? 'email' : 'phone';
 
     const user = await User.findOne({
       $or: [
         ...(email ? [{ email: email.toLowerCase() }] : []),
-        ...(phone ? [{ phone }] : []),
+        ...(normalizedPhone ? [{ phone: normalizedPhone }] : []),
       ].filter(Boolean),
     });
 
@@ -282,7 +299,8 @@ export const loginOtp = async (req, res) => {
 
     const { email, phone, otp } = req.body;
 
-    if (!email && !phone) {
+    const normalizedPhone = phone ? normalizePhoneTo10Digits(phone) : null;
+    if (!email && !normalizedPhone) {
       return res.status(400).json({ success: false, message: 'Email or phone is required' });
     }
 
@@ -293,11 +311,11 @@ export const loginOtp = async (req, res) => {
     if (loginCfg.loginIdentifier === 'email' && (phone || !email)) {
       return res.status(400).json({ success: false, message: 'Login with email only. Provide your email.' });
     }
-    if (loginCfg.loginIdentifier === 'phone' && (email || !phone)) {
+    if (loginCfg.loginIdentifier === 'phone' && (email || !normalizedPhone)) {
       return res.status(400).json({ success: false, message: 'Login with phone only. Provide your phone.' });
     }
 
-    const identifier = email || phone;
+    const identifier = email || normalizedPhone;
 
     const valid = await verifyOtp(identifier, otp, 'user');
     if (!valid) {
@@ -307,7 +325,7 @@ export const loginOtp = async (req, res) => {
     const user = await User.findOne({
       $or: [
         ...(email ? [{ email: email.toLowerCase() }] : []),
-        ...(phone ? [{ phone }] : []),
+        ...(normalizedPhone ? [{ phone: normalizedPhone }] : []),
       ].filter(Boolean),
     });
 

@@ -71,6 +71,7 @@ type SettingsContextType = {
   checkoutSettings: CheckoutSettings;
   paymentSettings: PaymentSettings;
   couponEnabled: boolean;
+  shippingEnabled: boolean;
   blogEnabled: boolean;
   taxEnabled: boolean;
   defaultTaxPercentage: number;
@@ -123,6 +124,7 @@ const SettingsContext = createContext<SettingsContextType>({
   checkoutSettings: defaultCheckoutSettings,
   paymentSettings: defaultPaymentSettings,
   couponEnabled: false,
+  shippingEnabled: false,
   blogEnabled: false,
   taxEnabled: false,
   defaultTaxPercentage: 0,
@@ -154,6 +156,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [checkoutSettings, setCheckoutSettings] = useState<CheckoutSettings>(defaultCheckoutSettings);
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(defaultPaymentSettings);
   const [couponEnabled, setCouponEnabled] = useState(false);
+  const [shippingEnabled, setShippingEnabled] = useState(false);
   const [blogEnabled, setBlogEnabled] = useState(false);
   const [taxEnabled, setTaxEnabled] = useState(false);
   const [defaultTaxPercentage, setDefaultTaxPercentage] = useState(0);
@@ -175,6 +178,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     if (publicData?.general) {
       setSettings({ ...defaultSettings, ...publicData.general });
       setCouponEnabled(!!publicData.general.couponEnabled);
+      setShippingEnabled(!!publicData.general.shippingEnabled);
       setBlogEnabled(!!publicData.general.blogEnabled);
       setTaxEnabled(!!publicData.general.taxEnabled);
       setDefaultTaxPercentage(typeof publicData.general.defaultTaxPercentage === "number" ? publicData.general.defaultTaxPercentage : 0);
@@ -191,6 +195,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     } else {
       setSettings(defaultSettings);
       setCouponEnabled(false);
+      setShippingEnabled(false);
       setBlogEnabled(false);
       setTaxEnabled(false);
       setDefaultTaxPercentage(0);
@@ -332,6 +337,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         checkoutSettings,
         paymentSettings: paymentSettings ?? defaultPaymentSettings,
         couponEnabled,
+        shippingEnabled,
         blogEnabled,
         taxEnabled,
         defaultTaxPercentage,

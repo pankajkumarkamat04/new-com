@@ -40,6 +40,7 @@ const updateSettingsValidation = [
 
 const updateModuleValidation = [
   body('couponEnabled').optional().isBoolean().withMessage('couponEnabled must be boolean'),
+  body('shippingEnabled').optional().isBoolean().withMessage('shippingEnabled must be boolean'),
   body('blogEnabled').optional().isBoolean().withMessage('blogEnabled must be boolean'),
   body('abandonedCartEnabled').optional().isBoolean().withMessage('abandonedCartEnabled must be boolean'),
   body('googleAnalyticsEnabled').optional().isBoolean().withMessage('googleAnalyticsEnabled must be boolean'),

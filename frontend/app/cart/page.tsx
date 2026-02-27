@@ -24,7 +24,7 @@ function computeItemTax(
 
 export default function CartPage() {
   const { items, loading, updateQuantity, removeFromCart } = useCart();
-  const { formatCurrency, taxEnabled, defaultTaxPercentage } = useSettings();
+  const { formatCurrency, taxEnabled, defaultTaxPercentage, shippingEnabled } = useSettings();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -165,6 +165,9 @@ export default function CartPage() {
                           <span>Tax</span>
                           <span>{formatCurrency(tax)}</span>
                         </div>
+                      )}
+                      {shippingEnabled && (
+                        <p className="text-sm text-slate-500">Shipping will be calculated after entering address</p>
                       )}
                       <p className="pt-2 text-xl font-bold text-slate-900">
                         Total: {formatCurrency(total)}

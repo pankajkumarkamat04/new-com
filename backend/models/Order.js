@@ -25,6 +25,7 @@ const orderSchema = new mongoose.Schema({
     state: { type: String, trim: true },
     zip: { type: String, required: true, trim: true },
     phone: { type: String, required: true, trim: true },
+    country: { type: String, trim: true },
     customFields: [{
       key: { type: String, trim: true },
       label: { type: String, trim: true },
@@ -33,6 +34,9 @@ const orderSchema = new mongoose.Schema({
   },
   couponCode: { type: String, trim: true },
   discountAmount: { type: Number, default: 0, min: 0 },
+  shippingMethodId: { type: mongoose.Schema.Types.ObjectId, ref: 'ShippingMethod' },
+  shippingMethodName: { type: String, trim: true },
+  shippingAmount: { type: Number, default: 0, min: 0 },
   status: {
     type: String,
     default: 'pending',

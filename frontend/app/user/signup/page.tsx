@@ -6,12 +6,36 @@ import { useRouter } from "next/navigation";
 import { userApi } from "@/lib/api";
 import { useCart } from "@/contexts/CartContext";
 
+const PHONE_COUNTRY_OPTIONS: { dial: string; name: string; code: string }[] = [
+  { dial: "+91", name: "India", code: "IN" },
+  { dial: "+1", name: "US/Canada", code: "US" },
+  { dial: "+44", name: "UK", code: "GB" },
+  { dial: "+971", name: "UAE", code: "AE" },
+  { dial: "+61", name: "Australia", code: "AU" },
+  { dial: "+81", name: "Japan", code: "JP" },
+  { dial: "+86", name: "China", code: "CN" },
+  { dial: "+65", name: "Singapore", code: "SG" },
+  { dial: "+92", name: "Pakistan", code: "PK" },
+  { dial: "+880", name: "Bangladesh", code: "BD" },
+  { dial: "+977", name: "Nepal", code: "NP" },
+  { dial: "+94", name: "Sri Lanka", code: "LK" },
+  { dial: "+966", name: "Saudi Arabia", code: "SA" },
+  { dial: "+49", name: "Germany", code: "DE" },
+  { dial: "+33", name: "France", code: "FR" },
+];
+
+function normalizePhoneDigits(value: string): string {
+  const digits = value.replace(/\D/g, "").replace(/^0+/, "");
+  return digits.slice(0, 10);
+}
+
 export default function UserSignupPage() {
   const router = useRouter();
   const cart = useCart();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [phoneCountryDial, setPhoneCountryDial] = useState("+91");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -29,7 +53,11 @@ export default function UserSignupPage() {
       return;
     }
     if (!phone.trim()) {
-      setError("Phone is required");
+      setError("Mobile number is required");
+      return;
+    }
+    if (phone.length !== 10) {
+      setError("Enter valid 10-digit mobile number (no country code or leading zero)");
       return;
     }
     if (!password) {
@@ -48,7 +76,7 @@ export default function UserSignupPage() {
     const res = await userApi.signup({
       name: name.trim(),
       email: email.trim(),
-      phone: phone.trim(),
+      phone,
       password,
     });
     setLoading(false);
@@ -94,15 +122,30 @@ export default function UserSignupPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-600">Phone No</label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-              placeholder="+1234567890"
-              required
-            />
+            <label className="mb-1 block text-sm font-medium text-slate-600">Mobile No</label>
+            <div className="flex gap-2">
+              <select
+                value={phoneCountryDial}
+                onChange={(e) => setPhoneCountryDial(e.target.value)}
+                className="w-24 flex-shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              >
+                {PHONE_COUNTRY_OPTIONS.map((c) => (
+                  <option key={c.code} value={c.dial}>
+                    {c.dial}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="tel"
+                inputMode="numeric"
+                maxLength={10}
+                value={phone}
+                onChange={(e) => setPhone(normalizePhoneDigits(e.target.value))}
+                className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                placeholder="10-digit number"
+                required
+              />
+            </div>
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-600">Password</label>

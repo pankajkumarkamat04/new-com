@@ -746,6 +746,7 @@ export const getPublicSettings = async (req, res) => {
         position: settings.whatsappChat?.position === 'left' ? 'left' : 'right',
         phoneNumber: (settings.whatsappChat?.phoneNumber || '').trim(),
       },
+      shippingEnabled: !!settings.shippingEnabled,
     };
 
     const seo = settings.seo || {};
@@ -898,6 +899,7 @@ export const updateSettings = async (req, res) => {
 function buildDefaultModuleSettings(raw) {
   return {
     couponEnabled: !!raw.couponEnabled,
+    shippingEnabled: !!raw.shippingEnabled,
     blogEnabled: !!raw.blogEnabled,
     abandonedCartEnabled: !!raw.abandonedCartEnabled,
     googleAnalyticsEnabled: !!raw.googleAnalyticsEnabled,
@@ -936,6 +938,7 @@ export const updateModuleSettings = async (req, res) => {
     const updates = {};
 
     if (req.body.couponEnabled !== undefined) updates.couponEnabled = !!req.body.couponEnabled;
+    if (req.body.shippingEnabled !== undefined) updates.shippingEnabled = !!req.body.shippingEnabled;
     if (req.body.blogEnabled !== undefined) updates.blogEnabled = !!req.body.blogEnabled;
     if (req.body.abandonedCartEnabled !== undefined) updates.abandonedCartEnabled = !!req.body.abandonedCartEnabled;
     if (req.body.googleAnalyticsEnabled !== undefined) updates.googleAnalyticsEnabled = !!req.body.googleAnalyticsEnabled;
