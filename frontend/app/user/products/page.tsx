@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { productApi, getMediaUrl } from "@/lib/api";
 import type { Product } from "@/lib/types";
+import { useSettings } from "@/contexts/SettingsContext";
 
 export default function UserProductsPage() {
+  const { formatCurrency } = useSettings();
   const [mounted, setMounted] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,7 +89,7 @@ export default function UserProductsPage() {
                   <p className="mt-1 text-sm text-slate-500">{product.category}</p>
                 )}
                 <p className="mt-2 text-lg font-bold text-emerald-600">
-                  ${product.price.toFixed(2)}
+                  {formatCurrency(product.price)}
                 </p>
                 {product.description && (
                   <p className="mt-2 line-clamp-2 text-sm text-slate-600">

@@ -296,7 +296,10 @@ export default function ProductPage() {
             {product.description && (
               <div className="mt-6">
                 <h2 className="text-sm font-semibold uppercase text-slate-500">Description</h2>
-                <p className="mt-2 text-slate-600 whitespace-pre-wrap">{product.description}</p>
+                <div
+                  className="product-description mt-2 text-slate-600 [&_ul]:list-inside [&_ul]:list-disc [&_ol]:list-inside [&_ol]:list-decimal [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_h3]:font-medium [&_a]:text-amber-600 [&_a]:underline [&_a:hover]:text-amber-700"
+                  dangerouslySetInnerHTML={{ __html: product.description }}
+                />
               </div>
             )}
 

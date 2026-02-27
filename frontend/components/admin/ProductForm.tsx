@@ -6,6 +6,7 @@ import { productApi, getMediaUrl } from "@/lib/api";
 import type { Product, Category, ProductTax } from "@/lib/types";
 import { useSettings } from "@/contexts/SettingsContext";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
+import HtmlEditor from "@/components/admin/HtmlEditor";
 
 type MediaPickerContext =
   | { type: "product-main" }
@@ -557,11 +558,11 @@ export default function ProductForm({ product, categories, onSuccess, onCancel }
         )}
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-600">Description</label>
-          <textarea
+          <HtmlEditor
             value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            rows={2}
-            className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+            onChange={(html) => setForm({ ...form, description: html })}
+            placeholder="Enter product description (supports bold, lists, links...)"
+            minHeight="160px"
           />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">

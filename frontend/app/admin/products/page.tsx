@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { productApi } from "@/lib/api";
 import type { Product } from "@/lib/types";
+import { useSettings } from "@/contexts/SettingsContext";
 
 export default function AdminProductsPage() {
+  const { formatCurrency } = useSettings();
   const [mounted, setMounted] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +82,7 @@ export default function AdminProductsPage() {
                     {product.category || "—"}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-slate-600">
-                    ${product.price.toFixed(2)}
+                    {formatCurrency(product.price)}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-slate-600">{product.stock}</td>
                   <td className="whitespace-nowrap px-6 py-4">
