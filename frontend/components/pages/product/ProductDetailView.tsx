@@ -1,107 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { productApi, getMediaUrl } from "@/lib/api";
+import { useState } from "react";
 import type { Product } from "@/lib/types";
 import { useCart } from "@/contexts/CartContext";
 import { useSettings } from "@/contexts/SettingsContext";
-import { PageLayout, Breadcrumb, LoadingState, ErrorState, Button } from "@/components/ui";
+import { getMediaUrl } from "@/lib/api";
+import { PageLayout, Breadcrumb } from "@/components/ui";
 import ProductImageGallery from "@/components/product/ProductImageGallery";
 import ProductDetailInfo from "@/components/product/ProductDetailInfo";
+import { getDefaultActiveImage, getDefaultSelectedAttributes } from "./productDetailUtils";
 
-export default function ProductPage() {
-  const params = useParams();
-  const id = params?.id as string;
+type ProductDetailViewProps = {
+  product: Product;
+};
+
+export function ProductDetailView({ product }: ProductDetailViewProps) {
   const { items, addToCart, removeFromCart } = useCart();
   const { formatCurrency } = useSettings();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [activeImage, setActiveImage] = useState<string | null>(null);
-  const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    setError(null);
-    productApi.get(id).then((res) => {
-      setLoading(false);
-      if (res.data?.data) {
-        const p = res.data.data;
-        if (!p.isActive) {
-          setError("This product is no longer available.");
-        } else {
-          setProduct(p);
-          if (Array.isArray(p.attributes) && p.attributes.length > 0) {
-            const defaultIdx =
-              typeof p.defaultVariationIndex === "number" &&
-              p.variations &&
-              p.defaultVariationIndex >= 0 &&
-              p.defaultVariationIndex < p.variations.length
-                ? p.defaultVariationIndex
-                : 0;
-            const defaultVar = p.variations?.[defaultIdx];
-            const initial: Record<string, string> = {};
-            if (defaultVar?.attributes && defaultVar.attributes.length > 0) {
-              defaultVar.attributes.forEach((a) => {
-                if (a.name && a.value) initial[a.name] = a.value;
-              });
-            }
-            p.attributes.forEach((attr) => {
-              if (!(attr.name in initial) && attr.terms.length > 0) {
-                initial[attr.name] = attr.terms[0];
-              }
-            });
-            setSelectedAttributes(initial);
-            const firstVar = p.variations?.find((v) =>
-              v.attributes?.every((a) => initial[a.name] === a.value)
-            );
-            const mainImage: string | null =
-              firstVar?.image ||
-              (Array.isArray(firstVar?.images) && firstVar.images[0]) ||
-              p.image ||
-              (Array.isArray(p.images) && p.images[0]) ||
-              null;
-            setActiveImage(mainImage);
-          } else {
-            const mainImage: string | null =
-              p.image || (Array.isArray(p.images) && p.images[0]) || null;
-            setActiveImage(mainImage);
-          }
-        }
-      } else {
-        setError(res.error || "Product not found.");
-      }
-    });
-  }, [id]);
-
-  if (loading) {
-    return (
-      <PageLayout>
-        <div className="mx-auto flex min-h-[60vh] max-w-7xl items-center justify-center px-4 sm:px-6 lg:px-8">
-          <LoadingState message="Loading product..." />
-        </div>
-      </PageLayout>
-    );
-  }
-
-  if (error || !product) {
-    return (
-      <PageLayout>
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <ErrorState
-            message={error || "Product not found."}
-            action={
-              <Button as="link" href="/shop" variant="primary">
-                Back to Shop
-              </Button>
-            }
-          />
-        </div>
-      </PageLayout>
-    );
-  }
+  const [activeImage, setActiveImage] = useState<string | null>(() => getDefaultActiveImage(product));
+  const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>(() =>
+    getDefaultSelectedAttributes(product)
+  );
 
   const hasAttributes = Array.isArray(product.attributes) && product.attributes.length > 0;
   const hasVariations = Array.isArray(product.variations) && product.variations.length > 0;
@@ -142,12 +61,14 @@ export default function ProductPage() {
   const breadcrumbItems = [
     { label: "Home", href: "/" },
     { label: "Shop", href: "/shop" },
-    ...(product.category ? [{ label: product.category, href: `/shop?category=${encodeURIComponent(product.category)}` }] : []),
+    ...(product.category
+      ? [{ label: product.category, href: `/shop?category=${encodeURIComponent(product.category)}` }]
+      : []),
     { label: product.name },
   ];
 
   return (
-    <PageLayout>
+    <PageLayout withLayout={false}>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <Breadcrumb items={breadcrumbItems} className="mb-8" />
 

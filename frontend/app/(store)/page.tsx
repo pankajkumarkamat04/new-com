@@ -1,13 +1,11 @@
-"use server";
-
 import { productApi, categoryApi, settingsApi } from "@/lib/api";
 import type { Product, Category, HomeCategorySettings, PublicSettings } from "@/lib/types";
 import Hero from "@/components/home/Hero";
 import { CategoriesSection } from "@/components/home/CategoriesSection";
 import { FeaturedProductsSection } from "@/components/home/FeaturedProductsSection";
 import { HomeCtaSection } from "@/components/home/HomeCtaSection";
-import { HeaderSSR } from "@/components/HeaderSSR";
-import { FooterSSR } from "@/components/FooterSSR";
+
+export const dynamic = "force-dynamic";
 
 function buildHomeCategorySettings(raw?: HomeCategorySettings | null): HomeCategorySettings {
   return {
@@ -33,18 +31,11 @@ export default async function Home() {
   const homeCategorySettings = buildHomeCategorySettings(rawHomeSettings);
 
   return (
-    <div className="min-h-screen bg-white">
-      <HeaderSSR />
-
+    <>
       <Hero />
-
       <CategoriesSection categories={categories} homeCategorySettings={homeCategorySettings} />
-
       <FeaturedProductsSection products={products} />
-
       <HomeCtaSection />
-
-      <FooterSSR />
-    </div>
+    </>
   );
 }

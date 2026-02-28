@@ -456,7 +456,7 @@ export default function CheckoutPage() {
 
   if (!isLoggedIn) {
     return (
-      <PageLayout>
+      <PageLayout withLayout={false}>
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <Card padding="large" className="mx-auto max-w-md text-center bg-slate-50">
             <h1 className="text-xl font-bold text-slate-900">Login to Checkout</h1>
@@ -475,7 +475,7 @@ export default function CheckoutPage() {
 
   if (orderId) {
     return (
-      <PageLayout>
+      <PageLayout withLayout={false}>
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <Card padding="large" className="mx-auto max-w-md border-emerald-200 bg-emerald-50 text-center">
             <h1 className="text-2xl font-bold text-emerald-800">Order Placed</h1>
@@ -495,7 +495,7 @@ export default function CheckoutPage() {
 
   if (loading || items.length === 0) {
     return (
-      <PageLayout>
+      <PageLayout withLayout={false}>
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="text-center text-slate-600">
             {loading ? "Loading..." : "Your cart is empty."}
@@ -507,7 +507,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <PageLayout>
+    <PageLayout withLayout={false}>
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <h1 className="mb-8 text-2xl font-bold text-slate-900">Checkout</h1>

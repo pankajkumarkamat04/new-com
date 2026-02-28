@@ -88,7 +88,7 @@ function CheckoutSuccessContent() {
 
   if (status === "loading") {
     return (
-      <PageLayout>
+      <PageLayout withLayout={false}>
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <Card padding="large" className="mx-auto max-w-md text-center">
             <p className="text-slate-600">Confirming your payment and placing order...</p>
@@ -100,7 +100,7 @@ function CheckoutSuccessContent() {
 
   if (status === "error") {
     return (
-      <PageLayout>
+      <PageLayout withLayout={false}>
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <Card padding="large" className="mx-auto max-w-md border-red-200 bg-red-50 text-center">
             <h1 className="text-xl font-bold text-red-800">Payment confirmation failed</h1>
@@ -118,7 +118,7 @@ function CheckoutSuccessContent() {
   }
 
   return (
-    <PageLayout>
+    <PageLayout withLayout={false}>
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <Card padding="large" className="mx-auto max-w-md border-emerald-200 bg-emerald-50 text-center">
           <h1 className="text-2xl font-bold text-emerald-800">Order Placed</h1>
@@ -140,7 +140,7 @@ export default function CheckoutSuccessPage() {
   return (
     <Suspense
       fallback={
-        <PageLayout>
+        <PageLayout withLayout={false}>
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <Card padding="large" className="mx-auto max-w-md text-center">
               <p className="text-slate-600">Loading...</p>
