@@ -30,8 +30,8 @@ const settingsSubItems = [
   },
 ];
 
-function SettingsNav({ pathname }: { pathname: string }) {
-  const isSettingsActive = pathname.startsWith("/admin/settings");
+function SettingsNav({ pathname, adminRole }: { pathname: string; adminRole?: string }) {
+  const isSettingsActive = pathname.startsWith("/admin/settings") || pathname === "/admin/backup";
   const isHomePageActive = pathname.startsWith("/admin/settings/home");
   const isGeneralGroupActive =
     pathname === "/admin/settings/general" ||
@@ -49,7 +49,7 @@ function SettingsNav({ pathname }: { pathname: string }) {
   const [orderExpanded, setOrderExpanded] = useState(isOrderGroupActive);
 
   useEffect(() => {
-    if (pathname.startsWith("/admin/settings")) setExpanded(true);
+    if (pathname.startsWith("/admin/settings") || pathname === "/admin/backup") setExpanded(true);
     if (pathname.startsWith("/admin/settings/home")) setHomeExpanded(true);
     if (
       pathname === "/admin/settings/general" ||
@@ -263,13 +263,24 @@ function SettingsNav({ pathname }: { pathname: string }) {
                   className={`block rounded px-2 py-1.5 text-sm ${pathname === "/admin/shipping"
                     ? "font-medium text-amber-700"
                     : "text-slate-600 hover:text-slate-900"
-                    }`}
+                  }`}
                 >
                   Shipping
                 </Link>
               </div>
             )}
           </div>
+          {adminRole === "superadmin" && (
+            <Link
+              href="/admin/backup"
+              className={`mt-1 block rounded px-2 py-1.5 text-sm ${pathname === "/admin/backup"
+                ? "font-medium text-amber-700"
+                : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Backup
+            </Link>
+          )}
         </div>
       )}
     </div>
@@ -431,7 +442,7 @@ export default function AdminLayout({
 
 
               {/* Settings - expandable, at the end */}
-              <SettingsNav pathname={pathname} />
+              <SettingsNav pathname={pathname} adminRole={admin?.role} />
               <Link
                 href="/admin/profile"
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${pathname === "/admin/profile"

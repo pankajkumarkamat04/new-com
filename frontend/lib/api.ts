@@ -592,3 +592,51 @@ export const mediaApi = {
   },
   delete: (id: string) => api(`/media/${id}`, { method: 'DELETE' }),
 };
+
+export type BackupRestoreResult = {
+  success: boolean;
+  message?: string;
+  results?: { inserted: Record<string, number>; errors: { collection: string; message: string }[] };
+};
+
+export const backupApi = {
+  /** Download backup as JSON file (superadmin only). Optional collections query: e.g. "users,products,categories". */
+  downloadBackup: async (collections?: string): Promise<{ error?: string }> => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const url = `${API_BASE}/backup${collections ? `?collections=${encodeURIComponent(collections)}` : ''}`;
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { ...(token && { Authorization: `Bearer ${token}` }) },
+    });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      return { error: json.message || json.error || 'Backup failed' };
+    }
+    const data = await res.json();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    return {};
+  },
+  /** Restore from a backup JSON file (superadmin only). Option clearBeforeRestore defaults to true. */
+  restoreBackup: async (
+    file: File,
+    options?: { clearBeforeRestore?: boolean }
+  ): Promise<{ data?: BackupRestoreResult; error?: string }> => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const formData = new FormData();
+    formData.append('file', file);
+    const query = options?.clearBeforeRestore === false ? '?clearBeforeRestore=false' : '';
+    const res = await fetch(`${API_BASE}/backup/restore${query}`, {
+      method: 'POST',
+      headers: { ...(token && { Authorization: `Bearer ${token}` }) },
+      body: formData,
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) return { error: json.message || json.error || 'Restore failed' };
+    return { data: json as BackupRestoreResult };
+  },
+};
