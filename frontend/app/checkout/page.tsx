@@ -5,61 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
 import { useSettings } from "@/contexts/SettingsContext";
-import { ordersApi, couponApi, shippingApi, paymentApi } from "@/lib/api";
+import { ordersApi, couponApi, shippingApi, paymentApi, addressApi } from "@/lib/api";
 import type { ShippingOption } from "@/lib/types";
+import type { Address } from "@/lib/types";
 import { PageLayout, Card, Button, Input, Label } from "@/components/ui";
-
-const COUNTRY_OPTIONS: { code: string; name: string }[] = [
-  { code: "IN", name: "India" },
-  { code: "US", name: "United States" },
-  { code: "GB", name: "United Kingdom" },
-  { code: "AE", name: "United Arab Emirates" },
-  { code: "AU", name: "Australia" },
-  { code: "CA", name: "Canada" },
-  { code: "DE", name: "Germany" },
-  { code: "FR", name: "France" },
-  { code: "SG", name: "Singapore" },
-  { code: "MY", name: "Malaysia" },
-  { code: "SA", name: "Saudi Arabia" },
-  { code: "PK", name: "Pakistan" },
-  { code: "BD", name: "Bangladesh" },
-  { code: "NP", name: "Nepal" },
-  { code: "LK", name: "Sri Lanka" },
-  { code: "JP", name: "Japan" },
-  { code: "CN", name: "China" },
-  { code: "HK", name: "Hong Kong" },
-  { code: "NZ", name: "New Zealand" },
-  { code: "ZA", name: "South Africa" },
-  { code: "BR", name: "Brazil" },
-  { code: "MX", name: "Mexico" },
-  { code: "ES", name: "Spain" },
-  { code: "IT", name: "Italy" },
-  { code: "NL", name: "Netherlands" },
-  { code: "SE", name: "Sweden" },
-  { code: "CH", name: "Switzerland" },
-  { code: "PL", name: "Poland" },
-  { code: "TH", name: "Thailand" },
-  { code: "ID", name: "Indonesia" },
-  { code: "PH", name: "Philippines" },
-  { code: "VN", name: "Vietnam" },
-  { code: "KE", name: "Kenya" },
-  { code: "NG", name: "Nigeria" },
-  { code: "EG", name: "Egypt" },
-  { code: "QA", name: "Qatar" },
-  { code: "KW", name: "Kuwait" },
-  { code: "BH", name: "Bahrain" },
-  { code: "OM", name: "Oman" },
-];
-
-const INDIAN_STATES = [
-  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
-  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
-  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
-  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
-  "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
-  "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
-  "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry",
-];
+import { COUNTRY_OPTIONS, INDIAN_STATES } from "@/lib/addressConstants";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -92,6 +42,9 @@ export default function CheckoutPage() {
   const [shippingOptions, setShippingOptions] = useState<{ methods: ShippingOption[]; zoneMatched?: boolean; message?: string; useZeroShipping?: boolean } | null>(null);
   const [shippingLoading, setShippingLoading] = useState(false);
   const [selectedShipping, setSelectedShipping] = useState<{ methodId: string; name: string; amount: number } | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [saveAddressForLater, setSaveAddressForLater] = useState(false);
 
   const isLoggedIn = mounted && typeof window !== "undefined" && !!localStorage.getItem("token") && localStorage.getItem("userType") === "user";
   const subtotal = items.reduce(
@@ -135,6 +88,29 @@ export default function CheckoutPage() {
       .filter((f) => f.value),
   });
 
+  const saveAddressIfRequested = async () => {
+    if (!saveAddressForLater || !form.name.trim() || !form.address.trim() || !form.city.trim() || !form.zip.trim() || !form.phone.trim()) return;
+    const customFields = (checkoutSettings.customFields || [])
+      .filter((f) => f.enabled !== false && (f.key || f.label))
+      .map((f) => ({
+        key: f.key || f.label || "",
+        label: f.label || f.key || "",
+        value: (customValues[f.key || ""] || "").trim(),
+      }))
+      .filter((f) => f.value);
+    await addressApi.create({
+      name: form.name.trim(),
+      address: form.address.trim(),
+      city: form.city.trim(),
+      state: form.state.trim() || undefined,
+      zip: form.zip.trim(),
+      phone: form.phone.trim(),
+      country: form.country.trim() || "IN",
+      customFields: customFields.length ? customFields : undefined,
+      isDefault: savedAddresses.length === 0,
+    });
+  };
+
   const placeOrderPayload = (extra: { razorpayPayment?: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }; cashfreePayment?: { order_id: string } } = {}) => ({
     shippingAddress: buildShippingAddress(),
     paymentMethod: allowedChosen,
@@ -171,9 +147,42 @@ export default function CheckoutPage() {
     setMounted(true);
   }, []);
 
+  // When international shipping is disabled, lock country to default (defined early for use in effects)
+  const internationalShippingEnabled = checkoutSettings.internationalShippingEnabled === true;
+  const defaultCountry = (checkoutSettings.defaultCountry && checkoutSettings.defaultCountry.trim()) || "IN";
+
+  // Load saved addresses when logged in
+  useEffect(() => {
+    if (!mounted || !isLoggedIn) return;
+    addressApi.list().then((res) => {
+      if (res.data?.data) {
+        setSavedAddresses(res.data.data);
+        const defaultAddr = res.data.data.find((a) => a.isDefault) ?? res.data.data[0];
+        if (defaultAddr) {
+          setSelectedAddressId(defaultAddr._id);
+          setForm({
+            name: defaultAddr.name,
+            address: defaultAddr.address,
+            city: defaultAddr.city,
+            state: defaultAddr.state ?? "",
+            zip: defaultAddr.zip,
+            phone: defaultAddr.phone,
+            country: internationalShippingEnabled ? (defaultAddr.country ?? "IN") : defaultCountry,
+          });
+        }
+      }
+    });
+  }, [mounted, isLoggedIn, internationalShippingEnabled, defaultCountry]);
+
   useEffect(() => {
     setForm((prev) => ({ ...prev, state: "" }));
   }, [form.country]);
+
+  useEffect(() => {
+    if (!internationalShippingEnabled && defaultCountry) {
+      setForm((prev) => (prev.country !== defaultCountry ? { ...prev, country: defaultCountry } : prev));
+    }
+  }, [internationalShippingEnabled, defaultCountry]);
 
   useEffect(() => {
     if (paymentMethods.length > 0 && !paymentMethods.some((m) => m.id === paymentMethod)) {
@@ -283,6 +292,7 @@ export default function CheckoutPage() {
       if (res.data?.data?._id) {
         setOrderId(res.data.data._id);
         await refreshCart();
+        await saveAddressIfRequested();
       }
       return;
     }
@@ -354,6 +364,7 @@ export default function CheckoutPage() {
             if (placeRes.data?.data?._id) {
               setOrderId(placeRes.data.data._id);
               refreshCart();
+              saveAddressIfRequested();
             }
           },
         });
@@ -392,7 +403,7 @@ export default function CheckoutPage() {
           return;
         }
         const { paymentSessionId } = sessionRes.data.data;
-        const payload = placeOrderPayload({ cashfreePayment: { order_id: sessionRes.data.data.orderId } });
+        const payload = { ...placeOrderPayload({ cashfreePayment: { order_id: sessionRes.data.data.orderId } }), saveAddressForLater };
         try {
           sessionStorage.setItem("checkout_cashfree_payload", JSON.stringify(payload));
         } catch (_) {}
@@ -502,7 +513,69 @@ export default function CheckoutPage() {
         <h1 className="mb-8 text-2xl font-bold text-slate-900">Checkout</h1>
 
         <form onSubmit={handleSubmit} className="grid gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-6">
+            {savedAddresses.length > 0 && (
+              <Card>
+                <h2 className="mb-3 text-lg font-semibold text-slate-900">Saved addresses</h2>
+                <p className="mb-4 text-sm text-slate-500">Choose a saved address or enter a new one below.</p>
+                <div className="space-y-2">
+                  {savedAddresses.map((a) => (
+                    <label
+                      key={a._id}
+                      className={`flex cursor-pointer items-start gap-3 rounded-lg border px-4 py-3 transition ${
+                        selectedAddressId === a._id ? "border-emerald-500 bg-emerald-50/50" : "border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="savedAddress"
+                        value={a._id}
+                        checked={selectedAddressId === a._id}
+                        onChange={() => {
+                          setSelectedAddressId(a._id);
+                          setForm({
+                            name: a.name,
+                            address: a.address,
+                            city: a.city,
+                            state: a.state ?? "",
+                            zip: a.zip,
+                            phone: a.phone,
+                            country: internationalShippingEnabled ? (a.country ?? "IN") : defaultCountry,
+                          });
+                        }}
+                        className="mt-1 h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <div className="flex-1 text-sm">
+                        {a.label && <span className="font-medium text-slate-500">{a.label} · </span>}
+                        <span className="font-medium text-slate-900">{a.name}</span>
+                        <p className="text-slate-600">{a.address}, {a.city}{a.state ? `, ${a.state}` : ""} {a.zip}</p>
+                        <p className="text-slate-500">{a.phone}</p>
+                      </div>
+                      {a.isDefault && (
+                        <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">Default</span>
+                      )}
+                    </label>
+                  ))}
+                  <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 px-4 py-3 transition hover:bg-slate-50">
+                    <input
+                      type="radio"
+                      name="savedAddress"
+                      value=""
+                      checked={selectedAddressId === null}
+                      onChange={() => {
+                        setSelectedAddressId(null);
+                        setForm({ name: "", address: "", city: "", state: "", zip: "", phone: "", country: defaultCountry });
+                      }}
+                      className="h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span className="text-sm font-medium text-slate-900">Use new address</span>
+                  </label>
+                </div>
+                <p className="mt-3 text-sm text-slate-500">
+                  <Link href="/user/addresses" className="text-emerald-600 hover:underline">Manage addresses</Link>
+                </p>
+              </Card>
+            )}
             <Card>
               <h2 className="mb-4 text-lg font-semibold text-slate-900">Shipping Address</h2>
               <div className="space-y-4">
@@ -593,17 +666,23 @@ export default function CheckoutPage() {
                   )}
                   <div>
                     <Label>Country</Label>
-                    <select
-                      value={form.country}
-                      onChange={(e) => setForm({ ...form, country: e.target.value })}
-                      className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                    >
-                      {COUNTRY_OPTIONS.map((c) => (
-                        <option key={c.code} value={c.code}>
-                          {c.name} ({c.code})
-                        </option>
-                      ))}
-                    </select>
+                    {internationalShippingEnabled ? (
+                      <select
+                        value={form.country}
+                        onChange={(e) => setForm({ ...form, country: e.target.value })}
+                        className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      >
+                        {COUNTRY_OPTIONS.map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.name} ({c.code})
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700">
+                        {COUNTRY_OPTIONS.find((c) => c.code === (form.country || defaultCountry))?.name ?? form.country ?? defaultCountry}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -621,6 +700,17 @@ export default function CheckoutPage() {
                     </div>
                   )}
                 </div>
+                {isLoggedIn && (
+                  <label className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={saveAddressForLater}
+                      onChange={(e) => setSaveAddressForLater(e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span className="text-sm text-slate-700">Save this address for next time</span>
+                  </label>
+                )}
                 {(checkoutSettings.customFields || [])
                   .filter((f) => f.enabled !== false)
                   .map((field) => (

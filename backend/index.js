@@ -20,6 +20,7 @@ import inventoryRoutes from './routes/inventoryRoutes.js';
 import cronRoutes from './routes/cronRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import shippingRoutes from './routes/shippingRoutes.js';
+import addressRoutes from './routes/addressRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import backupRoutes from './routes/backupRoutes.js';
 
@@ -89,6 +90,7 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/cron', cronRoutes);
 app.use('/api/admins', adminRoutes);
 app.use('/api/shipping', shippingRoutes);
+app.use('/api/addresses', addressRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/backup', backupRoutes);
 

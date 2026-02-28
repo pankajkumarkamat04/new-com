@@ -438,6 +438,8 @@ const buildDefaultCheckoutSettings = (raw = {}) => {
   return {
     ...base,
     customFields,
+    internationalShippingEnabled: raw.internationalShippingEnabled === true,
+    defaultCountry: (raw.defaultCountry && String(raw.defaultCountry).trim()) ? String(raw.defaultCountry).trim() : 'IN',
   };
 };
 
@@ -486,6 +488,13 @@ export const updateCheckoutSettings = async (req, res) => {
           enabled: f.enabled !== false,
           required: !!f.required,
         }));
+    }
+
+    if (req.body.internationalShippingEnabled !== undefined) {
+      updates['checkout.internationalShippingEnabled'] = !!req.body.internationalShippingEnabled;
+    }
+    if (req.body.defaultCountry !== undefined) {
+      updates['checkout.defaultCountry'] = (req.body.defaultCountry && String(req.body.defaultCountry).trim()) ? String(req.body.defaultCountry).trim() : 'IN';
     }
 
     const settings = await Settings.findOneAndUpdate(

@@ -40,6 +40,8 @@ const defaultCheckoutSettings: CheckoutSettings = {
   zip: { enabled: true, required: true, label: "ZIP / Postal Code" },
   phone: { enabled: true, required: true, label: "Phone" },
   customFields: [],
+  internationalShippingEnabled: false,
+  defaultCountry: "IN",
 };
 
 const defaultPaymentSettings: PaymentSettings = {
@@ -299,6 +301,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
                 required: !!f.required,
               }))
           : [],
+        internationalShippingEnabled: checkout.internationalShippingEnabled === true,
+        defaultCountry: (checkout.defaultCountry && String(checkout.defaultCountry).trim()) || "IN",
       });
     } else {
       setCheckoutSettings(defaultCheckoutSettings);

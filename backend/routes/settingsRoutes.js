@@ -130,6 +130,8 @@ const updateCheckoutValidation = [
   body('customFields.*.label').optional().trim(),
   body('customFields.*.enabled').optional().isBoolean().withMessage('customFields.enabled must be boolean'),
   body('customFields.*.required').optional().isBoolean().withMessage('customFields.required must be boolean'),
+  body('internationalShippingEnabled').optional().isBoolean().withMessage('internationalShippingEnabled must be boolean'),
+  body('defaultCountry').optional().trim(),
 ];
 
 const updatePaymentValidation = [

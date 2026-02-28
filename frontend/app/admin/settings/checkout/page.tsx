@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { settingsApi } from "@/lib/api";
 import type { CheckoutSettings } from "@/lib/types";
 import { Card, Button, Input, Label, LoadingState } from "@/components/ui";
+import { COUNTRY_OPTIONS } from "@/lib/addressConstants";
 
 const defaultForm: CheckoutSettings = {
   name: { enabled: true, required: true, label: "Full Name" },
@@ -13,6 +14,8 @@ const defaultForm: CheckoutSettings = {
   zip: { enabled: true, required: true, label: "ZIP / Postal Code" },
   phone: { enabled: true, required: true, label: "Phone" },
   customFields: [],
+  internationalShippingEnabled: false,
+  defaultCountry: "IN",
 };
 
 export default function AdminCheckoutSettingsPage() {
@@ -71,12 +74,17 @@ export default function AdminCheckoutSettingsPage() {
                 required: !!f.required,
               }))
             : [],
+          internationalShippingEnabled: data.internationalShippingEnabled === true,
+          defaultCountry: (data.defaultCountry && String(data.defaultCountry).trim()) || "IN",
         });
       }
     });
   }, [mounted]);
 
-  const updateField = (field: keyof CheckoutSettings, patch: Partial<CheckoutSettings[keyof CheckoutSettings]>) => {
+  const updateField = (
+    field: "name" | "address" | "city" | "state" | "zip" | "phone",
+    patch: Partial<CheckoutSettings["name"]>
+  ) => {
     setForm((prev) => ({
       ...prev,
       [field]: {
@@ -151,6 +159,41 @@ export default function AdminCheckoutSettingsPage() {
         <LoadingState message="Loading..." />
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-2 text-lg font-semibold text-slate-900">Shipping &amp; Country</h2>
+            <p className="mb-4 text-xs text-slate-500">
+              When international shipping is disabled, only the default country is shown on checkout. When enabled, customers can choose from the full country list.
+            </p>
+            <div className="flex flex-wrap items-center gap-6">
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={form.internationalShippingEnabled === true}
+                  onChange={(e) => setForm((prev) => ({ ...prev, internationalShippingEnabled: e.target.checked }))}
+                  className="h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+                />
+                <span className="text-sm font-medium text-slate-900">Enable international shipping</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <Label className="text-slate-700">Default country</Label>
+                <select
+                  value={form.defaultCountry ?? "IN"}
+                  onChange={(e) => setForm((prev) => ({ ...prev, defaultCountry: e.target.value }))}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                >
+                  {COUNTRY_OPTIONS.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.name} ({c.code})
+                    </option>
+                  ))}
+                </select>
+                <span className="text-xs text-slate-500">
+                  {form.internationalShippingEnabled ? "Used as default selection." : "Only country shown on checkout."}
+                </span>
+              </div>
+            </div>
+          </div>
+
           <div className="grid gap-6 md:grid-cols-2">
             {(
               [

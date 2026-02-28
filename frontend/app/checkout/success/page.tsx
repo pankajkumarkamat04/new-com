@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ordersApi } from "@/lib/api";
+import { ordersApi, addressApi } from "@/lib/api";
 import { PageLayout, Card, Button } from "@/components/ui";
 
 const STORAGE_KEY = "checkout_cashfree_payload";
@@ -33,12 +33,13 @@ export default function CheckoutSuccessPage() {
           return;
         }
         const payload = JSON.parse(raw) as {
-          shippingAddress: unknown;
+          shippingAddress: { name: string; address: string; city: string; state?: string; zip: string; phone: string; country?: string; customFields?: { key: string; label: string; value: string }[] };
           paymentMethod?: string;
           couponCode?: string;
           shippingMethodId?: string;
           shippingAmount?: number;
           cashfreePayment?: { order_id: string };
+          saveAddressForLater?: boolean;
         };
         payload.cashfreePayment = { order_id: cfOrderId };
         const res = await ordersApi.placeOrder(payload);
@@ -54,6 +55,20 @@ export default function CheckoutSuccessPage() {
         if (res.data?.data?._id) {
           setOrderId(res.data.data._id);
           setStatus("success");
+          if (payload.saveAddressForLater && payload.shippingAddress?.name && payload.shippingAddress?.address && payload.shippingAddress?.city && payload.shippingAddress?.zip && payload.shippingAddress?.phone) {
+            try {
+              await addressApi.create({
+                name: payload.shippingAddress.name,
+                address: payload.shippingAddress.address,
+                city: payload.shippingAddress.city,
+                state: payload.shippingAddress.state,
+                zip: payload.shippingAddress.zip,
+                phone: payload.shippingAddress.phone,
+                country: payload.shippingAddress.country || "IN",
+                customFields: payload.shippingAddress.customFields,
+              });
+            } catch (_) {}
+          }
         } else {
           setStatus("error");
           setError("Order could not be completed.");

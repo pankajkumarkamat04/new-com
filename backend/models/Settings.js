@@ -176,6 +176,8 @@ const settingsSchema = new mongoose.Schema({
       enabled: { type: Boolean, default: true },
       required: { type: Boolean, default: false },
     }],
+    internationalShippingEnabled: { type: Boolean, default: false },
+    defaultCountry: { type: String, trim: true, default: 'IN' },
   },
   payment: {
     currency: { type: String, trim: true, default: 'INR' },

@@ -134,6 +134,8 @@ export type CheckoutSettings = {
   zip: CheckoutFieldConfig;
   phone: CheckoutFieldConfig;
   customFields?: CheckoutCustomField[];
+  internationalShippingEnabled?: boolean;
+  defaultCountry?: string;
 };
 
 export type SeoSettings = {
@@ -404,6 +406,24 @@ export type Order = {
   paymentGatewayPaymentId?: string;
   paymentStatus?: "paid" | "pending" | "cod" | "failed";
   paidAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// User saved addresses
+export type Address = {
+  _id: string;
+  userId: string;
+  label?: string;
+  name: string;
+  address: string;
+  city: string;
+  state?: string;
+  zip: string;
+  phone: string;
+  country?: string;
+  customFields?: { key: string; label: string; value: string }[];
+  isDefault?: boolean;
   createdAt: string;
   updatedAt: string;
 };

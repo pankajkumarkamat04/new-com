@@ -517,6 +517,39 @@ export const blogApi = {
 };
 
 // Public: get shipping options for address (query: country, state, zip, subtotal, itemCount)
+export const addressApi = {
+  list: () => api<{ data: import("./types").Address[] }>("/addresses"),
+  create: (body: {
+    label?: string;
+    name: string;
+    address: string;
+    city: string;
+    state?: string;
+    zip: string;
+    phone: string;
+    country?: string;
+    customFields?: { key: string; label: string; value: string }[];
+    isDefault?: boolean;
+  }) => api<{ data: import("./types").Address }>("/addresses", { method: "POST", body: JSON.stringify(body) }),
+  update: (
+    id: string,
+    body: Partial<{
+      label: string;
+      name: string;
+      address: string;
+      city: string;
+      state: string;
+      zip: string;
+      phone: string;
+      country: string;
+      customFields: { key: string; label: string; value: string }[];
+      isDefault: boolean;
+    }>
+  ) => api<{ data: import("./types").Address }>(`/addresses/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  delete: (id: string) => api(`/addresses/${id}`, { method: "DELETE" }),
+  setDefault: (id: string) => api<{ data: import("./types").Address }>(`/addresses/${id}/default`, { method: "PATCH" }),
+};
+
 export const shippingApi = {
   getOptions: (params: { country?: string; state?: string; zip?: string; city?: string; subtotal?: number; itemCount?: number }) => {
     const searchParams = new URLSearchParams();
