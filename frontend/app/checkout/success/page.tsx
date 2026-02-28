@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ordersApi, addressApi } from "@/lib/api";
@@ -8,7 +8,7 @@ import { PageLayout, Card, Button } from "@/components/ui";
 
 const STORAGE_KEY = "checkout_cashfree_payload";
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const cfOrderId = searchParams.get("cf_order_id") || searchParams.get("order_id");
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
@@ -133,5 +133,23 @@ export default function CheckoutSuccessPage() {
         </Card>
       </div>
     </PageLayout>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <PageLayout>
+          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+            <Card padding="large" className="mx-auto max-w-md text-center">
+              <p className="text-slate-600">Loading...</p>
+            </Card>
+          </div>
+        </PageLayout>
+      }
+    >
+      <CheckoutSuccessContent />
+    </Suspense>
   );
 }
