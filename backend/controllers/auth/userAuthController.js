@@ -175,6 +175,7 @@ export const loginPassword = async (req, res) => {
 
     const { email, phone, password } = req.body;
 
+    const loginCfg = await getLoginSettings();
     const normalizedPhone = phone ? normalizePhoneTo10Digits(phone) : null;
     if (loginCfg.loginIdentifier === 'phone' && phone && !normalizedPhone) {
       return res.status(400).json({ success: false, message: 'Phone must be a valid 10-digit number.' });
@@ -182,8 +183,6 @@ export const loginPassword = async (req, res) => {
     if (!email && !normalizedPhone) {
       return res.status(400).json({ success: false, message: 'Email or phone is required' });
     }
-
-    const loginCfg = await getLoginSettings();
     if (loginCfg.loginMethod !== 'password') {
       return res.status(400).json({ success: false, message: 'Password login is disabled. Please use OTP to sign in.' });
     }

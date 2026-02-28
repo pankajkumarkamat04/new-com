@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { userApi, settingsApi } from "@/lib/api";
 import { useCart } from "@/contexts/CartContext";
 import type { LoginSettings } from "@/lib/types";
-import { Card, Input, Label, Button, LoadingState } from "@/components/ui";
+import { Card, Input, Label, Button, LoadingState, PasswordInput } from "@/components/ui";
 
 const defaultLoginSettings: LoginSettings = {
   loginIdentifier: "email",
@@ -222,7 +222,7 @@ export default function UserLoginPage() {
           {!isOtp && (
             <div>
               <Label>Password</Label>
-              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+              <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
             </div>
           )}
 

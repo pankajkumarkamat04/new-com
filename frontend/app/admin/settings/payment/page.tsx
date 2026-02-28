@@ -10,8 +10,8 @@ const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AED", "SGD", "CAD", "AUD", "JPY
 const defaultForm: PaymentSettings = {
   currency: "INR",
   cod: { enabled: true },
-  razorpay: { enabled: false },
-  cashfree: { enabled: false },
+  razorpay: { enabled: false, keyId: "", keySecret: "" },
+  cashfree: { enabled: false, appId: "", secretKey: "", env: "sandbox" },
 };
 
 export default function AdminPaymentSettingsPage() {
@@ -34,8 +34,17 @@ export default function AdminPaymentSettingsPage() {
         setForm({
           currency: d.currency || "INR",
           cod: { enabled: d.cod?.enabled !== false },
-          razorpay: { enabled: !!d.razorpay?.enabled },
-          cashfree: { enabled: !!d.cashfree?.enabled },
+          razorpay: {
+            enabled: !!d.razorpay?.enabled,
+            keyId: d.razorpay?.keyId ?? "",
+            keySecret: d.razorpay?.keySecret ?? "",
+          },
+          cashfree: {
+            enabled: !!d.cashfree?.enabled,
+            appId: d.cashfree?.appId ?? "",
+            secretKey: d.cashfree?.secretKey ?? "",
+            env: d.cashfree?.env === "production" ? "production" : "sandbox",
+          },
         });
       }
     });
@@ -94,45 +103,122 @@ export default function AdminPaymentSettingsPage() {
             Enable or disable each payment method. At least one method should be enabled for checkout.
           </p>
 
-          <div className="space-y-4">
-            <label className="flex cursor-pointer items-center justify-between rounded-lg border border-slate-200 p-4 transition hover:bg-slate-50">
+          <div className="space-y-3">
+            {/* COD */}
+            <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
               <div>
-                <span className="font-medium text-slate-900">Cash on Delivery (COD)</span>
-                <p className="text-sm text-slate-500">Customer pays when the order is delivered.</p>
+                <p className="text-sm font-medium text-slate-900">Cash on Delivery (COD)</p>
+                <p className="text-xs text-slate-500">Customer pays when the order is delivered.</p>
               </div>
-              <input
-                type="checkbox"
-                checked={form.cod.enabled}
-                onChange={(e) => setForm({ ...form, cod: { enabled: e.target.checked } })}
-                className="h-5 w-5 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
-              />
-            </label>
+              <label className="relative inline-flex cursor-pointer items-center">
+                <input
+                  type="checkbox"
+                  checked={form.cod.enabled}
+                  onChange={(e) => setForm({ ...form, cod: { enabled: e.target.checked } })}
+                  className="peer sr-only"
+                />
+                <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-600 peer-checked:after:translate-x-full" />
+              </label>
+            </div>
 
-            <label className="flex cursor-pointer items-center justify-between rounded-lg border border-slate-200 p-4 transition hover:bg-slate-50">
-              <div>
-                <span className="font-medium text-slate-900">Razorpay</span>
-                <p className="text-sm text-slate-500">Online payment via Razorpay (card, UPI, netbanking, etc.).</p>
+            {/* Razorpay */}
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Razorpay</p>
+                  <p className="text-xs text-slate-500">Online payment via Razorpay (card, UPI, netbanking, etc.).</p>
+                </div>
+                <label className="relative inline-flex cursor-pointer items-center">
+                  <input
+                    type="checkbox"
+                    checked={form.razorpay.enabled}
+                    onChange={(e) => setForm({ ...form, razorpay: { ...form.razorpay, enabled: e.target.checked } })}
+                    className="peer sr-only"
+                  />
+                  <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-600 peer-checked:after:translate-x-full" />
+                </label>
               </div>
-              <input
-                type="checkbox"
-                checked={form.razorpay.enabled}
-                onChange={(e) => setForm({ ...form, razorpay: { enabled: e.target.checked } })}
-                className="h-5 w-5 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
-              />
-            </label>
+              {form.razorpay.enabled && (
+                <div className="grid gap-3 sm:grid-cols-2 pl-0 pt-2 border-t border-slate-100">
+                  <div>
+                    <Label className="text-slate-600">Key ID</Label>
+                    <input
+                      type="text"
+                      value={form.razorpay.keyId ?? ""}
+                      onChange={(e) => setForm({ ...form, razorpay: { ...form.razorpay, keyId: e.target.value } })}
+                      placeholder="rzp_test_xxxx"
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-slate-600">Key Secret</Label>
+                    <input
+                      type="password"
+                      value={form.razorpay.keySecret ?? ""}
+                      onChange={(e) => setForm({ ...form, razorpay: { ...form.razorpay, keySecret: e.target.value } })}
+                      placeholder="Leave blank to keep current"
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    />
+                    <p className="mt-0.5 text-xs text-slate-500">From Dashboard → API Keys. Leave blank to keep existing secret.</p>
+                  </div>
+                </div>
+              )}
+            </div>
 
-            <label className="flex cursor-pointer items-center justify-between rounded-lg border border-slate-200 p-4 transition hover:bg-slate-50">
-              <div>
-                <span className="font-medium text-slate-900">Cashfree</span>
-                <p className="text-sm text-slate-500">Online payment via Cashfree.</p>
+            {/* Cashfree */}
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Cashfree</p>
+                  <p className="text-xs text-slate-500">Online payment via Cashfree.</p>
+                </div>
+                <label className="relative inline-flex cursor-pointer items-center">
+                  <input
+                    type="checkbox"
+                    checked={form.cashfree.enabled}
+                    onChange={(e) => setForm({ ...form, cashfree: { ...form.cashfree, enabled: e.target.checked } })}
+                    className="peer sr-only"
+                  />
+                  <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-amber-600 peer-checked:after:translate-x-full" />
+                </label>
               </div>
-              <input
-                type="checkbox"
-                checked={form.cashfree.enabled}
-                onChange={(e) => setForm({ ...form, cashfree: { enabled: e.target.checked } })}
-                className="h-5 w-5 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
-              />
-            </label>
+              {form.cashfree.enabled && (
+                <div className="grid gap-3 sm:grid-cols-2 pl-0 pt-2 border-t border-slate-100">
+                  <div>
+                    <Label className="text-slate-600">App ID</Label>
+                    <input
+                      type="text"
+                      value={form.cashfree.appId ?? ""}
+                      onChange={(e) => setForm({ ...form, cashfree: { ...form.cashfree, appId: e.target.value } })}
+                      placeholder="Your Cashfree App ID"
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-slate-600">Secret Key</Label>
+                    <input
+                      type="password"
+                      value={form.cashfree.secretKey ?? ""}
+                      onChange={(e) => setForm({ ...form, cashfree: { ...form.cashfree, secretKey: e.target.value } })}
+                      placeholder="Leave blank to keep current"
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    />
+                    <p className="mt-0.5 text-xs text-slate-500">Leave blank to keep existing secret.</p>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Label className="text-slate-600">Environment</Label>
+                    <select
+                      value={form.cashfree.env ?? "sandbox"}
+                      onChange={(e) => setForm({ ...form, cashfree: { ...form.cashfree, env: e.target.value as "sandbox" | "production" } })}
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    >
+                      <option value="sandbox">Sandbox (test)</option>
+                      <option value="production">Production</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

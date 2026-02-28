@@ -296,6 +296,35 @@ export const cartApi = {
   clear: () => api<{ data: { items: CartItem[] } }>('/cart', { method: 'DELETE' }),
 };
 
+export const paymentApi = {
+  createRazorpayOrder: (params: { amount: number; currency?: string; receipt?: string }) =>
+    api<{ data: { orderId: string; keyId: string; amountInPaise: number } }>('/payment/create-razorpay-order', {
+      method: 'POST',
+      body: JSON.stringify({
+        amount: params.amount,
+        currency: params.currency || 'INR',
+        ...(params.receipt && { receipt: params.receipt }),
+      }),
+    }),
+  createCashfreeSession: (params: {
+    orderId: string;
+    amount: number;
+    currency?: string;
+    customerDetails?: { customer_id?: string; customer_name?: string; customer_email?: string; customer_phone?: string };
+    returnUrl?: string;
+  }) =>
+    api<{ data: { orderId: string; paymentSessionId: string } }>('/payment/create-cashfree-session', {
+      method: 'POST',
+      body: JSON.stringify({
+        orderId: params.orderId,
+        amount: params.amount,
+        currency: params.currency || 'INR',
+        ...(params.customerDetails && { customerDetails: params.customerDetails }),
+        ...(params.returnUrl && { returnUrl: params.returnUrl }),
+      }),
+    }),
+};
+
 export const ordersApi = {
   placeOrder: (params: {
     shippingAddress: {
@@ -312,6 +341,8 @@ export const ordersApi = {
     couponCode?: string;
     shippingMethodId?: string;
     shippingAmount?: number;
+    razorpayPayment?: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string };
+    cashfreePayment?: { order_id: string };
   }) =>
     api<{ data: Order }>('/orders', {
       method: 'POST',
@@ -321,6 +352,8 @@ export const ordersApi = {
         ...(params.couponCode && { couponCode: params.couponCode }),
         ...(params.shippingMethodId && { shippingMethodId: params.shippingMethodId }),
         ...(params.shippingAmount !== undefined && params.shippingAmount !== null && { shippingAmount: params.shippingAmount }),
+        ...(params.razorpayPayment && { razorpayPayment: params.razorpayPayment }),
+        ...(params.cashfreePayment && { cashfreePayment: params.cashfreePayment }),
       }),
     }),
   getMyOrders: () => api<{ data: Order[] }>('/orders'),

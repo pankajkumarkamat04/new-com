@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
 import { useSettings } from "@/contexts/SettingsContext";
-import { ordersApi, couponApi, shippingApi } from "@/lib/api";
+import { ordersApi, couponApi, shippingApi, paymentApi } from "@/lib/api";
 import type { ShippingOption } from "@/lib/types";
 import { PageLayout, Card, Button, Input, Label } from "@/components/ui";
 
@@ -64,7 +64,7 @@ const INDIAN_STATES = [
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, loading, refreshCart } = useCart();
-  const { checkoutSettings, paymentMethods, formatCurrency, couponEnabled, taxEnabled, defaultTaxPercentage, shippingEnabled } = useSettings();
+  const { checkoutSettings, paymentMethods, paymentSettings, formatCurrency, couponEnabled, taxEnabled, defaultTaxPercentage, shippingEnabled } = useSettings();
   const [mounted, setMounted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -114,6 +114,37 @@ export default function CheckoutPage() {
   const shippingAmount = selectedShipping?.amount ?? 0;
   const total = Math.max(0, subtotal - discount + taxAmount + shippingAmount);
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
+  const allowedIds = paymentMethods.map((m) => m.id);
+  const allowedChosen = allowedIds.includes(paymentMethod) ? paymentMethod : (paymentMethods[0]?.id || "cod");
+
+  const buildShippingAddress = () => ({
+    name: form.name.trim(),
+    address: form.address.trim(),
+    city: form.city.trim(),
+    state: form.state.trim(),
+    zip: form.zip.trim(),
+    phone: form.phone.trim(),
+    country: form.country.trim() || "IN",
+    customFields: (checkoutSettings.customFields || [])
+      .filter((f) => f.enabled !== false && (f.key || f.label))
+      .map((f) => ({
+        key: f.key || f.label || "",
+        label: f.label || f.key || "",
+        value: (customValues[f.key || ""] || "").trim(),
+      }))
+      .filter((f) => f.value),
+  });
+
+  const placeOrderPayload = (extra: { razorpayPayment?: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }; cashfreePayment?: { order_id: string } } = {}) => ({
+    shippingAddress: buildShippingAddress(),
+    paymentMethod: allowedChosen,
+    ...(appliedCoupon && { couponCode: appliedCoupon.code }),
+    ...(shippingEnabled && selectedShipping && {
+      ...(selectedShipping.methodId && { shippingMethodId: selectedShipping.methodId }),
+      shippingAmount: selectedShipping.amount,
+    }),
+    ...extra,
+  });
 
   const handleApplyCoupon = async () => {
     setCouponError("");
@@ -238,35 +269,167 @@ export default function CheckoutPage() {
       setError("Please enter your address to see shipping options.");
       return;
     }
-    const allowedIds = paymentMethods.map((m) => m.id);
-    const chosen = allowedIds.includes(paymentMethod) ? paymentMethod : (allowedIds[0] || "cod");
+    const chosen = allowedChosen;
+    const currency = paymentSettings?.currency || "INR";
+
+    if (chosen === "cod") {
+      setSubmitting(true);
+      const res = await ordersApi.placeOrder(placeOrderPayload());
+      setSubmitting(false);
+      if (res.error) {
+        setError(res.error);
+        return;
+      }
+      if (res.data?.data?._id) {
+        setOrderId(res.data.data._id);
+        await refreshCart();
+      }
+      return;
+    }
+
+    if (chosen === "razorpay") {
+      setSubmitting(true);
+      try {
+        const createRes = await paymentApi.createRazorpayOrder({ amount: total, currency });
+        if (createRes.error || !createRes.data?.data) {
+          setError(createRes.error || "Failed to create payment.");
+          setSubmitting(false);
+          return;
+        }
+        const { orderId: rpOrderId, keyId } = createRes.data.data;
+        const loadScript = (src: string) =>
+          new Promise<void>((resolve, reject) => {
+            if (typeof document === "undefined") {
+              resolve();
+              return;
+            }
+            const existing = document.querySelector(`script[src="${src}"]`);
+            if (existing) {
+              resolve();
+              return;
+            }
+            const script = document.createElement("script");
+            script.src = src;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error("Razorpay script failed to load"));
+            document.body.appendChild(script);
+          });
+        await loadScript("https://checkout.razorpay.com/v1/checkout.js");
+        const Razorpay = (window as unknown as {
+          Razorpay: new (options: {
+            key: string;
+            order_id: string;
+            amount: number;
+            currency: string;
+            name?: string;
+            handler: (r: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => void;
+          }) => { on: (event: string, cb: () => void) => void; open: () => void };
+        }).Razorpay;
+        if (!Razorpay) {
+          setError("Razorpay failed to load.");
+          setSubmitting(false);
+          return;
+        }
+        const rzp = new Razorpay({
+          key: keyId,
+          order_id: rpOrderId,
+          amount: createRes.data.data.amountInPaise,
+          currency,
+          name: "Checkout",
+          handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
+            const placeRes = await ordersApi.placeOrder(
+              placeOrderPayload({
+                razorpayPayment: {
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                },
+              })
+            );
+            setSubmitting(false);
+            if (placeRes.error) {
+              setError(placeRes.error);
+              return;
+            }
+            if (placeRes.data?.data?._id) {
+              setOrderId(placeRes.data.data._id);
+              refreshCart();
+            }
+          },
+        });
+        rzp.on("payment.failed", () => {
+          setSubmitting(false);
+          setError("Payment failed or was cancelled.");
+        });
+        rzp.open();
+      } catch (err) {
+        setSubmitting(false);
+        setError(err instanceof Error ? err.message : "Payment failed.");
+      }
+      return;
+    }
+
+    if (chosen === "cashfree") {
+      setSubmitting(true);
+      try {
+        const cfOrderId = `cf_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+        const origin = typeof window !== "undefined" ? window.location.origin : "";
+        const returnUrl = `${origin}/checkout/success?cf_order_id={order_id}`;
+        const sessionRes = await paymentApi.createCashfreeSession({
+          orderId: cfOrderId,
+          amount: total,
+          currency,
+          customerDetails: {
+            customer_name: form.name.trim(),
+            customer_phone: form.phone.trim(),
+            customer_email: "",
+          },
+          returnUrl,
+        });
+        if (sessionRes.error || !sessionRes.data?.data) {
+          setError(sessionRes.error || "Failed to create Cashfree session.");
+          setSubmitting(false);
+          return;
+        }
+        const { paymentSessionId } = sessionRes.data.data;
+        const payload = placeOrderPayload({ cashfreePayment: { order_id: sessionRes.data.data.orderId } });
+        try {
+          sessionStorage.setItem("checkout_cashfree_payload", JSON.stringify(payload));
+        } catch (_) {}
+        const loadCashfree = (): Promise<{ checkout: (opts: { paymentSessionId: string; redirectTarget: string }) => void }> =>
+          new Promise((resolve, reject) => {
+            if (typeof document === "undefined") {
+              reject(new Error("No document"));
+              return;
+            }
+            const existing = (window as unknown as { Cashfree?: { checkout?: (opts: unknown) => void } }).Cashfree;
+            if (existing?.checkout) {
+              resolve(existing as { checkout: (opts: { paymentSessionId: string; redirectTarget: string }) => void });
+              return;
+            }
+            const script = document.createElement("script");
+            script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
+            script.async = true;
+            script.onload = () => {
+              const CashfreeFn = (window as unknown as { Cashfree: (opts: { mode: string }) => { checkout: (opts: { paymentSessionId: string; redirectTarget: string }) => void } }).Cashfree;
+              const mode = (paymentSettings as { cashfree?: { env?: string } })?.cashfree?.env === "production" ? "production" : "sandbox";
+              resolve(CashfreeFn({ mode }));
+            };
+            script.onerror = () => reject(new Error("Cashfree SDK failed to load"));
+            document.body.appendChild(script);
+          });
+        const cashfree = await loadCashfree();
+        cashfree.checkout({ paymentSessionId, redirectTarget: "_self" });
+        setSubmitting(false);
+      } catch (err) {
+        setSubmitting(false);
+        setError(err instanceof Error ? err.message : "Cashfree checkout failed.");
+      }
+      return;
+    }
 
     setSubmitting(true);
-    const res = await ordersApi.placeOrder({
-      shippingAddress: {
-        name: form.name.trim(),
-        address: form.address.trim(),
-        city: form.city.trim(),
-        state: form.state.trim(),
-        zip: form.zip.trim(),
-        phone: form.phone.trim(),
-        country: form.country.trim() || "IN",
-        customFields: (checkoutSettings.customFields || [])
-          .filter((f) => f.enabled !== false && (f.key || f.label))
-          .map((f) => ({
-            key: f.key || f.label || "",
-            label: f.label || f.key || "",
-            value: (customValues[f.key || ""] || "").trim(),
-          }))
-          .filter((f) => f.value),
-      },
-      paymentMethod: chosen,
-      ...(appliedCoupon && { couponCode: appliedCoupon.code }),
-      ...(shippingEnabled && selectedShipping && {
-        ...(selectedShipping.methodId && { shippingMethodId: selectedShipping.methodId }),
-        shippingAmount: selectedShipping.amount,
-      }),
-    });
+    const res = await ordersApi.placeOrder(placeOrderPayload());
     setSubmitting(false);
     if (res.error) {
       setError(res.error);

@@ -180,8 +180,17 @@ const settingsSchema = new mongoose.Schema({
   payment: {
     currency: { type: String, trim: true, default: 'INR' },
     cod: { enabled: { type: Boolean, default: true } },
-    razorpay: { enabled: { type: Boolean, default: false } },
-    cashfree: { enabled: { type: Boolean, default: false } },
+    razorpay: {
+      enabled: { type: Boolean, default: false },
+      keyId: { type: String, trim: true, default: '' },
+      keySecret: { type: String, trim: true, default: '' },
+    },
+    cashfree: {
+      enabled: { type: Boolean, default: false },
+      appId: { type: String, trim: true, default: '' },
+      secretKey: { type: String, trim: true, default: '' },
+      env: { type: String, trim: true, enum: ['sandbox', 'production'], default: 'sandbox' },
+    },
   },
   couponEnabled: {
     type: Boolean,

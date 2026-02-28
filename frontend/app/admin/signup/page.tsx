@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { adminApi } from "@/lib/api";
-import { Card, Input, Label, Button } from "@/components/ui";
+import { Card, Input, Label, Button, PasswordInput } from "@/components/ui";
 
 export default function AdminSignupPage() {
   const router = useRouter();
@@ -80,11 +80,11 @@ export default function AdminSignupPage() {
           </div>
           <div>
             <Label required>Password</Label>
-            <Input variant="amber" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
+            <PasswordInput variant="amber" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
           </div>
           <div>
             <Label required>Confirm Password</Label>
-            <Input variant="amber" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" required />
+            <PasswordInput variant="amber" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" required />
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}

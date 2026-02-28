@@ -45,8 +45,8 @@ const defaultCheckoutSettings: CheckoutSettings = {
 const defaultPaymentSettings: PaymentSettings = {
   currency: "INR",
   cod: { enabled: true },
-  razorpay: { enabled: false },
-  cashfree: { enabled: false },
+  razorpay: { enabled: false, keyId: "", keySecret: "" },
+  cashfree: { enabled: false, appId: "", secretKey: "", env: "sandbox" },
 };
 
 const defaultFooterSettings: FooterSettings = {
@@ -309,8 +309,14 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       setPaymentSettings({
         currency: payment.currency || "INR",
         cod: { enabled: payment.cod?.enabled !== false },
-        razorpay: { enabled: !!payment.razorpay?.enabled },
-        cashfree: { enabled: !!payment.cashfree?.enabled },
+        razorpay: {
+          enabled: !!payment.razorpay?.enabled,
+          keyId: (payment as { razorpay?: { keyId?: string } }).razorpay?.keyId ?? "",
+        },
+        cashfree: {
+          enabled: !!payment.cashfree?.enabled,
+          env: (payment as { cashfree?: { env?: string } }).cashfree?.env === "production" ? "production" : "sandbox",
+        },
       });
     } else {
       setPaymentSettings(defaultPaymentSettings);

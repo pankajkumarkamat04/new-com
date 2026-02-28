@@ -155,8 +155,17 @@ export type SeoSettings = {
 export type PaymentSettings = {
   currency: string;
   cod: { enabled: boolean };
-  razorpay: { enabled: boolean };
-  cashfree: { enabled: boolean };
+  razorpay: {
+    enabled: boolean;
+    keyId?: string;
+    keySecret?: string;
+  };
+  cashfree: {
+    enabled: boolean;
+    appId?: string;
+    secretKey?: string;
+    env?: "sandbox" | "production";
+  };
 };
 
 export type LoginSettings = {
@@ -391,6 +400,10 @@ export type Order = {
   };
   status: string;
   paymentMethod?: string;
+  paymentGatewayOrderId?: string;
+  paymentGatewayPaymentId?: string;
+  paymentStatus?: "paid" | "pending" | "cod" | "failed";
+  paidAt?: string | null;
   createdAt: string;
   updatedAt: string;
 };

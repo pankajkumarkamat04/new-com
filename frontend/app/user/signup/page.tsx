@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { userApi } from "@/lib/api";
 import { useCart } from "@/contexts/CartContext";
-import { Card, Input, Label, Button } from "@/components/ui";
+import { Card, Input, Label, Button, PasswordInput } from "@/components/ui";
 
 const PHONE_COUNTRY_OPTIONS: { dial: string; name: string; code: string }[] = [
   { dial: "+91", name: "India", code: "IN" },
@@ -136,11 +136,11 @@ export default function UserSignupPage() {
           </div>
           <div>
             <Label required>Password</Label>
-            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
+            <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
           </div>
           <div>
             <Label required>Confirm Password</Label>
-            <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" required />
+            <PasswordInput value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" required />
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}

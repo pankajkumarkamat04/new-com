@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ordersApi } from "@/lib/api";
 import type { Order } from "@/lib/types";
+import { getDisplayPaymentStatus } from "@/lib/orderUtils";
 import { useSettings } from "@/contexts/SettingsContext";
 import { LoadingState, EmptyState, Badge, Button } from "@/components/ui";
 
@@ -77,6 +78,9 @@ export default function UserOrdersPage() {
                   Total
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
+                  Payment
+                </th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
                   Status
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
@@ -102,6 +106,12 @@ export default function UserOrdersPage() {
                   <td className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-slate-900">
                     {formatCurrency(order.total)}
                   </td>
+                  <td className="px-4 py-3 text-sm text-slate-600">
+                    <span className="capitalize">{order.paymentMethod || "—"}</span>
+                    <span className={`ml-1 ${getDisplayPaymentStatus(order) === "paid" ? "text-emerald-600" : getDisplayPaymentStatus(order) === "cod" ? "text-amber-600" : getDisplayPaymentStatus(order) === "failed" ? "text-red-600" : "text-slate-400"}`}>
+                      {getDisplayPaymentStatus(order) === "paid" ? "· Paid" : getDisplayPaymentStatus(order) === "cod" ? "" : getDisplayPaymentStatus(order) === "failed" ? "· Failed" : "· Pending"}
+                    </span>
+                  </td>
                   <td className="whitespace-nowrap px-4 py-3">
                     <Badge
                       variant={
@@ -109,7 +119,7 @@ export default function UserOrdersPage() {
                           ? "warning"
                           : order.status === "delivered"
                             ? "success"
-                            : order.status === "cancelled"
+                            : order.status === "cancelled" || order.status === "failed"
                               ? "danger"
                               : "neutral"
                       }

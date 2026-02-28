@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { adminOrdersApi } from "@/lib/api";
 import type { Order } from "@/lib/types";
+import { getDisplayPaymentStatus } from "@/lib/orderUtils";
 import { useSettings } from "@/contexts/SettingsContext";
 import { LoadingState, EmptyState, Badge, Button } from "@/components/ui";
 
-const STATUS_OPTIONS = ["all", "pending", "confirmed", "shipped", "delivered", "cancelled"] as const;
+const STATUS_OPTIONS = ["all", "pending", "confirmed", "shipped", "delivered", "cancelled", "failed"] as const;
 
 export default function AdminOrdersPage() {
   const { formatCurrency } = useSettings();
@@ -71,6 +72,7 @@ export default function AdminOrdersPage() {
                 <th className="px-4 py-3 text-left font-semibold text-slate-700">Customer</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-700">Total</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-700">Payment</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-700">Transaction</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-700">Status</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-700">Date</th>
                 <th className="px-4 py-3 text-right font-semibold text-slate-700">Actions</th>
@@ -106,6 +108,21 @@ export default function AdminOrdersPage() {
                     <td className="px-4 py-3 align-top text-xs text-slate-600 capitalize">
                       {order.paymentMethod || "—"}
                     </td>
+                    <td className="px-4 py-3 align-top text-xs">
+                      <span className={getDisplayPaymentStatus(order) === "paid" ? "text-emerald-600 font-medium" : getDisplayPaymentStatus(order) === "cod" ? "text-amber-600" : getDisplayPaymentStatus(order) === "failed" ? "text-red-600" : "text-slate-500"}>
+                        {getDisplayPaymentStatus(order) === "paid" ? "Paid" : getDisplayPaymentStatus(order) === "cod" ? "COD" : getDisplayPaymentStatus(order) === "failed" ? "Failed" : "Pending"}
+                      </span>
+                      {order.paymentGatewayPaymentId && (
+                        <div className="mt-0.5 font-mono text-[10px] text-slate-400 truncate max-w-[100px]" title={order.paymentGatewayPaymentId}>
+                          {order.paymentGatewayPaymentId.slice(0, 12)}…
+                        </div>
+                      )}
+                      {!order.paymentGatewayPaymentId && order.paymentGatewayOrderId && (
+                        <div className="mt-0.5 font-mono text-[10px] text-slate-400 truncate max-w-[100px]" title={order.paymentGatewayOrderId}>
+                          {order.paymentGatewayOrderId.slice(0, 12)}…
+                        </div>
+                      )}
+                    </td>
                     <td className="px-4 py-3 align-top">
                       <Badge
                         variant={
@@ -113,7 +130,7 @@ export default function AdminOrdersPage() {
                             ? "warning"
                             : order.status === "delivered"
                               ? "success"
-                              : order.status === "cancelled"
+                              : order.status === "cancelled" || order.status === "failed"
                                 ? "danger"
                                 : "neutral"
                         }

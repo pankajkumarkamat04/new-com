@@ -8,6 +8,26 @@ import ShippingZone from '../models/ShippingZone.js';
 import ShippingMethod from '../models/ShippingMethod.js';
 import { redisDel, redisDeleteByPattern } from '../utils/redisClient.js';
 import { sendNotification } from '../utils/notificationService.js';
+import * as paymentService from '../services/paymentService.js';
+
+/** Ensure paymentStatus is set on order (for backward compatibility; infer paid when gateway IDs present). */
+function ensurePaymentStatus(order) {
+  if (!order) return order;
+  const method = (order.paymentMethod || '').toLowerCase();
+  const hasGatewayIds = !!(order.paymentGatewayOrderId || order.paymentGatewayPaymentId);
+  // If paymentMethod is razorpay/cashfree and we have gateway IDs, treat as paid (fixes old or mis-saved orders)
+  if ((method === 'razorpay' || method === 'cashfree') && hasGatewayIds) {
+    order.paymentStatus = 'paid';
+    return order;
+  }
+  if (order.paymentStatus) return order;
+  if (method === 'cod') {
+    order.paymentStatus = 'cod';
+    return order;
+  }
+  order.paymentStatus = 'pending';
+  return order;
+}
 
 function findZoneForAddress(zones, country, state, zip) {
   const countryUpper = (country || '').trim().toUpperCase();
@@ -77,7 +97,15 @@ const getEffectivePaymentConfig = async () => {
 
 export const placeOrder = async (req, res) => {
   try {
-    const { shippingAddress, paymentMethod: requestedMethod, couponCode: rawCouponCode, shippingMethodId, shippingAmount: requestedShippingAmount } = req.body;
+    const {
+      shippingAddress,
+      paymentMethod: requestedMethod,
+      couponCode: rawCouponCode,
+      shippingMethodId,
+      shippingAmount: requestedShippingAmount,
+      razorpayPayment,
+      cashfreePayment,
+    } = req.body;
     const { name, address, city, state, zip, phone, country, customFields } = shippingAddress || {};
 
     const checkout = await getEffectiveCheckoutConfig();
@@ -262,6 +290,58 @@ export const placeOrder = async (req, res) => {
 
     const finalTotal = Math.round((subtotal - discountAmount + totalTax + shippingAmount) * 100) / 100;
 
+    // Verify online payment before creating order
+    let paymentGatewayOrderId = '';
+    let paymentGatewayPaymentId = '';
+    let paymentStatus = 'pending';
+    let paidAt = null;
+    let paymentFailed = false;
+    let failureMessage = '';
+    if (paymentMethod === 'razorpay') {
+      const rp = razorpayPayment && typeof razorpayPayment === 'object'
+        ? razorpayPayment
+        : {};
+      const orderId = (rp.razorpay_order_id || rp.order_id || '').trim();
+      const paymentId = (rp.razorpay_payment_id || rp.payment_id || '').trim();
+      const signature = (rp.razorpay_signature || rp.signature || '').trim();
+      if (!orderId || !paymentId || !signature) {
+        return res.status(400).json({ success: false, message: 'Razorpay payment details (order_id, payment_id, signature) are required.' });
+      }
+      const expectedPaise = Math.round(finalTotal * 100);
+      const verification = await paymentService.verifyRazorpayPayment(orderId, paymentId, signature, expectedPaise);
+      if (!verification.valid) {
+        paymentFailed = true;
+        failureMessage = verification.message || 'Razorpay payment verification failed.';
+        paymentGatewayOrderId = orderId;
+        paymentGatewayPaymentId = paymentId;
+        paymentStatus = 'failed';
+      } else {
+        paymentGatewayOrderId = orderId;
+        paymentGatewayPaymentId = paymentId;
+        paymentStatus = 'paid';
+        paidAt = new Date();
+      }
+    } else if (paymentMethod === 'cashfree') {
+      const cf = cashfreePayment && typeof cashfreePayment === 'object' ? cashfreePayment : {};
+      const cfOrderId = (cf.order_id || cf.cf_order_id || '').trim();
+      if (!cfOrderId) {
+        return res.status(400).json({ success: false, message: 'Cashfree order_id is required.' });
+      }
+      const verification = await paymentService.verifyCashfreePayment(cfOrderId);
+      if (!verification.paid) {
+        paymentFailed = true;
+        failureMessage = 'Cashfree payment is not completed or verification failed.';
+        paymentGatewayOrderId = cfOrderId;
+        paymentStatus = 'failed';
+      } else {
+        paymentGatewayOrderId = cfOrderId;
+        paymentStatus = 'paid';
+        paidAt = new Date();
+      }
+    } else if (paymentMethod === 'cod') {
+      paymentStatus = 'cod';
+    }
+
     const normalizedCustomFields = Array.isArray(customFields)
       ? customFields
           .filter((f) => f && (f.key || f.label) && f.value)
@@ -272,7 +352,7 @@ export const placeOrder = async (req, res) => {
           }))
       : [];
 
-    const order = await Order.create({
+    const orderPayload = {
       userId: req.user._id,
       items: orderItems,
       subtotal,
@@ -295,8 +375,24 @@ export const placeOrder = async (req, res) => {
         ...((country || '').trim() && { country: String(country).trim() }),
         customFields: normalizedCustomFields,
       },
-      status: 'pending',
       paymentMethod,
+      paymentStatus,
+      ...(paymentGatewayOrderId && { paymentGatewayOrderId }),
+      ...(paymentGatewayPaymentId && { paymentGatewayPaymentId }),
+      ...(paidAt && { paidAt }),
+    };
+
+    if (paymentFailed) {
+      await Order.create({
+        ...orderPayload,
+        status: 'failed',
+      });
+      return res.status(400).json({ success: false, message: failureMessage });
+    }
+
+    const order = await Order.create({
+      ...orderPayload,
+      status: 'pending',
     });
 
     await Cart.findOneAndUpdate(
@@ -389,6 +485,7 @@ export const placeOrder = async (req, res) => {
     });
 
     const populated = await Order.findById(order._id).lean();
+    ensurePaymentStatus(populated);
     res.status(201).json({ success: true, data: populated });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -400,6 +497,7 @@ export const getMyOrders = async (req, res) => {
     const orders = await Order.find({ userId: req.user._id })
       .sort({ createdAt: -1 })
       .lean();
+    orders.forEach(ensurePaymentStatus);
     res.json({ success: true, data: orders });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -416,6 +514,7 @@ export const getOrderById = async (req, res) => {
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
+    ensurePaymentStatus(order);
     res.json({ success: true, data: order });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -436,6 +535,7 @@ export const adminListOrders = async (req, res) => {
       Order.find(query).populate('userId', 'name email phone').sort({ createdAt: -1 }).skip(skip).limit(limitNum).lean(),
       Order.countDocuments(query),
     ]);
+    orders.forEach(ensurePaymentStatus);
 
     const pages = Math.ceil(total / limitNum);
     res.json({
@@ -455,6 +555,7 @@ export const adminGetOrder = async (req, res) => {
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
+    ensurePaymentStatus(order);
     res.json({ success: true, data: order });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -465,7 +566,7 @@ export const adminGetOrder = async (req, res) => {
 export const adminUpdateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    const allowed = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+    const allowed = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled', 'failed'];
     if (!status || !allowed.includes(status)) {
       return res.status(400).json({ success: false, message: 'Valid status required: ' + allowed.join(', ') });
     }

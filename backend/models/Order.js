@@ -40,9 +40,13 @@ const orderSchema = new mongoose.Schema({
   status: {
     type: String,
     default: 'pending',
-    enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'],
+    enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled', 'failed'],
   },
   paymentMethod: { type: String, trim: true, default: 'cod' },
+  paymentGatewayOrderId: { type: String, trim: true, default: '' },
+  paymentGatewayPaymentId: { type: String, trim: true, default: '' },
+  paymentStatus: { type: String, trim: true, enum: ['paid', 'pending', 'cod', 'failed'], default: 'pending' },
+  paidAt: { type: Date, default: null },
 }, {
   timestamps: true,
 });

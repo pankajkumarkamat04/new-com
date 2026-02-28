@@ -8,6 +8,7 @@ export { default as Badge } from "./Badge";
 export { default as BackLink } from "./BackLink";
 export { default as Card } from "./Card";
 export { default as Input } from "./Input";
+export { default as PasswordInput } from "./PasswordInput";
 export { default as Label } from "./Label";
 export { default as Textarea } from "./Textarea";
 export { default as Breadcrumb } from "./Breadcrumb";

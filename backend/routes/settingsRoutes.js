@@ -136,7 +136,12 @@ const updatePaymentValidation = [
   body('currency').optional().trim().isIn(['INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD', 'CAD', 'AUD', 'JPY']).withMessage('Invalid currency'),
   body('cod.enabled').optional().isBoolean().withMessage('cod.enabled must be boolean'),
   body('razorpay.enabled').optional().isBoolean().withMessage('razorpay.enabled must be boolean'),
+  body('razorpay.keyId').optional().trim(),
+  body('razorpay.keySecret').optional().trim(),
   body('cashfree.enabled').optional().isBoolean().withMessage('cashfree.enabled must be boolean'),
+  body('cashfree.appId').optional().trim(),
+  body('cashfree.secretKey').optional().trim(),
+  body('cashfree.env').optional().trim().isIn(['sandbox', 'production']).withMessage('cashfree.env must be sandbox or production'),
 ];
 
 const updateNotificationValidation = [

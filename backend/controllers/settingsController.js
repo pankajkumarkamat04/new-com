@@ -508,14 +508,36 @@ export const updateCheckoutSettings = async (req, res) => {
 
 const PAYMENT_CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD', 'CAD', 'AUD', 'JPY'];
 
+const PAYMENT_MASK = '********';
+
 function buildDefaultPaymentSettings(raw) {
   return {
     currency: raw?.currency && PAYMENT_CURRENCIES.includes(String(raw.currency).toUpperCase())
       ? String(raw.currency).toUpperCase()
       : 'INR',
     cod: { enabled: raw?.cod?.enabled !== false },
-    razorpay: { enabled: !!raw?.razorpay?.enabled },
-    cashfree: { enabled: !!raw?.cashfree?.enabled },
+    razorpay: {
+      enabled: !!raw?.razorpay?.enabled,
+      keyId: (raw?.razorpay?.keyId && String(raw.razorpay.keyId).trim()) || '',
+      keySecret: (raw?.razorpay?.keySecret && String(raw.razorpay.keySecret).trim()) || '',
+    },
+    cashfree: {
+      enabled: !!raw?.cashfree?.enabled,
+      appId: (raw?.cashfree?.appId && String(raw.cashfree.appId).trim()) || '',
+      secretKey: (raw?.cashfree?.secretKey && String(raw.cashfree.secretKey).trim()) || '',
+      env: (raw?.cashfree?.env === 'production' ? 'production' : 'sandbox'),
+    },
+  };
+}
+
+/** Payment settings safe for public (no secrets); includes razorpay.keyId for checkout. */
+function buildPublicPaymentSettings(raw) {
+  const full = buildDefaultPaymentSettings(raw);
+  return {
+    currency: full.currency,
+    cod: full.cod,
+    razorpay: { enabled: full.razorpay.enabled, keyId: full.razorpay.keyId },
+    cashfree: { enabled: full.cashfree.enabled, env: full.cashfree.env },
   };
 }
 
@@ -524,6 +546,9 @@ export const getPaymentSettings = async (req, res) => {
     const settings = await Settings.getSettings();
     const payment = settings.payment || {};
     const data = buildDefaultPaymentSettings(payment);
+    // Mask secrets when sending to client (admin can leave as-is to keep current value)
+    if (data.razorpay.keySecret) data.razorpay.keySecret = PAYMENT_MASK;
+    if (data.cashfree.secretKey) data.cashfree.secretKey = PAYMENT_MASK;
     res.json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -543,8 +568,21 @@ export const updatePaymentSettings = async (req, res) => {
       updates['payment.currency'] = PAYMENT_CURRENCIES.includes(c) ? c : 'INR';
     }
     if (cod && typeof cod.enabled !== 'undefined') updates['payment.cod.enabled'] = !!cod.enabled;
-    if (razorpay && typeof razorpay.enabled !== 'undefined') updates['payment.razorpay.enabled'] = !!razorpay.enabled;
-    if (cashfree && typeof cashfree.enabled !== 'undefined') updates['payment.cashfree.enabled'] = !!cashfree.enabled;
+    if (razorpay) {
+      if (typeof razorpay.enabled !== 'undefined') updates['payment.razorpay.enabled'] = !!razorpay.enabled;
+      if (razorpay.keyId !== undefined) updates['payment.razorpay.keyId'] = String(razorpay.keyId || '').trim();
+      if (razorpay.keySecret !== undefined && razorpay.keySecret !== '' && razorpay.keySecret !== PAYMENT_MASK) {
+        updates['payment.razorpay.keySecret'] = String(razorpay.keySecret).trim();
+      }
+    }
+    if (cashfree) {
+      if (typeof cashfree.enabled !== 'undefined') updates['payment.cashfree.enabled'] = !!cashfree.enabled;
+      if (cashfree.appId !== undefined) updates['payment.cashfree.appId'] = String(cashfree.appId || '').trim();
+      if (cashfree.secretKey !== undefined && cashfree.secretKey !== '' && cashfree.secretKey !== PAYMENT_MASK) {
+        updates['payment.cashfree.secretKey'] = String(cashfree.secretKey).trim();
+      }
+      if (cashfree.env !== undefined) updates['payment.cashfree.env'] = cashfree.env === 'production' ? 'production' : 'sandbox';
+    }
 
     await Settings.findOneAndUpdate(
       { key: 'site' },
@@ -553,7 +591,8 @@ export const updatePaymentSettings = async (req, res) => {
     );
     const settings = await Settings.getSettings();
     const data = buildDefaultPaymentSettings(settings.payment || {});
-    // Invalidate cached public settings so next request rebuilds from DB
+    if (data.razorpay.keySecret) data.razorpay.keySecret = PAYMENT_MASK;
+    if (data.cashfree.secretKey) data.cashfree.secretKey = PAYMENT_MASK;
     await redisDel(PUBLIC_SETTINGS_CACHE_KEY);
     res.json({ success: true, data });
   } catch (error) {
@@ -789,7 +828,7 @@ export const getPublicSettings = async (req, res) => {
     const checkout = buildDefaultCheckoutSettings(checkoutRaw);
 
     const paymentRaw = settings.payment || {};
-    const payment = buildDefaultPaymentSettings(paymentRaw);
+    const payment = buildPublicPaymentSettings(paymentRaw);
 
     const footerRaw = settings.footer || {};
     const footer = buildDefaultFooterSettings(footerRaw);

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { ordersApi } from "@/lib/api";
 import type { Order } from "@/lib/types";
+import { getDisplayPaymentStatus } from "@/lib/orderUtils";
 import { useSettings } from "@/contexts/SettingsContext";
 import { GstInvoice } from "@/components/GstInvoice";
 import { LoadingState, ErrorState, BackLink, Card, Badge, Button } from "@/components/ui";
@@ -77,7 +78,7 @@ export default function UserOrderDetailPage() {
                 ? "warning"
                 : order.status === "delivered"
                   ? "success"
-                  : order.status === "cancelled"
+                  : order.status === "cancelled" || order.status === "failed"
                     ? "danger"
                     : "neutral"
             }
@@ -169,6 +170,41 @@ export default function UserOrderDetailPage() {
                   </dl>
                 </div>
               )}
+            </Card>
+            <Card>
+              <h2 className="mb-4 text-lg font-semibold text-slate-900">Payment & transaction</h2>
+              <dl className="space-y-2 text-sm">
+                <div className="flex justify-between gap-2">
+                  <dt className="text-slate-500">Method</dt>
+                  <dd className="font-medium text-slate-900">{paymentMethodLabel(order.paymentMethod)}</dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt className="text-slate-500">Status</dt>
+                  <dd>
+                    <span className={`font-medium ${getDisplayPaymentStatus(order) === "paid" ? "text-emerald-600" : getDisplayPaymentStatus(order) === "cod" ? "text-amber-600" : getDisplayPaymentStatus(order) === "failed" ? "text-red-600" : "text-slate-600"}`}>
+                      {getDisplayPaymentStatus(order) === "paid" ? "Paid" : getDisplayPaymentStatus(order) === "cod" ? "Cash on delivery" : getDisplayPaymentStatus(order) === "failed" ? "Failed" : "Pending"}
+                    </span>
+                  </dd>
+                </div>
+                {order.paymentGatewayPaymentId && (
+                  <div className="flex flex-col gap-0.5">
+                    <dt className="text-slate-500">Transaction ID</dt>
+                    <dd className="font-mono text-xs text-slate-700 break-all">{order.paymentGatewayPaymentId}</dd>
+                  </div>
+                )}
+                {order.paymentGatewayOrderId && !order.paymentGatewayPaymentId && (
+                  <div className="flex flex-col gap-0.5">
+                    <dt className="text-slate-500">Reference</dt>
+                    <dd className="font-mono text-xs text-slate-700 break-all">{order.paymentGatewayOrderId}</dd>
+                  </div>
+                )}
+                {order.paidAt && (
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-slate-500">Paid at</dt>
+                    <dd className="text-slate-700">{new Date(order.paidAt).toLocaleString()}</dd>
+                  </div>
+                )}
+              </dl>
             </Card>
             <Card>
               <h2 className="mb-4 text-lg font-semibold text-slate-900">Download Invoice</h2>
